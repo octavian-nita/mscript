@@ -1,0 +1,25 @@
+/*
+ * TESTS:
+ *  - multi-line comments
+ *  - single line comments
+ *  - simple literals: integers, floating-point numbers, booleans, strings
+ *  - escaping string literals
+ *  - simple variable assignment, terminated by line feed
+ *  - simple variable assignment, terminated by semicolon
+ *  - multi-assignment on same line
+ *  - NO expressions just yet...
+ */
+
+var1 = 1//
+var1 = '1'; // allowed; instructions optionally end in semicolon
+
+_var1 = 10.2
+
+
+/* That's allowed
+           too... */
+
+var2 = 'xyz'; _var2 = true
+
+/* One-liner multi-line comment */
+var3 = false; _var4 = 'ab\n\tc\'d\$'

@@ -1,0 +1,54 @@
+FAQ
+===
+
+ - case sensitive? assumed: YES
+ - allow empty scripts as input? assumed: YES
+ - allow empty statements like ; ? assumed: YES
+ - string interpolation for variables? assumed (from the examples): '[varName]' (i.e. the [] operator)
+ - can we have expressions like: var1 = 1 + '3' ? assumed: NO
+
+Identifiers
+-----------
+ - following the Java identifier rules but no $ character allowed
+
+Literals
+--------
+ - boolean: true, false
+ - integer: 0, 12, 341, but NO 023
+ - floating point number: 23.91, 1., .075, but NO scientific notation like 0.3E-10
+ - string: delimited by single quotes: 'abc';
+   -> escape sequences: \\, \', \$, \[, \], \n, \r, \t
+   -> no multi-line strings currently
+   -> no explicit string concatenation, only implicit through MScript expressions
+
+Operators
+---------
+ - arithmetic: +, -, *, /, %, unary -, , unary +
+ - parentheses for altering arithmetic operator precedence: ( )
+
+Statements
+----------
+ - if / while open braces can come on the next line too
+
+Misc
+----
+
+  if ($getValue('var1')) {
+
+and
+
+  if ($getValue('$getValue('var1')')) {
+
+and
+  if ('$getValue('var1')) {
+
+are all legal statements.
+
+A 'quoted' expression contains string parts as well as function calls.
+
+SEMANTIC NOTES (not taken into consideration at parse time)
+--------------
+ - dynamically-typed, a variable can be assigned a value of one type now and later, assigned a value of different type
+ - variables must be defined / assigned prior to any use
+ - internally, all variables / values are stored as strings, regardless of the value they are assigned;
+   literals are converted to / considered strings internally

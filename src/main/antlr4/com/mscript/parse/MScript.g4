@@ -1,9 +1,9 @@
 grammar MScript;
 
-text : ANY*;
+script : stat*;
 
-ANY : ~[ \t]+;
+stat : 'hello';
 
-WS : [ \t]+ -> skip;
+WS : [ \t\f]+ -> skip;
 
 NL : '\r' ? '\n';
