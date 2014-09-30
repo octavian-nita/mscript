@@ -7,14 +7,14 @@
  *  - simple variable assignment, terminated by line feed
  *  - simple variable assignment, terminated by semicolon
  *  - multi-assignment on same line
- *  - NO expressions just yet...
+ *  - NO complex expressions yet...
  */
 
 var1 = 1//
-var1 = '1'; // allowed; instructions optionally end in semicolon
+var1 = /* ... */ '1'; // allowed; instructions optionally end in semicolon
 
-_var1 = 10.2
-
+_var1=10.2
+;
 
 /* That's allowed
            too... */
