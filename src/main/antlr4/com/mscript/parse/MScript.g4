@@ -1,14 +1,16 @@
 grammar MScript;
 
-script : stat*;
+script : (NL | stat)* EOF ;
 
-stat : 'hello';
+stat : 'hello' ;
 
-// \f: \u000C
-// consider also \u000B\u00A0 (ECMAScript)
-WS : [ \t\f]+ -> skip;
+WS : [ \t\f]+ -> skip ;
 
-NL : '\r' ? '\n';
+NL : '\r' ? '\n' ;
+
+ML_COMMENT : '/*' .*? '*/' -> skip ;
+
+SL_COMMENT : '//' ~[\r\n]* -> skip ;
 
 // Inspiration:
 //   http://github.com/antlr/grammars-v4/blob/master/ecmascript/ECMAScript.g4
