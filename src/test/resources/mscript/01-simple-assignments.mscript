@@ -22,4 +22,6 @@ _var1=10.2
 var2 = 'xyz'; _var2 = true
 
 /* One-liner multi-line comment */
-var3 = false; _var4 = 'ab\n\tc\'d\$'
+var3 = 'false'; _var3 = 'ab\n\tc\'d\$'
+
+var4=.1
