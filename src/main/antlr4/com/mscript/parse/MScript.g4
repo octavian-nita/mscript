@@ -6,7 +6,7 @@ grammar MScript;
 //
 //////////////////////////////////
 
-script : STAT_SEPARATOR* stat? ( STAT_SEPARATOR stat )* STAT_SEPARATOR* EOF ;
+script : STAT_SEPARATOR* stat? ( STAT_SEPARATOR stat? )* EOF ;
 
 stat
   : assign
@@ -22,14 +22,10 @@ expr : LITERAL;
 //
 /////////////////////////////////
 
-// We do not currently handle / cover "java letters" (characters) above 0xFF and UTF-16 surrogate pairs encodings from
-// U+10000 to U+10FFFF; if needed, find missing bits at http://github.com/antlr/grammars-v4/blob/master/java8/Java8.g4
-ID : [a-zA-Z_] [a-zA-Z0-9_]* ;
-
 LITERAL
-  : BOOLEAN
-  | NUMBER
+  : NUMBER
   | STRING
+  | BOOLEAN
   ;
 
 BOOLEAN : 'true' | 'false' ;
@@ -56,6 +52,12 @@ ESCAPE
   | '\\r'
   | '\\t'
   ;
+
+// Keep ID definition AFTER LITERALs (so that true would be interpreted as a boolean literal and not an ID!)
+
+// We do not currently handle / cover "java letters" (characters) above 0xFF and UTF-16 surrogate pairs encodings from
+// U+10000 to U+10FFFF; if needed, find missing bits at http://github.com/antlr/grammars-v4/blob/master/java8/Java8.g4
+ID : [a-zA-Z_] [a-zA-Z0-9_]* ;
 
 STAT_SEPARATOR
   : '\r'? '\n'

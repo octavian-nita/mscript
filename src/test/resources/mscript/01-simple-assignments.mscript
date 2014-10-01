@@ -18,7 +18,7 @@ var1 = -1//
 var1 = /* ... */ '1'; // allowed; instructions optionally end in semicolon
 
  _var1=10.2
-  ;
+   ;
 
 /* That's allowed
            too... */
