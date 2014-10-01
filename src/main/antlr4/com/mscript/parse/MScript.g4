@@ -34,11 +34,28 @@ LITERAL
 
 BOOLEAN : 'true' | 'false' ;
 
-NUMBER : INT ( '.' INT )? ;
+NUMBER : [+-]? ( INT ( '.' INT )? | '.' INT ) ;
 
-fragment INT : [0-9]+ ;
+fragment
+INT
+  : '0'
+  | [1-9] [0-9]*
+  ;
 
-STRING : '\'' ~[']* '\'' ;
+STRING : '\'' ( ESCAPE | ~['] )* '\'' ;
+
+// \\, \', \$, \[, \], \n, \r, \t
+fragment
+ESCAPE
+  : '\\\\'
+  | '\\\''
+  | '\\$'
+  | '\\['
+  | '\\]'
+  | '\\n'
+  | '\\r'
+  | '\\t'
+  ;
 
 STAT_SEPARATOR
   : '\r'? '\n'
