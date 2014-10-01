@@ -1,6 +1,12 @@
 grammar MScript;
 
-script : STAT_SEPARATOR* stat? (STAT_SEPARATOR stat)* STAT_SEPARATOR* EOF ;
+//////////////////////////////////
+//
+// MScript Parser Specification
+//
+//////////////////////////////////
+
+script : STAT_SEPARATOR* stat? ( STAT_SEPARATOR stat )* STAT_SEPARATOR* EOF ;
 
 stat
   : assign
@@ -10,20 +16,37 @@ assign : ID '=' expr ;
 
 expr : LITERAL;
 
-ID : ;
+/////////////////////////////////
+//
+// MScript Lexer Specification
+//
+/////////////////////////////////
 
-LITERAL : ;
+// We do not currently handle / cover "java letters" (characters) above 0xFF and UTF-16 surrogate pairs encodings from
+// U+10000 to U+10FFFF; if needed, find missing bits at http://github.com/antlr/grammars-v4/blob/master/java8/Java8.g4
+ID : [a-zA-Z_] [a-zA-Z0-9_]* ;
 
-NL : '\r' ? '\n' ;
+LITERAL
+  : BOOLEAN
+  | NUMBER
+  | STRING
+  ;
 
-STAT_SEPARATOR : NL | ';' ;
+BOOLEAN : 'true' | 'false' ;
+
+NUMBER : INT ( '.' INT )? ;
+
+fragment INT : [0-9]+ ;
+
+STRING : '\'' ~[']* '\'' ;
+
+STAT_SEPARATOR
+  : '\r'? '\n'
+  | ';'
+  ;
 
 // Skip multi-line and single line comments and white spaces, other than new lines
-SKIP
-  : '/*' .*? '*/'
-  | '//' ~[\r\n]*
-  | [ \t\f]+ -> skip
-  ;
+SKIP : ( '/*' .*? '*/' | '//' ~[\r\n]* | [ \t\f]+ ) -> skip ;
 
 // Interesting / similar grammars to study:
 //   http://github.com/antlr/grammars-v4/blob/master/ecmascript/ECMAScript.g4

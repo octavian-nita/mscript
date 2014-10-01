@@ -8,7 +8,7 @@
  *  - simple variable assignment, terminated by line feed
  *  - simple variable assignment, terminated by semicolon
  *  - multi-assignment on same line
- *  - NO complex expressions yet...
+ *  - NO complex expressions and string interpolation yet
  */
 
 var1 = 1//
