@@ -1,17 +1,31 @@
 grammar MScript;
 
-script : (NL | stat)* EOF ;
+script : STAT_SEPARATOR* stat? (STAT_SEPARATOR stat)* STAT_SEPARATOR* EOF ;
 
-stat : 'hello' ;
+stat
+  : assign
+  ;
 
-WS : [ \t\f]+ -> skip ;
+assign : ID '=' expr ;
+
+expr : LITERAL;
+
+ID : ;
+
+LITERAL : ;
 
 NL : '\r' ? '\n' ;
 
-ML_COMMENT : '/*' .*? '*/' -> skip ;
+STAT_SEPARATOR : NL | ';' ;
 
-SL_COMMENT : '//' ~[\r\n]* -> skip ;
+// Skip multi-line and single line comments and white spaces, other than new lines
+SKIP
+  : '/*' .*? '*/'
+  | '//' ~[\r\n]*
+  | [ \t\f]+ -> skip
+  ;
 
-// Inspiration:
+// Interesting / similar grammars to study:
 //   http://github.com/antlr/grammars-v4/blob/master/ecmascript/ECMAScript.g4
 //   http://github.com/antlr/grammars-v4/blob/master/java8/Java8.g4
+//   http://github.com/antlr/grammars-v4/blob/master/python3/Python3.g4
