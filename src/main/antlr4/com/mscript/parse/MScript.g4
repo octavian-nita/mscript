@@ -14,7 +14,12 @@ stat
 
 assign : ID '=' expr ;
 
-expr : LITERAL;
+expr
+  : string
+  | LITERAL
+  ;
+
+string : '\'' ( ESC_CHAR | STR_CHAR )* '\'' ;
 
 /////////////////////////////////
 //
@@ -22,11 +27,26 @@ expr : LITERAL;
 //
 /////////////////////////////////
 
-LITERAL
-  : NUMBER
-  | STRING
-  | BOOLEAN
+// Allowed escape sequences: \\, \', \$, \[, \], \n, \r, \t
+fragment
+ESC_CHAR
+  : '\\\\'
+  | '\\\''
+  | '\\$'
+  | '\\['
+  | '\\]'
+  | '\\n'
+  | '\\r'
+  | '\\t'
   ;
+
+// Any character apart from: \, ', $, [, ]
+fragment
+STR_CHAR
+  : ~('\\' | '\'' | '$' | '[' | ']')
+  ;
+
+LITERAL : BOOLEAN | NUMBER ;
 
 BOOLEAN : 'true' | 'false' ;
 
@@ -36,21 +56,6 @@ fragment
 INT
   : '0'
   | [1-9] [0-9]*
-  ;
-
-STRING : '\'' ( ESCAPE | ~['] )* '\'' ;
-
-// \\, \', \$, \[, \], \n, \r, \t
-fragment
-ESCAPE
-  : '\\\\'
-  | '\\\''
-  | '\\$'
-  | '\\['
-  | '\\]'
-  | '\\n'
-  | '\\r'
-  | '\\t'
   ;
 
 // Keep ID definition AFTER LITERALs (so that true would be interpreted as a boolean literal and not an ID!)
@@ -68,7 +73,7 @@ STAT_SEPARATOR
 // Skip multi-line and single line comments and white spaces, other than new lines
 SKIP : ( '/*' .*? '*/' | '//' ~[\r\n]* | [ \t\f]+ ) -> skip ;
 
-// Interesting / similar grammars to study:
+// ANTLR v4 grammars of interest:
 //   http://github.com/antlr/grammars-v4/blob/master/ecmascript/ECMAScript.g4
 //   http://github.com/antlr/grammars-v4/blob/master/java8/Java8.g4
 //   http://github.com/antlr/grammars-v4/blob/master/python3/Python3.g4
