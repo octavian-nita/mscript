@@ -1,14 +1,14 @@
 FAQ
 ===
 
- - case sensitive? assumed: YES
- - case sensitive literals like True / tRUe? assumed: YES, ony valid boolean literals being true and false;
-   then again, what about the internal conversions for strings like 'TrUE'?
- - allow empty scripts as input? assumed: YES
- - allow empty statements like ; ? assumed: YES
- - string interpolation for variables? assumed (from the examples): '[varName]' (i.e. the [] operator)
- - can we have expressions like: var1 = 1 + '3' ? assumed: YES
- - no library function checking at parse time, right?
+ - case sensitive language
+ - case sensitive literals (e.g. True / tRUe), ony valid boolean literals being true and false
+   > Question: what about the internal conversions for strings like 'TrUE'?
+ - allow empty scripts as input
+ - allow empty statements, e.g. ;
+ - string interpolation for variables: '[varName]' (i.e. the [] operator)
+ - allow expressions like var1 = 1 + '3'
+ - library function checks at parse time
 
 Identifiers
 -----------
@@ -49,9 +49,16 @@ are all legal statements.
 
 A 'quoted' expression contains string parts as well as function calls.
 
-SEMANTIC NOTES (not taken into consideration at parse time)
+Semantic notes (not taken into consideration at parse time)
 --------------
  - dynamically-typed, a variable can be assigned a value of one type now and later, assigned a value of different type
  - variables must be defined / assigned prior to any use
  - internally, all variables / values are stored as strings, regardless of the value they are assigned;
    literals are converted to / considered strings internally
+
+ANTLR v4 Grammars of Interest
+-----------------------------
+ - http://github.com/antlr/grammars-v4/blob/master/ecmascript/ECMAScript.g4
+ - http://github.com/antlr/grammars-v4/blob/master/python3/Python3.g4
+ - http://github.com/antlr/grammars-v4/blob/master/java8/Java8.g4
+ - http://github.com/antlr/grammars-v4/blob/master/xml
