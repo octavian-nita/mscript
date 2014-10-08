@@ -7,6 +7,8 @@ lexer grammar MScriptLexer;
 
 ASSIGN : '=' ;
 
+SIGIL : '$' ;
+
 QUOTE : '\'' -> pushMode(IN_STR) ;
 
 LITERAL : BOOLEAN | NUMBER ;
@@ -17,9 +19,7 @@ fragment INT : '0' | [1-9] [0-9]* ;
 
 NUMBER : [+-]? ( INT ( '.' INT )? | '.' INT ) ;
 
-// Keep ID definition AFTER LITERALs so that, for example, true would be interpreted as a
-// boolean literal and not an ID!
-
+// Keep ID definition AFTER LITERALs so that for example, true would be interpreted as a boolean literal and not an ID.
 // We do not currently handle / cover "java letters" (characters) above 0xFF and UTF-16 surrogate pairs encodings from
 // U+10000 to U+10FFFF; if needed, find missing bits at http://github.com/antlr/grammars-v4/blob/master/java8/Java8.g4
 ID : [a-zA-Z_] [a-zA-Z0-9_]* ;
@@ -37,6 +37,8 @@ SKIP : ( '/*' .*? '*/' | '//' ~[\r\n]* | [ \t\f]+ ) -> skip ;
 mode IN_STR;
 
 IN_STR_QUOTE : '\'' -> popMode ;
+
+IN_STR_SIGIL : '$' -> popMode ;
 
 // Allowed escape sequences: \\, \', \$, \[, \], \n, \r, \t
 ESC_CHAR
