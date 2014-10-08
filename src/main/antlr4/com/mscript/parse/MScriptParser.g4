@@ -11,7 +11,7 @@ stat
   : assign
   ;
 
-assign : ID '=' expr ;
+assign : ID ASSIGN expr ;
 
 expr
   : string

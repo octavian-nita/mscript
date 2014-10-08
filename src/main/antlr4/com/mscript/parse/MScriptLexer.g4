@@ -5,6 +5,8 @@ lexer grammar MScriptLexer;
 
 // ---------- Default "mode": everything OUTSIDE a quoted string ----------
 
+ASSIGN : '=' ;
+
 QUOTE : '\'' -> pushMode(IN_STR) ;
 
 LITERAL : BOOLEAN | NUMBER ;
