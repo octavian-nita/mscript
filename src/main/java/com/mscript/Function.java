@@ -27,12 +27,12 @@ public class Function {
             if (!arityMatcher.matches()) { // for now, just skip poorly defined functions, but...
                 continue; // TODO: eventually log something before skipping to the next function definition...
             }
-
+            System.out.println(arityMatcher.group(0));
+            String maxArity = arityMatcher.group(2);
             library.put(nameOrQualifiedName,
-                        arityMatcher.groupCount() == 1 ? new Function(nameOrQualifiedName, arityMatcher.group(1))
-                                                       : new Function(nameOrQualifiedName,
-                                                                      parseInt(arityMatcher.group(1)),
-                                                                      parseInt(arityMatcher.group(2))));
+                        maxArity == null ? new Function(nameOrQualifiedName, parseInt(arityMatcher.group(1)))
+                                         : new Function(nameOrQualifiedName, parseInt(arityMatcher.group(1)),
+                                                        parseInt(maxArity)));
         }
     }
 
@@ -93,12 +93,13 @@ public class Function {
         }
 
         this.qualifiedName = nameOrQualifiedName;
-        if (qNameMatcher.groupCount() == 1) {
+        String name = qNameMatcher.group(2);
+        if (name == null) {
             this.plugin = "";
             this.name = qNameMatcher.group(1);
-        } else { // can only be 2...
+        } else {
             this.plugin = qNameMatcher.group(1);
-            this.name = qNameMatcher.group(2);
+            this.name = name;
         }
 
         if (minArity < 0) {
@@ -123,5 +124,7 @@ public class Function {
 
     public static void main(String[] args) throws IOException {
         Function.loadLibrary("pluginFuncList.properties");
+
+        System.out.println(Function.library);
     }
 }
