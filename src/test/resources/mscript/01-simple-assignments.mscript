@@ -8,7 +8,7 @@
  *  - simple variable assignment, terminated by line feed
  *  - simple variable assignment, terminated by semicolon
  *  - multi-assignment on same line
- *  - NO complex expressions and string interpolation yet
+ *  - NO expressions and string interpolation yet
  */
 
 ;
@@ -23,9 +23,9 @@ var1 = /* ... */ '1'; // allowed; instructions optionally end in semicolon
 /* That's allowed
            too... */
 
-var2 = 'xy z'; _var2 = true; var2 = ' // a string should include comments as well as anything else... ';
+var2 = 'xy z'; _var2 = true; var2 = ' // a string can include comments ';
 
 /* One-liner multi-line comment */
 var3 = 0; _var3 = 'a  /*b*/\n\tc\'d\$' ; var3 = ''
 
-var4=-.1;
+var4=-.1; var4 = false4
