@@ -8,6 +8,8 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static java.lang.Integer.parseInt;
+
 public class Function {
 
     private static final Map<String, Function> library = new HashMap<>();
@@ -21,15 +23,20 @@ public class Function {
         for (Map.Entry<Object, Object> definition : definitions.entrySet()) {
             String nameOrQualifiedName = (String) definition.getKey();
 
-            String arity = (String) definition.getValue();
+            Matcher arityMatcher = ARITY_RE.matcher((String) definition.getValue());
+            if (!arityMatcher.matches()) { // for now, just skip poorly defined functions, but...
+                continue; // TODO: eventually log something before skipping to the next function definition...
+            }
 
-            // parse the arity and create a function object...
+            library.put(nameOrQualifiedName,
+                        arityMatcher.groupCount() == 1 ? new Function(nameOrQualifiedName, arityMatcher.group(1))
+                                                       : new Function(nameOrQualifiedName,
+                                                                      parseInt(arityMatcher.group(1)),
+                                                                      parseInt(arityMatcher.group(2))));
         }
     }
 
-    public static void clearLibrary() {
-        library.clear();
-    }
+    public static void clearLibrary() { library.clear(); }
 
     private static final Pattern FULLY_QUALIFIED_NAME_RE =
         Pattern.compile("\\s*\\$?(?:([a-zA-Z_][a-zA-Z0-9_]*)\\.)?([a-zA-Z_][a-zA-Z0-9_]*)\\s*");
@@ -79,19 +86,19 @@ public class Function {
         if (nameOrQualifiedName == null) {
             throw new IllegalArgumentException("the name or qualified name of a function cannot be null or empty");
         }
-        Matcher matcher = FULLY_QUALIFIED_NAME_RE.matcher(nameOrQualifiedName);
-        if (!matcher.matches()) {
+        Matcher qNameMatcher = FULLY_QUALIFIED_NAME_RE.matcher(nameOrQualifiedName);
+        if (!qNameMatcher.matches()) {
             throw new IllegalArgumentException(
                 "the name or qualified name of a function should match the [plugin.]function pattern");
         }
 
         this.qualifiedName = nameOrQualifiedName;
-        if (matcher.groupCount() == 1) {
+        if (qNameMatcher.groupCount() == 1) {
             this.plugin = "";
-            this.name = matcher.group(1);
+            this.name = qNameMatcher.group(1);
         } else { // can only be 2...
-            this.plugin = matcher.group(1);
-            this.name = matcher.group(2);
+            this.plugin = qNameMatcher.group(1);
+            this.name = qNameMatcher.group(2);
         }
 
         if (minArity < 0) {
@@ -112,5 +119,9 @@ public class Function {
     @Override
     public String toString() {
         return "$" + qualifiedName + "(" + minArity + ".." + maxArity + ")";
+    }
+
+    public static void main(String[] args) throws IOException {
+        Function.loadLibrary("pluginFuncList.properties");
     }
 }
