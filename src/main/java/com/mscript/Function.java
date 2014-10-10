@@ -9,8 +9,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.lang.Integer.parseInt;
+import static java.util.regex.Pattern.compile;
 
+/**
+ * MScript functions can optionally be prefixed by a plugin name and are <a href="http://en.wikipedia
+ * .org/wiki/Variadic_function">variadic</a>. Function definitions can be loaded from {@link java.util.Properties}
+ * files.
+ */
 public class Function {
+
+    private static final Pattern ARITY_RE = compile("(?:\\s*(\\d+)\\s*,)?\\s*(\\d+)\\s*");
 
     private static final Map<String, Function> library = new HashMap<>();
 
@@ -21,51 +29,68 @@ public class Function {
         }
 
         for (Map.Entry<Object, Object> definition : definitions.entrySet()) {
-            String nameOrQualifiedName = (String) definition.getKey();
+            String qualifiedName = (String) definition.getKey();
+            if (!qualifiedName.startsWith("$")) { // simpler to just ensure the name starts with $...
+                qualifiedName = "$" + qualifiedName;
+            }
 
             Matcher arityMatcher = ARITY_RE.matcher((String) definition.getValue());
-            if (!arityMatcher.matches()) { // for now, just skip poorly defined functions, but...
-                continue; // TODO: eventually log something before skipping to the next function definition...
+            if (!arityMatcher.matches()) { // for now just skip the incorrectly defined functions but...
+                continue; // TODO: eventually log something before going to the next function definition
             }
-            System.out.println(arityMatcher.group(0));
-            String maxArity = arityMatcher.group(2);
-            library.put(nameOrQualifiedName,
-                        maxArity == null ? new Function(nameOrQualifiedName, parseInt(arityMatcher.group(1)))
-                                         : new Function(nameOrQualifiedName, parseInt(arityMatcher.group(1)),
-                                                        parseInt(maxArity)));
+
+            String minArity = arityMatcher.group(1);
+            library.put(qualifiedName, minArity == null ? new Function(qualifiedName, parseInt(arityMatcher.group(2)))
+                                                        : new Function(qualifiedName, parseInt(minArity),
+                                                                       parseInt(arityMatcher.group(2))));
         }
     }
 
-    public static void clearLibrary() { library.clear(); }
+    public static Validation validate(String plugin, String name, int argsNumber) {
+        StringBuilder qualifiedName = new StringBuilder(plugin == null ? "" : plugin.trim());
+        if (qualifiedName.length() > 0) {
+            qualifiedName.append('.');
+        }
+        qualifiedName.append(name == null ? "" : name.trim());
+        if (qualifiedName.length() > 0 && qualifiedName.charAt(0) != '$') {
+            qualifiedName.insert(0, '$');
+        }
+        Function function = library.get(qualifiedName.toString());
 
-    private static final Pattern FULLY_QUALIFIED_NAME_RE =
-        Pattern.compile("\\s*\\$?(?:([a-zA-Z_][a-zA-Z0-9_]*)\\.)?([a-zA-Z_][a-zA-Z0-9_]*)\\s*");
+        if (function == null) {
+            return Validation.NO_SUCH_FUNCTION;
+        }
 
-    private static final Pattern ARITY_RE = Pattern.compile("(?:\\s*(\\d+)\\s*,)?\\s*(\\d+)\\s*");
+        if (argsNumber < function.minArity || argsNumber > function.maxArity) {
+            return Validation.WRONG_NUM_OF_ARGS;
+        }
+
+        return Validation.OK;
+    }
+
+    public static enum Validation {
+        OK,
+        NO_SUCH_FUNCTION,
+        WRONG_NUM_OF_ARGS
+    }
 
     public final String qualifiedName;
-
-    public final String plugin;
-
-    public final String name;
 
     public final int minArity;
 
     public final int maxArity;
 
-    public Function(String plugin, String name, int minArity, int maxArity) {
-        if (name == null || (name = name.trim()).length() == 0) {
-            throw new IllegalArgumentException("the name of a function cannot be null or empty");
+    public Function(String qualifiedName, int minArity, int maxArity) {
+        if (qualifiedName == null) {
+            throw new IllegalArgumentException("the (qualified) name of a function cannot be null");
         }
-        this.name = name;
-
-        if (plugin == null || (plugin = plugin.trim()).length() == 0) {
-            this.plugin = "";
-            this.qualifiedName = this.name;
-        } else {
-            this.plugin = plugin;
-            this.qualifiedName = this.plugin + "." + this.name;
+        if (!qualifiedName.startsWith("$")) {
+            qualifiedName = "$" + qualifiedName;
         }
+        if (qualifiedName.equals("$")) {
+            throw new IllegalArgumentException("the (qualified) name of a function cannot be empty");
+        }
+        this.qualifiedName = qualifiedName;
 
         if (minArity < 0) {
             throw new IllegalArgumentException("the minimum arity of a function cannot be less than 0");
@@ -74,57 +99,30 @@ public class Function {
         this.maxArity = maxArity < this.minArity ? this.minArity : maxArity; // we might also want to issue a warning...
     }
 
-    public Function(String plugin, String name, int minArity) {
-        this(plugin, name, minArity, minArity);
-    }
-
-    public Function(String plugin, String name) {
-        this(plugin, name, 0, 0);
-    }
-
-    public Function(String nameOrQualifiedName, int minArity, int maxArity) {
-        if (nameOrQualifiedName == null) {
-            throw new IllegalArgumentException("the name or qualified name of a function cannot be null or empty");
-        }
-        Matcher qNameMatcher = FULLY_QUALIFIED_NAME_RE.matcher(nameOrQualifiedName);
-        if (!qNameMatcher.matches()) {
-            throw new IllegalArgumentException(
-                "the name or qualified name of a function should match the [plugin.]function pattern");
-        }
-
-        this.qualifiedName = nameOrQualifiedName;
-        String name = qNameMatcher.group(2);
-        if (name == null) {
-            this.plugin = "";
-            this.name = qNameMatcher.group(1);
-        } else {
-            this.plugin = qNameMatcher.group(1);
-            this.name = name;
-        }
-
-        if (minArity < 0) {
-            throw new IllegalArgumentException("the minimum arity of a function cannot be less than 0");
-        }
-        this.minArity = minArity;
-        this.maxArity = maxArity < this.minArity ? this.minArity : maxArity; // we might also want to issue a warning...
-    }
-
-    public Function(String nameOrQualifiedName, int minArity) {
-        this(nameOrQualifiedName, minArity, minArity);
-    }
-
-    public Function(String nameOrQualifiedName) {
-        this(nameOrQualifiedName, 0, 0);
+    public Function(String qualifiedName, int minArity) {
+        this(qualifiedName, minArity, minArity);
     }
 
     @Override
     public String toString() {
-        return "$" + qualifiedName + "(" + minArity + ".." + maxArity + ")";
+        return qualifiedName + "(" + minArity + ".." + maxArity + ")";
     }
 
     public static void main(String[] args) throws IOException {
         Function.loadLibrary("pluginFuncList.properties");
 
-        System.out.println(Function.library);
+        for (Map.Entry<String, Function> e : Function.library.entrySet()) {
+            System.out.println(e.getKey() + " :: " + e.getValue());
+        }
+
+        System.out.println(validate("web", "isPresent", 0));
+        System.out.println(validate("web", "isPresent", 1));
+        System.out.println(validate("web", "isPresent", 2));
+
+        System.out.println(validate(null, "$rand", 0));
+        System.out.println(validate(null, "$rand", 1));
+        System.out.println(validate(null, "$rand", 2));
+
+        System.out.println(validate(null, "foo", 2));
     }
 }
