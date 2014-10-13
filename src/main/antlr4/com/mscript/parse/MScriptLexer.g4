@@ -7,7 +7,17 @@ lexer grammar MScriptLexer;
 
 ASSIGN : '=' ;
 
+MUL : '*' ;
+DIV : '/' ;
+MOD : '%' ;
+ADD : '+' ;
+SUB : '-' ;
+
 SIGIL : '$' ;
+DOT : '.' ;
+LPAREN : '(' ;
+RPAREN : ')' ;
+COMMA : ',' ;
 
 QUOTE : '\'' -> pushMode(IN_STR) ;
 
@@ -15,9 +25,9 @@ LITERAL : BOOLEAN | NUMBER ;
 
 BOOLEAN : 'true' | 'false' ;
 
-fragment INT : '0' | [1-9] [0-9]* ;
+NUMBER : [+-]? ( INT ( DOT INT )? | DOT INT ) ;
 
-NUMBER : [+-]? ( INT ( '.' INT )? | '.' INT ) ;
+fragment INT : '0' | [1-9] [0-9]* ;
 
 // Keep ID definition AFTER LITERALs so that for example, true would be interpreted as a boolean literal and not an ID.
 // We do not currently handle / cover "java letters" (characters) above 0xFF and UTF-16 surrogate pairs encodings from
@@ -38,7 +48,7 @@ mode IN_STR;
 
 IN_STR_QUOTE : '\'' -> popMode ;
 
-IN_STR_SIGIL : '$' -> popMode ;
+//IN_STR_SIGIL : '$' -> type(SIGIL), popMode ;
 
 // Allowed escape sequences: \\, \', \$, \[, \], \n, \r, \t
 ESC_CHAR
