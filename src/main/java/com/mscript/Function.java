@@ -9,16 +9,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.lang.Integer.parseInt;
-import static java.util.regex.Pattern.compile;
 
 /**
- * MScript functions can optionally be prefixed by a plugin name and are <a href="http://en.wikipedia
- * .org/wiki/Variadic_function">variadic</a>. Function definitions can be loaded from {@link java.util.Properties}
- * files.
+ * MScript function definitions are {@link #loadLibrary(String) loaded} from {@link java.util.Properties} files. A
+ * function reference is prefixed by a sigil ($) and the name can optionally be prefixed by a plugin name. MScript
+ * functions are <a href="http://en.wikipedia.org/wiki/Variadic_function">variadic</a>.
  */
 public class Function {
 
-    private static final Pattern ARITY_RE = compile("(?:\\s*(\\d+)\\s*,)?\\s*(\\d+)\\s*");
+    private static final Pattern ARITY_PATTERN = Pattern.compile("(?:\\s*(\\d+)\\s*,)?\\s*(\\d+)\\s*");
 
     private static final Map<String, Function> library = new HashMap<>();
 
@@ -30,11 +29,8 @@ public class Function {
 
         for (Map.Entry<Object, Object> definition : definitions.entrySet()) {
             String qualifiedName = (String) definition.getKey();
-            if (!qualifiedName.startsWith("$")) { // simpler to just ensure the name starts with $...
-                qualifiedName = "$" + qualifiedName;
-            }
 
-            Matcher arityMatcher = ARITY_RE.matcher((String) definition.getValue());
+            Matcher arityMatcher = ARITY_PATTERN.matcher((String) definition.getValue());
             if (!arityMatcher.matches()) { // for now just skip the incorrectly defined functions but...
                 continue; // TODO: eventually log something before going to the next function definition
             }
@@ -46,29 +42,29 @@ public class Function {
         }
     }
 
-    public static Validation validate(String plugin, String name, int argsNumber) {
-        StringBuilder qualifiedName = new StringBuilder(plugin == null ? "" : plugin.trim());
+    public static CheckResult check(String pluginName, String functionName, int argsNumber) {
+        StringBuilder qualifiedName = new StringBuilder(pluginName == null ? "" : pluginName.trim());
         if (qualifiedName.length() > 0) {
             qualifiedName.append('.');
         }
-        qualifiedName.append(name == null ? "" : name.trim());
+        qualifiedName.append(functionName == null ? "" : functionName.trim());
         if (qualifiedName.length() > 0 && qualifiedName.charAt(0) != '$') {
             qualifiedName.insert(0, '$');
         }
         Function function = library.get(qualifiedName.toString());
 
         if (function == null) {
-            return Validation.NO_SUCH_FUNCTION;
+            return CheckResult.NO_SUCH_FUNCTION;
         }
-
         if (argsNumber < function.minArity || argsNumber > function.maxArity) {
-            return Validation.WRONG_NUM_OF_ARGS;
+            return CheckResult.WRONG_NUM_OF_ARGS;
         }
-
-        return Validation.OK;
+        return CheckResult.OK;
     }
 
-    public static enum Validation {
+    // One could consider refactoring this enum into an actual class and associate a particular error message with every
+    // performed {@link #check(String, String, int)}.
+    public static enum CheckResult {
         OK,
         NO_SUCH_FUNCTION,
         WRONG_NUM_OF_ARGS
@@ -96,7 +92,11 @@ public class Function {
             throw new IllegalArgumentException("the minimum arity of a function cannot be less than 0");
         }
         this.minArity = minArity;
-        this.maxArity = maxArity < this.minArity ? this.minArity : maxArity; // we might also want to issue a warning...
+
+        if (maxArity < minArity) {
+            throw new IllegalArgumentException("the maximum arity of a function cannot be less than its minimum arity");
+        }
+        this.maxArity = maxArity;
     }
 
     public Function(String qualifiedName, int minArity) {
@@ -106,23 +106,5 @@ public class Function {
     @Override
     public String toString() {
         return qualifiedName + "(" + minArity + ".." + maxArity + ")";
-    }
-
-    public static void main(String[] args) throws IOException {
-        Function.loadLibrary("pluginFuncList.properties");
-
-        for (Map.Entry<String, Function> e : Function.library.entrySet()) {
-            System.out.println(e.getKey() + " :: " + e.getValue());
-        }
-
-        System.out.println(validate("web", "isPresent", 0));
-        System.out.println(validate("web", "isPresent", 1));
-        System.out.println(validate("web", "isPresent", 2));
-
-        System.out.println(validate(null, "$rand", 0));
-        System.out.println(validate(null, "$rand", 1));
-        System.out.println(validate(null, "$rand", 2));
-
-        System.out.println(validate(null, "foo", 2));
     }
 }
