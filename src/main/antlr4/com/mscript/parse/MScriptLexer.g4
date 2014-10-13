@@ -15,8 +15,8 @@ SUB : '-' ;
 
 SIGIL : '$' ;
 DOT : '.' ;
-LPAREN : '(' ;
-RPAREN : ')' ;
+LPAREN : '(' -> pushMode(DEFAULT_MODE) ;
+RPAREN : ')' -> popMode ;
 COMMA : ',' ;
 
 QUOTE : '\'' -> pushMode(IN_STR) ;
@@ -48,7 +48,7 @@ mode IN_STR;
 
 IN_STR_QUOTE : '\'' -> popMode ;
 
-//IN_STR_SIGIL : '$' -> type(SIGIL), popMode ;
+IN_STR_SIGIL : '$' -> type(SIGIL), pushMode(DEFAULT_MODE) ;
 
 // Allowed escape sequences: \\, \', \$, \[, \], \n, \r, \t
 ESC_CHAR
