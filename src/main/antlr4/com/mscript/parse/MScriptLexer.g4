@@ -13,7 +13,7 @@ MOD : '%' ;
 ADD : '+' ;
 SUB : '-' ;
 
-SIGIL : '$' ;
+SIGIL : '$' -> pushMode(IN_FNC) ;
 DOT : '.' ;
 LPAREN : '(' -> pushMode(DEFAULT_MODE) ;
 RPAREN : ')' -> popMode ;
@@ -43,12 +43,12 @@ STAT_SEPARATOR
 // In default mode, we skip multi-line and single line comments and white spaces, other than new lines
 SKIP : ( '/*' .*? '*/' | '//' ~[\r\n]* | [ \t\f]+ ) -> skip ;
 
-// ---------- Everything INside a quoted STRing ----------
+// ---------- INside a quoted STRing ----------
 mode IN_STR;
 
 IN_STR_QUOTE : '\'' -> popMode ;
 
-IN_STR_SIGIL : '$' -> type(SIGIL), pushMode(DEFAULT_MODE) ;
+IN_STR_SIGIL : '$' -> type(SIGIL), pushMode(IN_FNC) ;
 
 // Allowed escape sequences: \\, \', \$, \[, \], \n, \r, \t
 ESC_CHAR
@@ -66,3 +66,12 @@ ESC_CHAR
 STR_CHAR
   : ~('\\' | '\'' | '$' | '[' | ']')
   ;
+
+// ---------- INside a FuNction Call ----------
+mode IN_FNC;
+
+IN_FNC_DOT : '.' -> type(DOT) ;
+
+IN_FNC_LPAREN : '(' -> type(LPAREN), popMode, pushMode(DEFAULT_MODE) ;
+
+IN_FNC_ID : [a-zA-Z_] [a-zA-Z0-9_]* -> type(ID) ;
