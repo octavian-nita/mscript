@@ -1,0 +1,375 @@
+Yaxiong L.
+Thanks for the follow up. You are correct that we will still need to allow quoted literal string. If you can make it to support both, that will be fine.
+
+Thanks,
+
+Yaxiong
+
+> On Oct 15, 2014, at 3:01 PM, Octavian N via Elance <E62236593-WR@workroom.elance.com> wrote:
+>
+>
+>
+Oct 15, 2014
+4:32 pm
+Octav... N.
+Wait... at a second thought...
+
+Why should we not allow quotes around arguments? I mean, we can certainly call functions that take strings as arguments and we delimit strings with quotes, so...
+
+$f('str')
+
+is quite valid. But if the string is actually an interpolated one... instead of simply str, we can have:
+
+$f('Hello $name()')
+
+And now, imagine one would like to print an arithmetic expression at the output (whatever that may be):
+
+$print('a + b equals c')
+
+That's also correctly parsed by the grammar we have so far and is correct from my point of view at least...
+Oct 15, 2014
+4:00 pm
+Octav... N.
+Ah! :)
+
+What I had understood was to keep expressions as well as quoted arguments. And in that case, I think my 2 examples would have been correct, since quoting the arg meant creating a string (even an interpolated one :) ).
+
+But no matter. As it is, the parser accepts (AND creates correct parse trees for) both of your examples. Moreover, not supporting quoted params will probably simplify the grammar.
+
+So... since we support parameters as expressions... you mean you don't need string interpolation at all? I.e. no expressions of the sort "ab[v1]d"? If YES, do we keep calling / embedding functions in strings, like '$f(v + '3', 'qw')'?
+Oct 15, 2014
+5:13 am
+Yaxiong L.
+Hi Octavian,
+
+Thanks for the updates.
+
+The case you have illustrated would be considered a syntax error as it's missing the matching left paranthesis (the one you just took out). Is this syntax error hard to catch?
+
+I noticed in your example you have parameters enclosed in quotes. I have recently changed not to require quotes on parameters that consist of expressions (see my previous email), so in the example you have given, it should be:
+
+$f($g(3 * ($l.h()) * (2 + 1))-'aa' )
+
+Can the parser handle this?
+
+Regarding the var notation, [varname] can not contain expression, i.e. what's inside [] is considered a variable name, unless [ and ] are escaped with "\", e.g. "\[text\]"
+
+We also need to make sure the expression can handle variable name, e.g. $f(var1 + 'test' + $l.g(3))
+
+If we can support the above, then we don't need to support [varname] notation.
+
+Thanks.
+
+Yaxiong
+
+
+Oct 15, 2014
+12:29 am
+Octav... N.
+Hi Yaxiong,
+
+I've filed a new status report, as you might have seen already. As described, things look quite good now :) (after quite a bit of struggling and worrying since the language grammar is not trivial :) )
+
+One more question: when interpolating variables using the "[v1]" syntax, do we also allow for things like "[v1 + 3]", i.e. expressions?
+
+And a case I found interesting: the following expression, described in the status report:
+
+$f( '$g('3' * ($l.h()) * (2 + 1))-aa' )
+
+is obviously correct; the argument passed to $g is computed by multiplying 3 expressions.
+
+But if we (mistakenly, maybe :) ) delete the ONLY the parentheses to the left of $l.h, we also get a correct expression:
+
+$f( '$g('3' * $l.h()) * (2 + 1))-aa' )
+
+But in this case, $g is passed the multiplication of 2 values and the rest of the characters after the right parentheses closing the call to $g ( i.e. * (2 + 1))-aa ) become merely a part of the resulting string!!! Can you spot it?
+
+It is not something wrong with the parser OR the definition of the language. It is just a situation you might want to know about :)
+
+Oct 14, 2014
+11:30 am
+Yaxiong L.
+Yes, the list of functions will be provided in a property file or array parameter at time of calling the parser. The list of functions will be dynamically determined based on what plugins users have chosen at that time.
+
+01) the answer is yes. This is to avoid nested quotes which would be much harder to parse and confusing to the users too. So we still require nested function calls like:
+$web.click($getData('ds1',$getAttr('f3','Val')))
+
+02) the addition would be string concatenation or math add depending the types of values. Again, the parser do not need to enforce the compatibility of values.
+
+Yaxiong
+Oct 03, 2014
+10:41 am
+Octav... N.
+About the functions -- what I wanted to ask actually is do we need to check against the defined function names (in the .properties file ) at parse time? It's not a big deal but in my experience the check is done after parsing, to see whether or not the call makes sense.
+
+About the expressions:
+
+01. just to clear on this: do we allow expressions like a + 10 as function arguments? I think the previous answer was no, we only allow quoted expressions, like strings and strings interpolated with function calls but just to make sure, I am asking again
+
+02. even though it does not matter much from the parsing perspective, in the following line: var1=$setValue('f1',$rand(5)) + '-OK string' -- the addition meas what? concatenation or addition? I mean, it's obvious it cannot be addition but then, if it is concatenation, 1 + '3' should be concatenation as well, right? :)
+Oct 03, 2014
+5:46 am
+Yaxiong L.
+Hi Octavian,
+
+That's fine with me. It looks like you are making progress which is good.
+
+Your assumptions are correct.
+
+Regarding if to allow expression 1 + '3', it's not ideal but you don't need to enforce/check as long as 1 and 3 are parsed out as separate elements that my java code can access.
+
+Not sure what you mean by library functions. We do have function calls and the name of the function names need to be checked against list of function definitions (plugin name, function name, and min/max # of parameters). But if you mean calls to some java library functions, then the answer is no.
+
+Thanks for bringing up the acceptance testing/criteria, I was hoping that the example scripts I have attached earlier would serve as minimum set of test cases. Obviously things change and so please make appropriate adjustment or add additional test cases as we go.
+
+I have been thinking a lot about your question on arithmetic operations, I know I have told you no need to support that, I have a second thought about that. I would like to see the support of arithmetic operations in the expression. I have listed a few expressions that we need to support/allow:
+
+var1='xyz'
+var1=1
+var1=var2 + 'xyz'
+var1=$web.getAttr('f1','name')
+var1=var2 + 'xyz'
+var1=$setValue('f1',$rand(5)) + '-OK string'
+if (var1==var2)
+if (var1=='xyz')
+if ($getAttr('f2','val') > var2)
+if ($web.isPresent('f2'))
+var2 = $isPresent('f2')
+var2 = $web.getValue('f3','val') + 30
+
+
+Please let me know if you have any questions regarding this change.
+
+Yaxiong
+
+Oct 02, 2014
+7:20 pm
+Octav... N.
+Hey there!
+
+I've failed my first status report, I hope it's OK with you.
+
+There are a few new questions I need to ask on the grammar (they come up while development):
+
+- is the language case sensitive? assumed: YES;
+- how about literals like True / tRUe? assumed: YES, i.e. case-sensitive, and the only valid boolean literals being true and false (i.e. lower-case); then again, what about the internal conversions for strings like 'TrUE'? (even though we are not yet concerned with that since it's not about parsing but about semantics)
+- do we allow empty scripts as input? assumed: YES
+- do we allow empty statements like ; ? assumed: YES
+- do we allow string interpolation for variables? assumed (from the examples): '[varName]' (i.e. the [] operator)
+- can we have expressions like: var1 = 1 + '3' ??? i.e. can we mix value types? should be reasonable since in the end we only have strings...
+- no library function checking at parse time, right?
+
+And also -- we need to discuss about "acceptance testing": how do you want to test the parser so that you can say whether you are satisfied or not?
+
+Regards,
+Octavian
+Oct 02, 2014
+8:17 am
+Octav... N.
+Hey there!
+
+Thanks for accepting my bid.
+
+I've set up a github project at: http://github.com/octavian-nita/mscript where you can easily check the code and progress. Currently, the project has public access, as soon as we finish, I will remove the repository.
+
+Will keep you posted.
+Regards, Tavi
+Sep 23, 2014
+2:22 pm
+Octav... N.
+Hi,
+
+OK, I think I am good now, we can follow along all the specification, nothing should be skipped. Moreover, apparently the most recent version of ANTLR allows for most recursive rules to be naturally specified.
+
+As specified in the proposal, I require $400 and estimate to finish in one month.
+
+Please let me know if you are OK as I am pretty flexible myself.
+
+Regards,
+Octavian
+Sep 19, 2014
+8:39 am
+Yaxiong L.
+You are correct, no arithmetic operation is expected. But the expression must allow nested function calls.
+
+One thing that we haven't discussed is how the resulted parser will need to be called directly from a java application and the syntax error must be passed back to the calling app and the parser tree will be traversed in the java app. Please make sure the solution you will develop allows this with relevant documentation.
+
+Please give me an overall assessment if you feel comfortable with the specification and the updates that we have discussed.
+
+Yaxiong
+
+> On Sep 18, 2014, at 11:10 AM, Octavian N via Elance <E62236593-WR@workroom.elance.com> wrote:
+>
+>
+>
+Sep 18, 2014
+12:52 pm
+Octav... N.
+Thanks.
+
+One more question, just to be sure: an expression can only be a string literal or function call or concatenation of the two, right?
+
+I mean, we don't allow things as:
+
+if ( '$foo(20 + var1)' ) { ... }
+
+i.e. arithmetic expression passed as argument to a function, right?
+
+( Sorry for so many questions but even for the simplest languages there can be quite a few possibilities, at least in my experience. I might have more questions on the way as I figure out new cases... )
+Sep 18, 2014
+12:06 pm
+Yaxiong L.
+The data types are dynamically converted before the comparison by the system. So, true and 'true' are the same, 10 and '10' are the same too. Internally all variables are stored as string regardless of the value they are assigned.
+
+Hope I have answered your question.
+
+Yaxiong
+
+> On Sep 17, 2014, at 6:25 PM, Octavian N via Elance <E62236593-WR@workroom.elance.com> wrote:
+>
+>
+>
+Sep 17, 2014
+7:39 pm
+Octav... N.
+I am glad I asked that question... because now I realise I may have not fully understood:
+
+When one writes:
+
+var1 = 'true' // is var1 a boolean or a string? I would assume a string since otherwise, how could I create a string
+// literal containing the word <<true>>?
+
+However, in examples like:
+
+if ('true') {
+...
+}
+
+it seems to me that the 'true' literal is a boolean...
+
+Also, if we were to compare 2 strings in a so-called "boolean context" (if/while condition) we would be forced to write:
+
+while ("true" == 'foo("another_string_literal")') { ... }
+
+Right?
+Sep 17, 2014
+7:24 pm
+Yaxiong L.
+Hi Octavian,
+
+Thank you for the feedback and suggestions. Please see my answer inline below.
+
+Yaxiong
+
+========
+...
+Available data types:
+- Boolean: represented by true and false literals
+answer: yes
+
+- String : delimited by single quotes; if we want to escape a quote, we use \, like in \'
+Question: how do we allow the character \ itself? I would suggest like that: '\\'
+Question: do we allow any other so-called escape sequences, like \r, \n etc.?
+answer: yes, \n, \t, \\
+Question: do we allow multi-line strings?
+answer: not necessary, but if it's easy to implement I like to allow multi-line string.
+Question: do we also have a concatenation operator for strings, like + or . ? I am assuming not...
+answer: no, strings are implicitly concatenated in MScript Expression.
+- Integers & Floating-point numbers
+answer: yes
+Question: do we allow negative and positive numeric literals? like +3 and -5.7? (I am assuming yes)
+answer: yes, but "+" should be removed, i.e +3 would be 3.
+Question: do we support scientific notation, like 0.3E-10?
+answer: no
+Question: do we support arithmetic operators like +, -, *, /, %, etc.?
+answer: yes
+- Additional questions on data types:
+01. do we allow conversion between types? like non-0 numbers representing true and 0 or 0.0 representing false? Or, what happens when we try to compare 2 variables or values or function calls that have different types?
+answer: no data type check necessary. This check is done during execution.
+
+Also, looking at your example, I deduce that the language isno dynamically-typed, meaning a variable could be assigned a value of one type now and later, assigned a different value of a different type -- is this correct?
+answer: yes, that's correct.
+
+What happens if we use a variable that hasn't yet been assigned to? ...
+answer: variables are required to be assigned before it's value can be retrieved. But no check is required during parsing for now.
+
+Do we allow an instruction to spread on several lines?...
+answer: a statement must be on the same line for now. "if () {" is preferred, but
+if ()
+{
+}
+would be a legal syntax. However if this adds a lot of effort/complexity, then we can go with "if (){" on the same line only.
+
+And one of the most interesting points: I understand that whenever one uses expressions, s/he should enclose those expressions in single quotes, similar to string literals... May I ask why? ...
+answer: great question. Let's me make sure we are on the same page:
+if ($getValue('var1')) {
+and
+if ($getValue('$getValue('var1')')) {
+and
+if ('$getValue('var1')) {
+all 3 styles are legal.
+
+Are you referring to the last syntax which the function call is enclosed with single quotes?
+The reason is for backward compatibility. But I am ok not to support last syntax if it removes significant complexity from the solution.
+Please make sure the following are supported:
+if ('$getValue('var1')-xyz' == '$getValue('var2')) {
+that is, it tests if var1 concatenated with "-xyz" literal is the same as value of var2.
+Would the above syntax cause problem?
+Sep 17, 2014
+12:51 am
+Octav... N.
+Hey there!
+
+Thanks for replying back. Indeed, the updated specs and test scripts clear things quite a bit!
+
+Some assumptions / notes I'm making and additional questions, just so we can start on the right track; please correct / modify where you don't agree:
+
+Available data types:
+- Boolean: represented by true and false literals
+- String : delimited by single quotes; if we want to escape a quote, we use \, like in \'
+Question: how do we allow the character \ itself? I would suggest like that: '\\'
+Question: do we allow any other so-called escape sequences, like \r, \n etc.?
+Question: do we allow multi-line strings?
+Question: do we also have a concatenation operator for strings, like + or . ? I am assuming not...
+- Integers & Floating-point numbers
+Question: do we allow negative and positive numeric literals? like +3 and -5.7? (I am assuming yes)
+Question: do we support scientific notation, like 0.3E-10?
+Question: do we support arithmetic operators like +, -, *, /, %, etc.?
+- Additional questions on data types:
+01. do we allow conversion between types? like non-0 numbers representing true and 0 or 0.0 representing false? Or, what happens when we try to compare 2 variables or values or function calls that have different types?
+
+Also, looking at your example, I deduce that the language is dynamically-typed, meaning a variable could be assigned a value of one type now and later, assigned a different value of a different type -- is this correct?
+
+What happens if we use a variable that hasn't yet been assigned to? My first assumption would be that we should throw an error, but this check must be done during semantic analysis, i.e. when 'tree parsing' the resulting tree of the syntax parsing. Do we allow a concept like null / undefined?
+
+Do we allow an instruction to spread on several lines? Because if we do, then we need a way to escape the end of the line (like Python does it with \ at the end on a line) so that we know to continue reading input past the EOL... Also, do we allow something like if () { ... } on the same line and something like
+if ()
+{
+}
+, i.e. statements being freely formatted or we require something like Go does: i.e. always format an if statement with the brace on the same line as the if?
+
+And one of the most interesting points: I understand that whenever one uses expressions, s/he should enclose those expressions in single quotes, similar to string literals... May I ask why? I am asking because this decision greatly increases the complexity of the grammar and in consequence, the complexity and inefficiency of the generated parser, and for no apparent advantage (not to me, at least, but you might know better). For example, let's say we want to write something like if ( 'expr' ) { echo("True") } where expr is actually a function call (let it be named is_true, for the sake of the example) that takes a parameter ; but arguments passed to functions need to be enclosed in single quotes, so we end up with if ( '$is_true('arg')' ) {}
+
+But an argument can also be an expression; let's say in our case is a string comparison expression and let's try to elaborate a small program:
+
+str = 'antlr' // define a variable
+if ( '$is_true('str == 'antlr")' ) {
+$do_something();
+}
+Now, apart from the fact that it's not very readable, the parser need to read much more from the input string in order to take a decision. Moreover, when writing the grammar we might get recursivity issues.
+
+Now, if you're really keen on this syntax, it is do-able, no question about it (we can use counters and decide we have a full expression when the counter is reset to 0, use parser states, etc.) but I was just wondering whether it's a good idea to keep quotes around expressions in general and function arguments in particular...
+
+Looking forward to hearing from you.
+
+Regards, Octavian
+Sep 16, 2014
+11:46 am
+Yaxiong L.
+Hi,
+
+Thank you for the proposal and suggestions. I have updated the spec and added test script and a file to list the functions. Please review the changes and update your proposal accordingly.
+
+Yaxiong
+Sep 16, 2014
+2:21 am

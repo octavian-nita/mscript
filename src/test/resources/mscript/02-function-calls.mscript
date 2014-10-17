@@ -5,4 +5,17 @@
  */
 
 var1 = 1 + '3'
+var1 = 1 * (2+ 3)/10% -200;
+
 var2 = $getValue('var1')
+$log('a + b equals c');
+$log('Hello $getValue('var1')')
+
+$web.click($getData('ds1',$getAttr('f3','Val')))
+
+var2 = $web.getValue('f3','val') + 30
+var1=$setValue('f1' ,$rand(5)) + '-OK string'
+
+$f( '$g('3' * ($l.h()) * (2 + 1))-aa', 1, 2 )
+
+$f( '$g('3' * $l.h()) * (2 + 1))-aa' )

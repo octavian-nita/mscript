@@ -17,9 +17,9 @@ import static java.lang.Integer.parseInt;
  */
 public class Function {
 
-    private static final Pattern ARITY_PATTERN = Pattern.compile("(?:\\s*(\\d+)\\s*,)?\\s*(\\d+)\\s*");
+    protected static final Pattern ARITY_PATTERN = Pattern.compile("(?:\\s*(\\d+)\\s*,)?\\s*(\\d+)\\s*");
 
-    private static final Map<String, Function> library = new HashMap<>();
+    protected static final Map<String, Function> library = new HashMap<>();
 
     public static void loadLibrary(String libraryFilename) throws IOException {
         Properties definitions = new Properties();
