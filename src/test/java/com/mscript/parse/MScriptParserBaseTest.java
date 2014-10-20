@@ -63,10 +63,10 @@ public class MScriptParserBaseTest {
     protected ParseTree parse(File file) throws IOException {
 
         ANTLRInputStream chars = new ANTLRInputStream(new FileReader(file));
-        MScriptLexer mScriptLexer = new MScriptLexer(chars);
+        com.mscript.parse.MScriptLexer mScriptLexer = new com.mscript.parse.MScriptLexer(chars);
 
         CommonTokenStream tokens = new CommonTokenStream(mScriptLexer);
-        MScriptParser mScriptParser = new MScriptParser(tokens);
+        com.mscript.parse.MScriptParser mScriptParser = new com.mscript.parse.MScriptParser(tokens);
 
         // Set the parser with an error listener that forces a test to fail upon the first parsing error:
         mScriptParser.addErrorListener(new MScriptParserTestErrorListener());

@@ -49,9 +49,9 @@ mode IN_STR;
 
 IN_STR_QUOTE : '\'' -> popMode ;
 
-IN_STR_SIGIL : '$' -> type(SIGIL), pushMode(IN_FNC) ;
-
 IN_STR_LBRACK : '[' -> pushMode(DEFAULT_MODE) ;
+
+IN_STR_SIGIL : '$' -> type(SIGIL), pushMode(IN_FNC) ;
 
 // Allowed escape sequences: \\, \', \$, \[, \], \n, \r, \t
 ESC_CHAR
