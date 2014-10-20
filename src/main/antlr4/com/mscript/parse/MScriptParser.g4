@@ -5,6 +5,10 @@ parser grammar MScriptParser;
 
 options { tokenVocab=MScriptLexer; }
 
+@header {
+import com.mscript.Function;
+}
+
 script : STAT_SEPARATOR* stat? ( STAT_SEPARATOR stat? )* EOF ;
 
 stat
@@ -17,15 +21,15 @@ assign : ID ASSIGN expr ;
 expr
   : expr ( MUL | DIV | MOD ) expr
   | expr ( ADD | SUB ) expr
-  | LPAREN expr RPAREN // parenthesized expression
-  | ADD expr           // e.g. +3
-  | SUB expr           // e.g. -7
-  | fncall
-  | string
-  | LITERAL
-  | ID
+  | (ADD | SUB)? LPAREN expr RPAREN // parenthesized expression
+  | (ADD | SUB)? fncall
+  | (ADD | SUB)? string
+  | (ADD | SUB)? LITERAL
+  | (ADD | SUB)? ID
   ;
 
-string : QUOTE ( ESC_CHAR | STR_CHAR | fncall )* IN_STR_QUOTE ;
+fncall : SIGIL ( ID DOT )? ID LPAREN ( expr ( COMMA expr )* )? RPAREN {
+    // Validate function existence:
+} ;
 
-fncall : SIGIL ( ID DOT )? ID LPAREN ( expr ( COMMA expr )* )? RPAREN ;
+string : QUOTE ( ESC_CHAR | STR_CHAR | fncall | (IN_STR_LBRACK expr RBRACK) )* IN_STR_QUOTE ;

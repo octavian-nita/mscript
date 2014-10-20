@@ -17,6 +17,7 @@ SIGIL : '$' -> pushMode(IN_FNC) ;
 DOT : '.' ;
 LPAREN : '(' -> pushMode(DEFAULT_MODE) ;
 RPAREN : ')' -> popMode ;
+RBRACK : ']' -> popMode ;
 COMMA : ',' ;
 
 QUOTE : '\'' -> pushMode(IN_STR) ;
@@ -25,7 +26,7 @@ LITERAL : BOOLEAN | NUMBER ;
 
 BOOLEAN : 'true' | 'false' ;
 
-NUMBER : [+-]? ( INT ( DOT INT )? | DOT INT ) ;
+NUMBER : INT ( DOT INT )? | DOT INT ;
 
 fragment INT : '0' | [1-9] [0-9]* ;
 
@@ -50,6 +51,8 @@ IN_STR_QUOTE : '\'' -> popMode ;
 
 IN_STR_SIGIL : '$' -> type(SIGIL), pushMode(IN_FNC) ;
 
+IN_STR_LBRACK : '[' -> pushMode(DEFAULT_MODE) ;
+
 // Allowed escape sequences: \\, \', \$, \[, \], \n, \r, \t
 ESC_CHAR
   : '\\\\'
@@ -72,6 +75,6 @@ mode IN_FNC;
 
 IN_FNC_DOT : '.' -> type(DOT) ;
 
-IN_FNC_LPAREN : '(' -> type(LPAREN), popMode, pushMode(DEFAULT_MODE) ;
-
 IN_FNC_ID : [a-zA-Z_] [a-zA-Z0-9_]* -> type(ID) ;
+
+IN_FNC_LPAREN : '(' -> type(LPAREN), popMode, pushMode(DEFAULT_MODE) ;
