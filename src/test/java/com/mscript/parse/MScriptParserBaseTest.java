@@ -41,6 +41,15 @@ public class MScriptParserBaseTest {
     }
 
     /**
+     * Equivalent to <code>parse(new ANTLRInputStream(text))</code>.
+     *
+     * @see #parse(ANTLRInputStream)
+     */
+    protected ParseTree parseText(String text) {
+        return parse(new ANTLRInputStream(text));
+    }
+
+    /**
      * Equivalent to <code>parse(new File(filename))</code>.
      *
      * @see #parse(File)
@@ -50,25 +59,34 @@ public class MScriptParserBaseTest {
     }
 
     /**
-     * Defines what it means to <a href="http://xunitpatterns.com/exercise%20SUT.html">exercise</a> the <a
-     * href="http://xunitpatterns.com/SUT.html">system under test (SUT)</a> for simple {@link MScriptParser} tests, i.e.
-     * parse an MScript file and return the resulting {@link ParseTree parse tree}. Outlines the code needed to call the
-     * MScript parser in an application. If the parsing process fails, tests calling this method will also fail.
+     * Equivalent to <code>parse(new ANTLRInputStream(new FileReader(file)))</code>.
      *
-     * @param file path to a <a href="http://xunitpatterns.com/test%20fixture%20-%20xUnit.html">fixture</a> MScript
-     *             file to be parsed
-     * @return the {@link ParseTree parse tree} resulting after the parsing process
-     * @throws IOException if the specified file cannot be found or read
+     * @see #parse(ANTLRInputStream)
      */
     protected ParseTree parse(File file) throws IOException {
+        try (FileReader reader = new FileReader(file)) {
+            return parse(new ANTLRInputStream(reader));
+        }
+    }
 
-        ANTLRInputStream chars = new ANTLRInputStream(new FileReader(file));
+    /**
+     * Defines what it means to <a href="http://xunitpatterns.com/exercise%20SUT.html">exercise</a> the <a
+     * href="http://xunitpatterns.com/SUT.html">system under test (SUT)</a> for simple {@link MScriptParser} tests, i.e.
+     * to parse streams containing MScript code and return resulting {@link ParseTree parse tree}. Encapsulates the code
+     * required to call the MScript parser from an application. If the parsing process fails, tests calling this method
+     * will also fail.
+     *
+     * @param chars <a href="http://xunitpatterns.com/test%20fixture%20-%20xUnit.html">fixture</a> {@link
+     *              ANTLRInputStream input stream} to be parsed
+     * @return the {@link ParseTree parse tree} resulting after the parsing process
+     */
+    protected ParseTree parse(ANTLRInputStream chars) {
         com.mscript.parse.MScriptLexer mScriptLexer = new com.mscript.parse.MScriptLexer(chars);
 
         CommonTokenStream tokens = new CommonTokenStream(mScriptLexer);
         com.mscript.parse.MScriptParser mScriptParser = new com.mscript.parse.MScriptParser(tokens);
 
-        // Set the parser with an error listener that forces a test to fail upon the first parsing error:
+        // Set the parser with a custom error listener that forces a test to fail upon the first parsing error:
         mScriptParser.addErrorListener(new MScriptParserTestErrorListener());
 
         return mScriptParser.script();
