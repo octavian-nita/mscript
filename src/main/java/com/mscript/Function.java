@@ -14,12 +14,27 @@ import static java.lang.Integer.parseInt;
  * MScript function definitions are {@link #loadLibrary(String) loaded} from {@link java.util.Properties} files. A
  * function reference is prefixed by a sigil ($) and the name can optionally be prefixed by a plugin name. MScript
  * functions are <a href="http://en.wikipedia.org/wiki/Variadic_function">variadic</a>.
+ *
+ * @author Octavian Theodor Nita (https://github.com/octavian-nita)
+ * @version 1.0, Oct 21, 2014
  */
 public class Function {
 
     protected static final Pattern ARITY_PATTERN = Pattern.compile("(?:\\s*(\\d+)\\s*,)?\\s*(\\d+)\\s*");
 
     protected static final Map<String, Function> library = new HashMap<>();
+
+    public static void define(String qualifiedName, int minArity, int maxArity) {
+        library.put(qualifiedName, new Function(qualifiedName, minArity, maxArity));
+    }
+
+    public static void define(String qualifiedName, int arity) {
+        library.put(qualifiedName, new Function(qualifiedName, arity));
+    }
+
+    public static void clearLibrary() {
+        library.clear();
+    }
 
     public static void loadLibrary(String libraryFilename) throws IOException {
         Properties definitions = new Properties();
@@ -62,7 +77,7 @@ public class Function {
         return CheckResult.OK;
     }
 
-    // One could consider refactoring this enum into an actual class and associate a particular error message with every
+    // One might consider refactoring this enum into an actual class and associate a particular error message with every
     // performed {@link #check(String, String, int)}.
     public static enum CheckResult {
         OK,
@@ -99,8 +114,8 @@ public class Function {
         this.maxArity = maxArity;
     }
 
-    public Function(String qualifiedName, int minArity) {
-        this(qualifiedName, minArity, minArity);
+    public Function(String qualifiedName, int arity) {
+        this(qualifiedName, arity, arity);
     }
 
     @Override

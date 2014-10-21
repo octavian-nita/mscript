@@ -1,19 +1,22 @@
 package com.mscript.parse;
 
-import org.antlr.v4.runtime.ANTLRInputStream;
-import org.antlr.v4.runtime.BaseErrorListener;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.RecognitionException;
-import org.antlr.v4.runtime.Recognizer;
-import org.antlr.v4.runtime.misc.NotNull;
-import org.antlr.v4.runtime.misc.Nullable;
-import org.antlr.v4.runtime.tree.ParseTree;
+    import org.antlr.v4.runtime.ANTLRInputStream;
+    import org.antlr.v4.runtime.BaseErrorListener;
+    import org.antlr.v4.runtime.CommonTokenStream;
+    import org.antlr.v4.runtime.RecognitionException;
+    import org.antlr.v4.runtime.Recognizer;
+    import org.antlr.v4.runtime.misc.NotNull;
+    import org.antlr.v4.runtime.misc.Nullable;
+    import org.antlr.v4.runtime.tree.ParseTree;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+    import java.io.File;
+    import java.io.FileReader;
+    import java.io.IOException;
 
-import static org.junit.Assert.fail;
+    import static org.junit.Assert.fail;
+
+    import com.mscript.parse.MScriptLexer;
+    import com.mscript.parse.MScriptParser;
 
 /**
  * Base class for MScript parser tests, encapsulating common functionality like exercising the SUT on a script, etc.
@@ -24,9 +27,8 @@ import static org.junit.Assert.fail;
 public class MScriptParserBaseTest {
 
     /**
-     * Simple {@link org.antlr.v4.runtime.ANTLRErrorListener} that handles a syntax error either by throwing the
-     * passed {@link RecognitionException} if not null or otherwise by calling {@link org.junit.Assert#fail(String)}
-     * with a proper message. The end goal is to cause an MScript parser test to fail upon syntax errors.
+     * Simple {@link org.antlr.v4.runtime.ANTLRErrorListener} that handles a syntax error by {@link
+     * org.junit.Assert#fail(String) failing} an MScript parser test with a descriptive message.
      */
     protected static class MScriptParserTestErrorListener extends BaseErrorListener {
 
@@ -69,22 +71,22 @@ public class MScriptParserBaseTest {
 
     /**
      * Defines what it means to <a href="http://xunitpatterns.com/exercise%20SUT.html">exercise</a> the <a
-     * href="http://xunitpatterns.com/SUT.html">system under test (SUT)</a> for simple {@link MScriptParser} tests, i.e.
-     * to parse streams containing MScript code and return resulting {@link ParseTree parse tree}. Encapsulates the code
-     * required to call the MScript parser from an application. If the parsing process fails, tests calling this method
-     * will also fail.
+     * href="http://xunitpatterns.com/SUT.html">system under test (or SUT)</a> for simple {@link
+     * com.mscript.parse.MScriptParser} tests, i.e. to parse streams containing MScript code and return resulting {@link
+     * ParseTree parse tree}. Encapsulates the code required to call the MScript parser from an application. If the
+     * parsing process fails, tests calling this method will also fail.
      *
      * @param chars <a href="http://xunitpatterns.com/test%20fixture%20-%20xUnit.html">fixture</a> {@link
      *              ANTLRInputStream input stream} to be parsed
      * @return the {@link ParseTree parse tree} resulting after the parsing process
      */
     protected ParseTree parse(ANTLRInputStream chars) {
-        com.mscript.parse.MScriptLexer mScriptLexer = new com.mscript.parse.MScriptLexer(chars);
+        MScriptLexer mScriptLexer = new MScriptLexer(chars);
 
         CommonTokenStream tokens = new CommonTokenStream(mScriptLexer);
-        com.mscript.parse.MScriptParser mScriptParser = new com.mscript.parse.MScriptParser(tokens);
+        MScriptParser mScriptParser = new MScriptParser(tokens);
 
-        // Set the parser with a custom error listener that forces a test to fail upon the first parsing error:
+        // Set up a custom error listener that forces a test to fail upon the first parsing error:
         mScriptParser.addErrorListener(new MScriptParserTestErrorListener());
 
         return mScriptParser.script();

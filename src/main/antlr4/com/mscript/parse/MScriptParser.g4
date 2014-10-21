@@ -1,5 +1,8 @@
 /**
- * MScript Parser Definition
+ * MScript parser definition.
+ *
+ * @author Octavian Theodor Nita (https://github.com/octavian-nita)
+ * @version 1.0, Sep 27, 2014
  */
 parser grammar MScriptParser;
 
