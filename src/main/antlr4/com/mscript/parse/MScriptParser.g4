@@ -8,6 +8,7 @@ options { tokenVocab=MScriptLexer; }
 @header {
 import com.mscript.Function;
 import com.mscript.Function.CheckResult;
+import com.mscript.parse.FunctionRecognitionException;
 }
 
 script : STAT_SEPARATOR* stat? ( STAT_SEPARATOR stat? )* EOF ;
@@ -39,18 +40,17 @@ locals [int argsCount=0, String pluginName=null, String functionName=null]
     // As we match arguments, we count them in order to validate the call:
     LPAREN ( expr {$argsCount++;} ( COMMA expr {$argsCount++;} )* )? RPAREN {
 
-    // After matching the whole function call, validate the function name and arguments:
-    switch (Function.check($pluginName, $functionName, $argsCount)) {
-    case NO_SUCH_FUNCTION:
-        throw new RecognitionException("no such function: " + ($pluginName != null ? $pluginName + "." : "") +
-                                       $functionName + " defined", this, _input, _localctx);
-    case WRONG_NUM_OF_ARGS:
-        throw new RecognitionException("function: " + ($pluginName != null ? $pluginName + "." : "") +
-                                       $functionName + " cannot be called with " + $argsCount + " arguments",
-                                       this, _input, _localctx);
-    }
+// After matching the whole function call, validate the function name and arguments:
+switch (Function.check($pluginName, $functionName, $argsCount)) {
+case NO_SUCH_FUNCTION:
+    throw new FunctionRecognitionException("no such function: $" + ($pluginName != null ? $pluginName + "." : "") +
+                                           $functionName + " defined", this, $SIGIL);
+case WRONG_NUM_OF_ARGS:
+    throw new FunctionRecognitionException("function: $" + ($pluginName != null ? $pluginName + "." : "") +
+                                           $functionName + " cannot be called with " + $argsCount + " arguments", this,
+                                           $SIGIL);
+}
 
-  }
-  ;
+} ;
 
 string : QUOTE ( ESC_CHAR | STR_CHAR | fncall | (IN_STR_LBRACK expr RBRACK) )* IN_STR_QUOTE ;

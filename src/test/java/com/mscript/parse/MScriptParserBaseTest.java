@@ -33,10 +33,8 @@ public class MScriptParserBaseTest {
         @Override
         public void syntaxError(@NotNull Recognizer<?, ?> recognizer, @Nullable Object offendingSymbol, int line,
                                 int charPositionInLine, @NotNull String msg, @Nullable RecognitionException e) {
-            if (e != null) {
-                throw e; // in order to force a test to fail
-            }
-            fail(offendingSymbol + "@" + line + ":" + charPositionInLine + ": " + msg);
+            fail(offendingSymbol + "@" + line + ":" + charPositionInLine + ": " + msg +
+                 (e != null && e.getMessage() != null ? " [" + e.getMessage() + "]" : ""));
         }
     }
 
