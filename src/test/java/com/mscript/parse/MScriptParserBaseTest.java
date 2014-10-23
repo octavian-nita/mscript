@@ -1,22 +1,22 @@
 package com.mscript.parse;
 
-    import org.antlr.v4.runtime.ANTLRInputStream;
-    import org.antlr.v4.runtime.BaseErrorListener;
-    import org.antlr.v4.runtime.CommonTokenStream;
-    import org.antlr.v4.runtime.RecognitionException;
-    import org.antlr.v4.runtime.Recognizer;
-    import org.antlr.v4.runtime.misc.NotNull;
-    import org.antlr.v4.runtime.misc.Nullable;
-    import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.BaseErrorListener;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Recognizer;
+import org.antlr.v4.runtime.misc.NotNull;
+import org.antlr.v4.runtime.misc.Nullable;
+import org.antlr.v4.runtime.tree.ParseTree;
 
-    import java.io.File;
-    import java.io.FileReader;
-    import java.io.IOException;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 
-    import static org.junit.Assert.fail;
+import static org.junit.Assert.fail;
 
-    import com.mscript.parse.MScriptLexer;
-    import com.mscript.parse.MScriptParser;
+import com.mscript.parse.MScriptLexer;
+import com.mscript.parse.MScriptParser;
 
 /**
  * Base class for MScript parser tests, encapsulating common functionality like exercising the SUT on a script, etc.

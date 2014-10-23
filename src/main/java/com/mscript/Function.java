@@ -20,16 +20,20 @@ import static java.lang.Integer.parseInt;
  */
 public class Function {
 
+    /**
+     * {@link Pattern Regular expression} used to parse a function's arity.
+     */
     protected static final Pattern ARITY_PATTERN = Pattern.compile("(?:\\s*(\\d+)\\s*,)?\\s*(\\d+)\\s*");
 
     protected static final Map<String, Function> library = new HashMap<>();
 
     public static void define(String qualifiedName, int minArity, int maxArity) {
-        library.put(qualifiedName, new Function(qualifiedName, minArity, maxArity));
+        Function function = new Function(qualifiedName, minArity, maxArity);
+        library.put(function.qualifiedName, function);
     }
 
     public static void define(String qualifiedName, int arity) {
-        library.put(qualifiedName, new Function(qualifiedName, arity));
+        define(qualifiedName, arity, arity);
     }
 
     public static void clearLibrary() {
@@ -43,20 +47,25 @@ public class Function {
         }
 
         for (Map.Entry<Object, Object> definition : definitions.entrySet()) {
-            String qualifiedName = (String) definition.getKey();
-
             Matcher arityMatcher = ARITY_PATTERN.matcher((String) definition.getValue());
             if (!arityMatcher.matches()) { // for now just skip the incorrectly defined functions but...
                 continue; // TODO: eventually log something before going to the next function definition
             }
 
             String minArity = arityMatcher.group(1);
-            library.put(qualifiedName, minArity == null ? new Function(qualifiedName, parseInt(arityMatcher.group(2)))
-                                                        : new Function(qualifiedName, parseInt(minArity),
-                                                                       parseInt(arityMatcher.group(2))));
+            Function function =
+                minArity == null ? new Function((String) definition.getKey(), parseInt(arityMatcher.group(2)))
+                                 : new Function((String) definition.getKey(), parseInt(minArity),
+                                                parseInt(arityMatcher.group(2)));
+
+            library.put(function.qualifiedName, function);
         }
     }
 
+    /**
+     * An MScript parser normally matches separately the plugin, the function name and every passed argument so the
+     * signature of this methods makes it easy to be called upon a successful function call match.
+     */
     public static CheckResult check(String pluginName, String functionName, int argsNumber) {
         StringBuilder qualifiedName = new StringBuilder(pluginName == null ? "" : pluginName.trim());
         if (qualifiedName.length() > 0) {
