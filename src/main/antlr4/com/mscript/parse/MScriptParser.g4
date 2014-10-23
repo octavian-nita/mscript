@@ -14,24 +14,17 @@ import com.mscript.Function.CheckResult;
 import com.mscript.parse.FunctionRecognitionException;
 }
 
-script : SEPARATORS? stat? ( SEPARATORS stat? )* EOF ;
+script : block? EOF ;
+
+block : SEPS? stat ( SEPS stat? )* ;
 
 stat
   : assign
   | fncall
+  | ifStat
   ;
 
 assign : ID ASSIGN expr ;
-
-expr
-  : expr ( MUL | DIV | MOD ) expr
-  | expr ( ADD | SUB ) expr
-  | ( ADD | SUB )? LPAREN expr RPAREN // parenthesized expression
-  | ( ADD | SUB )? fncall
-  | ( ADD | SUB )? string
-  | ( ADD | SUB )? LITERAL
-  | ( ADD | SUB )? ID
-  ;
 
 fncall
 locals [int argsCount=0, String pluginName=null, String functionName=null]
@@ -55,5 +48,19 @@ case WRONG_NUM_OF_ARGS:
 }
 
 } ;
+
+ifStat : IF NL* LPAREN NL* cond NL* RPAREN NL* LBRACE NL* block NL* RBRACE ;
+
+cond : expr NL* ( EQ | NE | LE | LT | GE | GT ) NL* expr ;
+
+expr
+  : expr ( MUL | DIV | MOD ) expr
+  | expr ( ADD | SUB ) expr
+  | ( ADD | SUB )? LPAREN expr RPAREN // parenthesized expression
+  | ( ADD | SUB )? fncall
+  | ( ADD | SUB )? string
+  | ( ADD | SUB )? LITERAL
+  | ( ADD | SUB )? ID
+  ;
 
 string : QUOTE ( ESC_CHAR | STR_CHAR | fncall | (IN_STR_LBRACK expr RBRACK) )* IN_STR_QUOTE ;
