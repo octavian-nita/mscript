@@ -18,12 +18,26 @@ SUB : '-' ;
 
 SIGIL : '$' -> pushMode(IN_FNC) ;
 DOT : '.' ;
+
 LPAREN : '(' -> pushMode(DEFAULT_MODE) ;
 RPAREN : ')' -> popMode ;
 RBRACK : ']' -> popMode ;
-COMMA : ',' ;
+LBRACE : '{' ;
+RBRACE : '}' ;
 
+EQ : '==' ;
+NE : '!=' ;
+LE : '<=' ;
+LT : '<' ;
+GE : '>=' ;
+GT : '>' ;
+
+COMMA : ',' ;
 QUOTE : '\'' -> pushMode(IN_STR) ;
+
+IF : 'if' ;
+ELSE : 'else' ;
+WHILE : 'while' ;
 
 LITERAL : BOOLEAN | NUMBER ;
 
@@ -38,10 +52,15 @@ fragment INT : '0' | [1-9] [0-9]* ;
 // U+10000 to U+10FFFF; if needed, find missing bits at http://github.com/antlr/grammars-v4/blob/master/java8/Java8.g4
 ID : [a-zA-Z_] [a-zA-Z0-9_]* ;
 
-STAT_SEPARATOR : ('\r'? '\n' | '\r' /* on mac */ | ';')+ ;
+// Grouping several separators into one provides for smaller automatically generated syntax trees
+SEPARATORS : SP ( WS? SP )* ;
 
-// In default mode, we skip multi-line and single line comments and white spaces, other than new lines
-SKIP : ( '/*' .*? '*/' | '//' ~[\r\n]* | [ \t\f]+ ) -> skip ;
+// In default mode, skip multi-line and single line comments and white spaces, other than new lines
+SKIP : ( '/*' .*? '*/' | '//' ~[\r\n]* | WS ) -> skip ;
+
+fragment SP : '\r'? '\n' | '\r' /* on mac */ | ';' ;
+
+fragment WS : [ \t\f]+ ;
 
 // ---------- INside a quoted STRing ----------
 mode IN_STR;

@@ -14,7 +14,7 @@ import com.mscript.Function.CheckResult;
 import com.mscript.parse.FunctionRecognitionException;
 }
 
-script : STAT_SEPARATOR* stat? ( STAT_SEPARATOR stat? )* EOF ;
+script : SEPARATORS? stat? ( SEPARATORS stat? )* EOF ;
 
 stat
   : assign
