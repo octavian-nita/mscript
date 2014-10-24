@@ -16,7 +16,7 @@ import com.mscript.parse.FunctionRecognitionException;
 
 script : block? EOF ;
 
-block : SEPS? stat ( SEPS stat? )* ;
+block : SEPARATOR* stat ( SEPARATOR+ stat? )* ;
 
 stat
   : assign
