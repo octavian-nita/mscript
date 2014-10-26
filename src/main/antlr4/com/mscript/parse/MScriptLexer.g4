@@ -8,23 +8,14 @@ lexer grammar MScriptLexer;
 
 // ---------- Default "mode": everything OUTSIDE a quoted string ----------
 
-ASSIGN : '=' ;
-
+// Arithmetic operators
 MUL : '*' ;
 DIV : '/' ;
 MOD : '%' ;
 ADD : '+' ;
 SUB : '-' ;
 
-SIGIL : '$' -> pushMode(IN_FNC) ;
-DOT : '.' ;
-
-LPAREN : '(' -> pushMode(DEFAULT_MODE) ;
-RPAREN : ')' -> popMode ;
-RBRACK : ']' -> popMode ;
-LBRACE : '{' ;
-RBRACE : '}' ;
-
+// Comparison operators
 EQ : '==' ;
 NE : '!=' ;
 LE : '<=' ;
@@ -32,12 +23,24 @@ LT : '<' ;
 GE : '>=' ;
 GT : '>' ;
 
-COMMA : ',' ;
-QUOTE : '\'' -> pushMode(IN_STR) ;
+LPAREN : '(' -> pushMode(DEFAULT_MODE) ;
+RPAREN : ')' -> popMode ;
 
-IF : 'if' ;
-ELSE : 'else' ;
-WHILE : 'while' ;
+ASSIGN : '=' ;
+
+SIGIL : '$' -> pushMode(IN_FNC) ;
+DOT : '.' ;
+COMMA : ',' ;
+
+QUOTE : '\'' -> pushMode(IN_STR) ;
+RBRACK : ']' -> popMode ;
+
+IF     : 'if' ;
+ELSE   : 'else' ;
+WHILE  : 'while' ;
+
+LBRACE : '{' ;
+RBRACE : '}' ;
 
 LITERAL : BOOLEAN | NUMBER ;
 
@@ -52,9 +55,9 @@ fragment INT : '0' | [1-9] [0-9]* ;
 // U+10000 to U+10FFFF; if needed, find missing bits at http://github.com/antlr/grammars-v4/blob/master/java8/Java8.g4
 ID : [a-zA-Z_] [a-zA-Z0-9_]* ;
 
+// Statement separators, keps separate since we want to allow new lines between tokens like IF and '('
 NL : ( '\r'? '\n' ) | '\r' /* on mac */ ;
-
-SEPARATOR : NL | ';' ;
+SEMIC : ';' ;
 
 // In default mode, skip multi-line and single line comments and white spaces, other than new lines
 SKIP : ( '/*' .*? '*/' | '//' ~[\r\n]* | [ \t\f]+ ) -> skip ;

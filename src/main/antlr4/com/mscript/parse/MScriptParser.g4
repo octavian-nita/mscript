@@ -16,7 +16,7 @@ import com.mscript.parse.FunctionRecognitionException;
 
 script : block? EOF ;
 
-block : SEPARATOR* stat ( SEPARATOR+ stat? )* ;
+block : ( NL | SEMIC )* stat ( ( NL | SEMIC )+ stat? )* ;
 
 stat
   : assign
@@ -49,7 +49,7 @@ case WRONG_NUM_OF_ARGS:
 
 } ;
 
-ifStat : IF NL* LPAREN NL* cond NL* RPAREN NL* LBRACE NL* block NL* RBRACE ;
+ifStat : IF NL* LPAREN NL* cond NL* RPAREN NL* LBRACE block RBRACE ( NL* ELSE NL* LBRACE block RBRACE )? ;
 
 cond : expr NL* ( EQ | NE | LE | LT | GE | GT ) NL* expr ;
 
