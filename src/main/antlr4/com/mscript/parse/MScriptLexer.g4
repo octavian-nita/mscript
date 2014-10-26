@@ -84,8 +84,8 @@ ESC_CHAR
   ;
 
 // Any character apart from: \, ', $, [, ]
-STR_CHAR
-  : ~('\\' | '\'' | '$' | '[' | ']')
+STR_CHARS
+  : ( ~( '\\' | '\'' | '$' | '[' | ']' ) )+
   ;
 
 // ---------- INside a FuNction Call ----------

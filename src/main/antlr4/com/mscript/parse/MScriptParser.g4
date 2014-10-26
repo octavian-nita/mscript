@@ -65,4 +65,4 @@ expr
   | ( ADD | SUB )? ID
   ;
 
-string : QUOTE ( ESC_CHAR | STR_CHAR | fncall | (IN_STR_LBRACK expr RBRACK) )* IN_STR_QUOTE ;
+string : QUOTE ( ESC_CHAR | STR_CHARS | fncall | (IN_STR_LBRACK expr RBRACK) )* IN_STR_QUOTE ;
