@@ -49,7 +49,9 @@ case WRONG_NUM_OF_ARGS:
 
 } ;
 
-ifStat : IF NL* LPAREN NL* cond NL* RPAREN NL* LBRACE block RBRACE ( NL* ELSE NL* LBRACE block RBRACE )? ;
+ifStat : IF NL* LPAREN NL* cond NL* RPAREN NL* ( ( LBRACE block RBRACE ) | ( stat ( NL+ | SEMIC )? ) )
+         // Optional ELSE branch
+         ( NL* ELSE NL* ( ( LBRACE block RBRACE ) | ( stat ( NL+ | SEMIC )? ) ) )? ;
 
 cond : expr NL* ( EQ | NE | LE | LT | GE | GT ) NL* expr ;
 

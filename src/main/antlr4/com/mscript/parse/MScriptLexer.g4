@@ -55,7 +55,7 @@ fragment INT : '0' | [1-9] [0-9]* ;
 // U+10000 to U+10FFFF; if needed, find missing bits at http://github.com/antlr/grammars-v4/blob/master/java8/Java8.g4
 ID : [a-zA-Z_] [a-zA-Z0-9_]* ;
 
-// Statement separators, keps separate since we want to allow new lines between tokens like IF and '('
+// Statement separators, kept separate since we want to allow new lines between tokens like IF and '('
 NL : ( '\r'? '\n' ) | '\r' /* on mac */ ;
 SEMIC : ';' ;
 
