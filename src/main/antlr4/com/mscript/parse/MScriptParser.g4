@@ -16,7 +16,7 @@ import com.mscript.parse.FunctionRecognitionException;
 
 script : block? EOF ;
 
-block : ( NL | SEMIC )* stat ( ( NL | SEMIC )+ stat? )* ;
+block : ( NEWLN | SEMIC )* stat ( ( NEWLN | SEMIC )+ stat? )* ;
 
 stat
   : assign
@@ -49,11 +49,11 @@ case WRONG_NUM_OF_ARGS:
 
 } ;
 
-ifStat : IF NL* LPAREN NL* cond NL* RPAREN NL* ( ( LBRACE block RBRACE ) | ( stat ( NL+ | SEMIC )? ) )
+ifStat : IF NEWLN* LPAREN NEWLN* cond NEWLN* RPAREN NEWLN* ( ( LBRACE block RBRACE ) | ( stat ( NEWLN+ | SEMIC )? ) )
          // Optional ELSE branch
-         ( NL* ELSE NL* ( ( LBRACE block RBRACE ) | ( stat ( NL+ | SEMIC )? ) ) )? ;
+         ( NEWLN* ELSE NEWLN* ( ( LBRACE block RBRACE ) | ( stat ( NEWLN+ | SEMIC )? ) ) )? ;
 
-cond : expr NL* ( EQ | NE | LE | LT | GE | GT ) NL* expr ;
+cond : expr NEWLN* ( EQ | NE | LE | LT | GE | GT ) NEWLN* expr ;
 
 expr
   : expr ( MUL | DIV | MOD ) expr
@@ -61,7 +61,8 @@ expr
   | ( ADD | SUB )? LPAREN expr RPAREN // parenthesized expression
   | ( ADD | SUB )? fncall
   | ( ADD | SUB )? string
-  | ( ADD | SUB )? LITERAL
+  | ( ADD | SUB )? BOOLEAN
+  | ( ADD | SUB )? NUMBER
   | ( ADD | SUB )? ID
   ;
 

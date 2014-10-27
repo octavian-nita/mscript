@@ -19,9 +19,9 @@ SUB : '-' ;
 EQ : '==' ;
 NE : '!=' ;
 LE : '<=' ;
-LT : '<' ;
+LT : '<'  ;
 GE : '>=' ;
-GT : '>' ;
+GT : '>'  ;
 
 LPAREN : '(' -> pushMode(DEFAULT_MODE) ;
 RPAREN : ')' -> popMode ;
@@ -29,20 +29,18 @@ RPAREN : ')' -> popMode ;
 ASSIGN : '=' ;
 
 SIGIL : '$' -> pushMode(IN_FNC) ;
-DOT : '.' ;
+DOT   : '.' ;
 COMMA : ',' ;
 
-QUOTE : '\'' -> pushMode(IN_STR) ;
-RBRACK : ']' -> popMode ;
+QUOTE  : '\'' -> pushMode(IN_STR) ;
+RBRACK : ']'  -> popMode ;
 
-IF     : 'if' ;
-ELSE   : 'else' ;
+IF     : 'if'    ;
+ELSE   : 'else'  ;
 WHILE  : 'while' ;
 
 LBRACE : '{' ;
 RBRACE : '}' ;
-
-LITERAL : BOOLEAN | NUMBER ;
 
 BOOLEAN : 'true' | 'false' ;
 
@@ -55,8 +53,9 @@ fragment INT : '0' | [1-9] [0-9]* ;
 // U+10000 to U+10FFFF; if needed, find missing bits at http://github.com/antlr/grammars-v4/blob/master/java8/Java8.g4
 ID : [a-zA-Z_] [a-zA-Z0-9_]* ;
 
-// Statement separators, kept separate since we want to allow new lines between tokens like IF and '('
-NL : ( '\r'? '\n' ) | '\r' /* on mac */ ;
+// Statement separators, kept separate since we want to allow new lines between some tokens like IF and '(' without
+// marking an end of statement
+NEWLN : ( '\r'? '\n' ) | '\r' /* on mac */ ;
 SEMIC : ';' ;
 
 // In default mode, skip multi-line and single line comments and white spaces, other than new lines
@@ -65,11 +64,11 @@ SKIP : ( '/*' .*? '*/' | '//' ~[\r\n]* | [ \t\f]+ ) -> skip ;
 // ---------- INside a quoted STRing ----------
 mode IN_STR;
 
-IN_STR_QUOTE : '\'' -> popMode ;
+IN_STR_QUOTE  : '\'' -> popMode ;
 
-IN_STR_LBRACK : '[' -> pushMode(DEFAULT_MODE) ;
+IN_STR_LBRACK : '['  -> pushMode(DEFAULT_MODE) ;
 
-IN_STR_SIGIL : '$' -> type(SIGIL), pushMode(IN_FNC) ;
+IN_STR_SIGIL  : '$'  -> type(SIGIL), pushMode(IN_FNC) ;
 
 // Allowed escape sequences: \\, \', \$, \[, \], \n, \r, \t
 ESC_CHAR
@@ -84,15 +83,13 @@ ESC_CHAR
   ;
 
 // Any character apart from: \, ', $, [, ]
-STR_CHARS
-  : ( ~( '\\' | '\'' | '$' | '[' | ']' ) )+
-  ;
+STR_CHARS : ( ~( '\\' | '\'' | '$' | '[' | ']' ) )+ ;
 
 // ---------- INside a FuNction Call ----------
 mode IN_FNC;
 
-IN_FNC_DOT : '.' -> type(DOT) ;
+IN_FNC_DOT    : '.' -> type(DOT) ;
 
-IN_FNC_ID : [a-zA-Z_] [a-zA-Z0-9_]* -> type(ID) ;
+IN_FNC_ID     : [a-zA-Z_] [a-zA-Z0-9_]* -> type(ID) ;
 
 IN_FNC_LPAREN : '(' -> type(LPAREN), popMode, pushMode(DEFAULT_MODE) ;
