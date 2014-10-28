@@ -1,21 +1,62 @@
 package com.mscript.parse.misc;
 
 import java.awt.Component;
+import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.Icon;
+import javax.swing.JFileChooser;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.filechooser.FileFilter;
 
 /**
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
  * @version 1.0, Oct 27, 2014
  */
-public class MScriptTestRig extends javax.swing.JFrame {
+public class MScriptTestRig extends javax.swing.JFrame implements KeyListener {
+
+    private static final Font CODE_FONT = new Font(Font.MONOSPACED, Font.PLAIN, 14);
+    private static final Font LABEL_FONT = new Font(Font.SANS_SERIF, Font.BOLD, 12);
+
+    private static final FileFilter MSCRIPT_FILTER = new FileFilter() {
+
+        @Override
+        public boolean accept(File file) {
+            String path = file.getAbsolutePath().toLowerCase();
+            return path.endsWith(".mscript") || path.endsWith(".ms");
+        }
+
+        @Override
+        public String getDescription() {
+            return "MScript file";
+        }
+    };
+
+    @Override
+    public void keyTyped(KeyEvent e) {
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_O) {
+            if (JFileChooser.APPROVE_OPTION == scriptChooser.showOpenDialog(MScriptTestRig.this)) {
+                File file = scriptChooser.getSelectedFile();
+            }
+        }
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {
+    }
 
     public MScriptTestRig() {
         initComponents();
+        addKeyListener(this);
         setLocationRelativeTo(null);
     }
 
@@ -27,16 +68,19 @@ public class MScriptTestRig extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        scriptChooser = new javax.swing.JFileChooser();
         javax.swing.JSplitPane mainSplit = new javax.swing.JSplitPane();
         javax.swing.JPanel rightPanel = new javax.swing.JPanel();
         javax.swing.JScrollPane treeScroll = new javax.swing.JScrollPane();
         treeTree = new javax.swing.JTree();
         javax.swing.JSplitPane leftSplit = new javax.swing.JSplitPane();
-        javax.swing.JScrollPane errorsScroll = new javax.swing.JScrollPane();
-        errorsPane = new javax.swing.JTextPane();
-        javax.swing.JTabbedPane srcPane = new javax.swing.JTabbedPane();
-        inlineScroll = new javax.swing.JScrollPane();
-        inlinePane = new javax.swing.JTextPane();
+        javax.swing.JScrollPane errScroll = new javax.swing.JScrollPane();
+        errList = new javax.swing.JList();
+        javax.swing.JScrollPane srcScroll = new javax.swing.JScrollPane();
+        srcPane = new javax.swing.JTextPane();
+
+        scriptChooser.setDialogTitle("Open an MScript file");
+        scriptChooser.setFileFilter(MSCRIPT_FILTER);
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("MScript Test Rig, v. 0.1");
@@ -45,16 +89,16 @@ public class MScriptTestRig extends javax.swing.JFrame {
 
         mainSplit.setBorder(javax.swing.BorderFactory.createEmptyBorder(4, 4, 4, 4));
         mainSplit.setDividerLocation(400);
-        mainSplit.setDividerSize(2);
+        mainSplit.setDividerSize(4);
         mainSplit.setResizeWeight(0.5);
+        mainSplit.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
 
         rightPanel.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
 
-        treeScroll.setBackground(javax.swing.UIManager.getDefaults().getColor("window"));
-        treeScroll.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0), "Parse Tree"));
-        treeScroll.setViewportView(treeTree);
+        treeScroll.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0), "Parse Tree", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, LABEL_FONT));
 
         treeTree.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)), javax.swing.BorderFactory.createEmptyBorder(4, 4, 4, 4)));
+        treeTree.setFont(CODE_FONT);
         treeTree.setAutoscrolls(true);
         treeTree.setSelectionModel(null);
         treeScroll.setViewportView(treeTree);
@@ -63,45 +107,43 @@ public class MScriptTestRig extends javax.swing.JFrame {
         rightPanel.setLayout(rightPanelLayout);
         rightPanelLayout.setHorizontalGroup(
             rightPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 294, Short.MAX_VALUE)
-            .addGroup(rightPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addComponent(treeScroll, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 294, Short.MAX_VALUE))
+            .addComponent(treeScroll, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 212, Short.MAX_VALUE)
         );
         rightPanelLayout.setVerticalGroup(
             rightPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 517, Short.MAX_VALUE)
-            .addGroup(rightPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addComponent(treeScroll, javax.swing.GroupLayout.DEFAULT_SIZE, 517, Short.MAX_VALUE))
+            .addComponent(treeScroll, javax.swing.GroupLayout.DEFAULT_SIZE, 517, Short.MAX_VALUE)
         );
 
         mainSplit.setRightComponent(rightPanel);
 
         leftSplit.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
         leftSplit.setDividerLocation(350);
-        leftSplit.setDividerSize(2);
+        leftSplit.setDividerSize(4);
         leftSplit.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
         leftSplit.setResizeWeight(0.5);
 
-        errorsScroll.setBackground(javax.swing.UIManager.getDefaults().getColor("window"));
-        errorsScroll.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0), "Parse Errors"));
+        errScroll.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0), "Parse Errors", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, LABEL_FONT));
 
-        errorsPane.setEditable(false);
-        errorsPane.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
-        errorsPane.setContentType("text/html"); // NOI18N
-        errorsScroll.setViewportView(errorsPane);
+        errList.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+        errList.setFont(CODE_FONT);
+        errList.setForeground(new java.awt.Color(255, 51, 51));
+        errList.setModel(new javax.swing.AbstractListModel() {
+            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
+            public int getSize() { return strings.length; }
+            public Object getElementAt(int i) { return strings[i]; }
+        });
+        errList.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+        errScroll.setViewportView(errList);
 
-        leftSplit.setRightComponent(errorsScroll);
+        leftSplit.setRightComponent(errScroll);
 
-        srcPane.setTabLayoutPolicy(javax.swing.JTabbedPane.SCROLL_TAB_LAYOUT);
+        srcScroll.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0), "MScript (Ctrl+O to open existing file)", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, LABEL_FONT));
 
-        inlineScroll.setBorder(null);
+        srcPane.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+        srcPane.setFont(CODE_FONT);
+        srcScroll.setViewportView(srcPane);
 
-        inlinePane.setBorder(javax.swing.BorderFactory.createEmptyBorder(4, 4, 4, 4));
-        inlineScroll.setViewportView(inlinePane);
-
-        srcPane.addTab("Inline MScript", inlineScroll);
-
-        leftSplit.setLeftComponent(srcPane);
+        leftSplit.setLeftComponent(srcScroll);
 
         mainSplit.setLeftComponent(leftSplit);
 
@@ -109,7 +151,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(mainSplit, javax.swing.GroupLayout.Alignment.TRAILING)
+            .addComponent(mainSplit, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 700, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -153,9 +195,9 @@ public class MScriptTestRig extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JTextPane errorsPane;
-    private javax.swing.JTextPane inlinePane;
-    private javax.swing.JScrollPane inlineScroll;
+    private javax.swing.JList errList;
+    private javax.swing.JFileChooser scriptChooser;
+    private javax.swing.JTextPane srcPane;
     private javax.swing.JTree treeTree;
     // End of variables declaration//GEN-END:variables
 }
