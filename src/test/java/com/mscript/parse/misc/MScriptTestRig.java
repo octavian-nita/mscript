@@ -1,63 +1,134 @@
 package com.mscript.parse.misc;
 
+import com.mscript.parse.MScriptLexer;
+import com.mscript.parse.MScriptParser;
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Font;
 import java.awt.Graphics;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import java.awt.event.ActionEvent;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.AbstractAction;
+import javax.swing.DefaultListModel;
 import javax.swing.Icon;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import javax.swing.UIManager;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
+import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.BaseErrorListener;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Recognizer;
+import org.antlr.v4.runtime.misc.NotNull;
+import org.antlr.v4.runtime.misc.Nullable;
+import org.antlr.v4.runtime.tree.ParseTree;
 
 /**
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
  * @version 1.0, Oct 27, 2014
  */
-public class MScriptTestRig extends javax.swing.JFrame implements KeyListener {
+public class MScriptTestRig extends javax.swing.JFrame {
 
-    private static final Font CODE_FONT = new Font(Font.MONOSPACED, Font.PLAIN, 14);
-    private static final Font LABEL_FONT = new Font(Font.SANS_SERIF, Font.BOLD, 12);
-
-    private static final FileFilter MSCRIPT_FILTER = new FileFilter() {
-
-        @Override
-        public boolean accept(File file) {
-            String path = file.getAbsolutePath().toLowerCase();
-            return path.endsWith(".mscript") || path.endsWith(".ms");
+    public static void main(String args[]) {
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Throwable ex) {
+            Logger.getLogger(MScriptTestRig.class.getName()).log(Level.WARNING, null, ex);
         }
 
-        @Override
-        public String getDescription() {
-            return "MScript file";
-        }
-    };
+        Icon empty = new Icon() {
 
-    @Override
-    public void keyTyped(KeyEvent e) {
-    }
-
-    @Override
-    public void keyPressed(KeyEvent e) {
-        if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_O) {
-            if (JFileChooser.APPROVE_OPTION == scriptChooser.showOpenDialog(MScriptTestRig.this)) {
-                File file = scriptChooser.getSelectedFile();
+            @Override
+            public void paintIcon(Component c, Graphics g, int x, int y) {
+                // Do nothing.
             }
-        }
-    }
 
-    @Override
-    public void keyReleased(KeyEvent e) {
+            @Override
+            public int getIconWidth() {
+                return 0;
+            }
+
+            @Override
+            public int getIconHeight() {
+                return 0;
+            }
+        };
+        UIManager.put("Tree.closedIcon", empty);
+        UIManager.put("Tree.openIcon", empty);
+        UIManager.put("Tree.leafIcon", empty);
+
+        SwingUtilities.invokeLater(() -> {
+            new MScriptTestRig().setVisible(true);
+        });
     }
 
     public MScriptTestRig() {
         initComponents();
-        addKeyListener(this);
         setLocationRelativeTo(null);
+
+        srcPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control O"), "openScript");
+        srcPane.getActionMap().put("openScript", new AbstractAction("openScript") {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (JFileChooser.APPROVE_OPTION == scriptChooser.showOpenDialog(MScriptTestRig.this)) {
+                    File script = scriptChooser.getSelectedFile();
+
+                    try (BufferedReader reader = new BufferedReader(new FileReader(script))) {
+                        StringBuilder source = new StringBuilder();
+
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            source.append(line).append(NL);
+                        }
+
+                        srcPane.setText(source.toString());
+                    } catch (IOException ioe) {
+                        JOptionPane.showMessageDialog(MScriptTestRig.this, "Cannot open/read file " +
+                                                                           script.getAbsolutePath() + "! (" +
+                                                                           ioe.getMessage() + ")",
+                                                      "Cannot open file", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
+        });
+
+        srcPane.getDocument().addDocumentListener(new DocumentListener() {
+
+            private void parse() {
+                MScriptTestRig.this.getRootPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+                ((DefaultListModel<SyntaxError>) errList.getModel()).clear();
+                new ParseWorker().execute();
+            }
+
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                parse();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                parse();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                parse();
+            }
+        });
     }
 
     /**
@@ -95,6 +166,7 @@ public class MScriptTestRig extends javax.swing.JFrame implements KeyListener {
 
         rightPanel.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
 
+        treeScroll.setBackground(javax.swing.UIManager.getDefaults().getColor("control"));
         treeScroll.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0), "Parse Tree", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, LABEL_FONT));
 
         treeTree.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)), javax.swing.BorderFactory.createEmptyBorder(4, 4, 4, 4)));
@@ -122,21 +194,24 @@ public class MScriptTestRig extends javax.swing.JFrame implements KeyListener {
         leftSplit.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
         leftSplit.setResizeWeight(0.5);
 
+        errScroll.setBackground(javax.swing.UIManager.getDefaults().getColor("control"));
         errScroll.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0), "Parse Errors", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, LABEL_FONT));
 
         errList.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
         errList.setFont(CODE_FONT);
         errList.setForeground(new java.awt.Color(255, 51, 51));
-        errList.setModel(new javax.swing.AbstractListModel() {
-            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
-            public int getSize() { return strings.length; }
-            public Object getElementAt(int i) { return strings[i]; }
+        errList.setModel(new DefaultListModel<SyntaxError>());
+        errList.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        errList.addListSelectionListener(new javax.swing.event.ListSelectionListener() {
+            public void valueChanged(javax.swing.event.ListSelectionEvent evt) {
+                errListValueChanged(evt);
+            }
         });
-        errList.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_INTERVAL_SELECTION);
         errScroll.setViewportView(errList);
 
         leftSplit.setRightComponent(errScroll);
 
+        srcScroll.setBackground(javax.swing.UIManager.getDefaults().getColor("control"));
         srcScroll.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0), "MScript (Ctrl+O to open existing file)", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, LABEL_FONT));
 
         srcPane.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
@@ -161,38 +236,104 @@ public class MScriptTestRig extends javax.swing.JFrame implements KeyListener {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    public static void main(String args[]) {
+    private void errListValueChanged(javax.swing.event.ListSelectionEvent evt) {//GEN-FIRST:event_errListValueChanged
         try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Throwable ex) {
-            Logger.getLogger(MScriptTestRig.class.getName()).log(Level.WARNING, null, ex);
+            SyntaxError selectedError = (SyntaxError) errList.getSelectedValue();
+
+            int pos = 0, lineCount = selectedError.line - 1;
+            String[] lines = srcPane.getText().split(NL);
+            for (int i = 0; i < lineCount; i++) {
+                pos += lines[i].length() + NL.length();
+            }
+
+            srcPane.setCaretPosition(selectedError.charPositionInLine + pos);
+            srcPane.requestFocusInWindow();
+        } catch (Throwable throwable) {
+            Logger.getLogger(MScriptTestRig.class.getName()).log(Level.SEVERE, null, throwable);
+        }
+    }//GEN-LAST:event_errListValueChanged
+
+    private class ParseWorker extends SwingWorker<ParseTree, SyntaxError> {
+
+        @Override
+        protected ParseTree doInBackground() throws Exception {
+            MScriptLexer mScriptLexer = new MScriptLexer(new ANTLRInputStream(srcPane.getText()));
+            CommonTokenStream tokens = new CommonTokenStream(mScriptLexer);
+
+            MScriptParser mScriptParser = new MScriptParser(tokens);
+            mScriptParser.addErrorListener(new BaseErrorListener() {
+
+                @Override
+                public void syntaxError(@NotNull Recognizer<?, ?> recognizer, @Nullable Object offendingSymbol, int line,
+                                        int charPositionInLine, @NotNull String message,
+                                        @Nullable RecognitionException exception) {
+                    publish(new SyntaxError(recognizer, offendingSymbol, line, charPositionInLine, message, exception));
+                }
+            });
+            return mScriptParser.script();
         }
 
-        Icon empty = new Icon() {
-
-            @Override
-            public void paintIcon(Component c, Graphics g, int x, int y) {
-                // Do nothing.
+        @Override
+        protected void process(List<SyntaxError> syntaxErrors) {
+            DefaultListModel<SyntaxError> errModel = (DefaultListModel<SyntaxError>) errList.getModel();
+            for (SyntaxError syntaxError : syntaxErrors) {
+                errModel.addElement(syntaxError);
             }
+        }
 
-            @Override
-            public int getIconWidth() {
-                return 0;
-            }
+        @Override
+        protected void done() {
+            MScriptTestRig.this.getRootPane().setCursor(Cursor.getDefaultCursor());
+        }
+    };
 
-            @Override
-            public int getIconHeight() {
-                return 0;
-            }
-        };
-        UIManager.put("Tree.closedIcon", empty);
-        UIManager.put("Tree.openIcon", empty);
-        UIManager.put("Tree.leafIcon", empty);
+    private static class SyntaxError {
 
-        SwingUtilities.invokeLater(() -> {
-            new MScriptTestRig().setVisible(true);
-        });
+        final Recognizer<?, ?> recognizer;
+        final Object offendingSymbol;
+        final int line;
+        final int charPositionInLine;
+        final String message;
+        final RecognitionException recognitionException;
+
+        final String asString;
+
+        public SyntaxError(@NotNull Recognizer<?, ?> recognizer, @Nullable Object offendingSymbol, int line,
+                           int charPositionInLine, @NotNull String message, @Nullable RecognitionException exception) {
+            this.recognizer = recognizer;
+            this.offendingSymbol = offendingSymbol;
+            this.line = line;
+            this.charPositionInLine = charPositionInLine;
+            this.message = message;
+            this.recognitionException = exception;
+
+            asString = offendingSymbol + "@" + line + ":" + charPositionInLine + ": " + message; // +
+            // (exception != null && exception.getMessage() != null ? " [" + exception.getMessage() + "]" : "");
+        }
+
+        @Override
+        public String toString() {
+            return asString;
+        }
     }
+
+    private static final FileFilter MSCRIPT_FILTER = new FileFilter() {
+
+        @Override
+        public boolean accept(File file) {
+            String path = file.getAbsolutePath().toLowerCase();
+            return path.endsWith(".mscript") || path.endsWith(".ms");
+        }
+
+        @Override
+        public String getDescription() {
+            return "MScript files (*.mscript, *.ms)";
+        }
+    };
+
+    private static final Font CODE_FONT = new Font(Font.MONOSPACED, Font.PLAIN, 14);
+    private static final Font LABEL_FONT = new Font(Font.SANS_SERIF, Font.BOLD, 12);
+    private static final String NL = System.getProperty("line.separator", "\n");
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JList errList;
