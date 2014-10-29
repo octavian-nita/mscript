@@ -2,6 +2,7 @@ package com.mscript;
 
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -9,6 +10,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.lang.Integer.parseInt;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * MScript function definitions are {@link #loadLibrary(String) loaded} from {@link java.util.Properties} files. A
@@ -44,6 +47,23 @@ public class Function {
         Properties definitions = new Properties();
         try (FileReader reader = new FileReader(libraryFilename)) {
             definitions.load(reader);
+        } catch (IOException ioe) { // try to load the file from the classpath
+            InputStream resource = Function.class.getResourceAsStream(libraryFilename);
+            if (resource == null) { // no such file in the classpath - just throw the initial exception
+                throw ioe;
+            }
+
+            try {
+                definitions.load(resource);
+            } finally {
+                try {
+                    resource.close();
+                } catch (IOException ioe2) {
+                    Logger.getLogger(Function.class.getName()).log(Level.WARNING,
+                                                                   "Cannot close functions library resource stream; ignoring...",
+                                                                   ioe2);
+                }
+            }
         }
 
         for (Map.Entry<Object, Object> definition : definitions.entrySet()) {
@@ -54,9 +74,9 @@ public class Function {
 
             String minArity = arityMatcher.group(1);
             Function function =
-                minArity == null ? new Function((String) definition.getKey(), parseInt(arityMatcher.group(2)))
-                                 : new Function((String) definition.getKey(), parseInt(minArity),
-                                                parseInt(arityMatcher.group(2)));
+                minArity == null ? new Function((String) definition.getKey(), parseInt(arityMatcher.group(2))) :
+                     new Function((String) definition.getKey(), parseInt(minArity),
+                                  parseInt(arityMatcher.group(2)));
 
             library.put(function.qualifiedName, function);
         }

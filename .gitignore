@@ -6,5 +6,7 @@
 /.settings
 
 /nbproject
+/nb-configuration.xml
+/nbactions.xml
 
 /target

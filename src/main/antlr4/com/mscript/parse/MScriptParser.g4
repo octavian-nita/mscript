@@ -53,7 +53,10 @@ ifStat : IF NEWLN* LPAREN NEWLN* cond NEWLN* RPAREN NEWLN* ( ( LBRACE block RBRA
          // Optional ELSE branch
          ( NEWLN* ELSE NEWLN* ( ( LBRACE block RBRACE ) | ( stat ( NEWLN+ | SEMIC )? ) ) )? ;
 
-cond : expr NEWLN* ( EQ | NE | LE | LT | GE | GT ) NEWLN* expr ;
+cond
+  : expr NEWLN* ( EQ | NE | LE | LT | GE | GT ) NEWLN* expr
+  | expr // in order to allow statements like while (v) { ... } or if ('true') { ... }
+  ;
 
 expr
   : expr ( MUL | DIV | MOD ) expr
@@ -66,4 +69,4 @@ expr
   | ( ADD | SUB )? ID
   ;
 
-string : QUOTE ( ESC_CHAR | STR_CHARS | fncall | (IN_STR_LBRACK expr RBRACK) )* IN_STR_QUOTE ;
+string : QUOTE ( ESC_CHAR | STR_CHARS | fncall | ( IN_STR_LBRACK expr RBRACK ) )* IN_STR_QUOTE ;

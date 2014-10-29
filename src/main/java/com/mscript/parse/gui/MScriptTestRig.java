@@ -1,5 +1,6 @@
-package com.mscript.parse.misc;
+package com.mscript.parse.gui;
 
+import com.mscript.Function;
 import com.mscript.parse.MScriptLexer;
 import com.mscript.parse.MScriptParser;
 import java.awt.Component;
@@ -72,8 +73,18 @@ public class MScriptTestRig extends javax.swing.JFrame {
         UIManager.put("Tree.openIcon", empty);
         UIManager.put("Tree.leafIcon", empty);
 
-        SwingUtilities.invokeLater(() -> {
-            new MScriptTestRig().setVisible(true);
+        try {
+            Function.loadLibrary("functions.properties");
+        } catch (IOException ex) {
+            Logger.getLogger(MScriptTestRig.class.getName()).log(Level.SEVERE, "Cannot load functions library", ex);
+        }
+
+        SwingUtilities.invokeLater(new Runnable() {
+
+            @Override
+            public void run() {
+                new MScriptTestRig().setVisible(true);
+            }
         });
     }
 
@@ -158,7 +169,6 @@ public class MScriptTestRig extends javax.swing.JFrame {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("MScript Test Rig, v. 0.1");
         setName("mainFrame"); // NOI18N
-        setPreferredSize(new java.awt.Dimension(800, 600));
 
         mainSplit.setBorder(javax.swing.BorderFactory.createEmptyBorder(4, 4, 4, 4));
         mainSplit.setDividerLocation(400);
@@ -173,7 +183,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
 
         treeTree.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)), javax.swing.BorderFactory.createEmptyBorder(4, 4, 4, 4)));
         treeTree.setFont(CODE_FONT);
-        treeTree.setModel(new DefaultTreeModel(new DefaultMutableTreeNode("script")));
+        treeTree.setModel(new DefaultTreeModel(new DefaultMutableTreeNode()));
         treeTree.setAutoscrolls(true);
         treeScroll.setViewportView(treeTree);
 
@@ -266,9 +276,11 @@ public class MScriptTestRig extends javax.swing.JFrame {
 
         try {
             srcPane.setCaretPosition(error.charPositionInLine + caretPos);
-            srcPane.requestFocus();
+            srcPane.requestFocusInWindow();
         } catch (Throwable throwable) {
-            Logger.getLogger(MScriptTestRig.class.getName()).log(Level.SEVERE, "cannot go to error", throwable);
+            Logger.getLogger(MScriptTestRig.class.getName()).log(Level.SEVERE,
+                                                                 "Cannot go to the syntax error location in code",
+                                                                 throwable);
         }
     }
 

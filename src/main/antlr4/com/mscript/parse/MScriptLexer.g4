@@ -23,24 +23,26 @@ LT : '<'  ;
 GE : '>=' ;
 GT : '>'  ;
 
-LPAREN : '(' -> pushMode(DEFAULT_MODE) ;
-RPAREN : ')' -> popMode ;
-
-ASSIGN : '=' ;
-
 SIGIL : '$' -> pushMode(IN_FNC) ;
 DOT   : '.' ;
 COMMA : ',' ;
 
+LPAREN : '(' -> pushMode(DEFAULT_MODE) ;
+RPAREN : ')' -> popMode ;
+
 QUOTE  : '\'' -> pushMode(IN_STR) ;
 RBRACK : ']'  -> popMode ;
 
-IF     : 'if'    ;
-ELSE   : 'else'  ;
-WHILE  : 'while' ;
-
 LBRACE : '{' ;
 RBRACE : '}' ;
+
+ASSIGN : '=' ;
+
+IF       : 'if'    ;
+ELSE     : 'else'  ;
+WHILE    : 'while' ;
+BREAK    : 'break' ;
+CONTINUE : 'continue' ;
 
 BOOLEAN : 'true' | 'false' ;
 
@@ -48,13 +50,12 @@ NUMBER : INT ( DOT INT )? | DOT INT ;
 
 fragment INT : '0' | [1-9] [0-9]* ;
 
-// Keep ID definition AFTER LITERALs so that for example, true would be interpreted as a boolean literal and not an ID.
+// Keep ID definition AFTER literals so that for example, true would be interpreted as a BOOLEAN literal and not an ID.
 // We do not currently handle / cover "java letters" (characters) above 0xFF and UTF-16 surrogate pairs encodings from
 // U+10000 to U+10FFFF; if needed, find missing bits at http://github.com/antlr/grammars-v4/blob/master/java8/Java8.g4
 ID : [a-zA-Z_] [a-zA-Z0-9_]* ;
 
-// Statement separators, kept separate since we want to allow new lines between some tokens like IF and '(' without
-// marking an end of statement
+// Statement separators, kept separate to allow new lines between tokens like IF and ( without marking end of statement.
 NEWLN : ( '\r'? '\n' ) | '\r' /* on mac */ ;
 SEMIC : ';' ;
 
