@@ -38,6 +38,7 @@ import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.misc.Nullable;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.Tree;
 
 /**
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
@@ -110,22 +111,16 @@ public class MScriptTestRig extends javax.swing.JFrame {
 
                         srcPane.setText(source.toString());
                     } catch (IOException ioe) {
-                        JOptionPane.showMessageDialog(MScriptTestRig.this, "Cannot open/read file " +
-                                                                           script.getAbsolutePath() +
-                                                                           "! (" + ioe.getMessage() + ")",
-                                                      "Cannot open file", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(MScriptTestRig.this,
+                                                      "Cannot open/read file " + script.getAbsolutePath() + ": " +
+                                                      ioe.getMessage() + "!",
+                                                      "An error has occurred", JOptionPane.ERROR_MESSAGE);
                     }
                 }
             }
         });
 
         srcPane.getDocument().addDocumentListener(new DocumentListener() {
-
-            private void parse() {
-                MScriptTestRig.this.getRootPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-                ((DefaultListModel<SyntaxError>) errList.getModel()).clear();
-                new ParseWorker().execute();
-            }
 
             @Override
             public void insertUpdate(DocumentEvent e) {
@@ -156,7 +151,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
         javax.swing.JSplitPane mainSplit = new javax.swing.JSplitPane();
         javax.swing.JPanel rightPanel = new javax.swing.JPanel();
         javax.swing.JScrollPane treeScroll = new javax.swing.JScrollPane();
-        treeTree = new javax.swing.JTree();
+        treeView = new javax.swing.JTree();
         javax.swing.JSplitPane leftSplit = new javax.swing.JSplitPane();
         javax.swing.JScrollPane errScroll = new javax.swing.JScrollPane();
         errList = new javax.swing.JList();
@@ -181,11 +176,11 @@ public class MScriptTestRig extends javax.swing.JFrame {
         treeScroll.setBackground(javax.swing.UIManager.getDefaults().getColor("control"));
         treeScroll.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0), "Parse Tree", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, LABEL_FONT));
 
-        treeTree.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)), javax.swing.BorderFactory.createEmptyBorder(4, 4, 4, 4)));
-        treeTree.setFont(CODE_FONT);
-        treeTree.setModel(new DefaultTreeModel(new DefaultMutableTreeNode()));
-        treeTree.setAutoscrolls(true);
-        treeScroll.setViewportView(treeTree);
+        treeView.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)), javax.swing.BorderFactory.createEmptyBorder(4, 4, 4, 4)));
+        treeView.setFont(CODE_FONT);
+        treeView.setModel(new DefaultTreeModel(null));
+        treeView.setAutoscrolls(true);
+        treeScroll.setViewportView(treeView);
 
         javax.swing.GroupLayout rightPanelLayout = new javax.swing.GroupLayout(rightPanel);
         rightPanel.setLayout(rightPanelLayout);
@@ -261,6 +256,12 @@ public class MScriptTestRig extends javax.swing.JFrame {
         goToSyntaxError();
     }//GEN-LAST:event_errListFocusGained
 
+    private void parse() {
+        MScriptTestRig.this.getRootPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        ((DefaultListModel<?>) errList.getModel()).clear();
+        new ParseWorker().execute();
+    }
+
     private void goToSyntaxError() {
         if (errList.isSelectionEmpty()) {
             return;
@@ -282,6 +283,18 @@ public class MScriptTestRig extends javax.swing.JFrame {
                                                                  "Cannot go to the syntax error location in code",
                                                                  throwable);
         }
+    }
+
+    private DefaultMutableTreeNode populate(DefaultMutableTreeNode treeNode, ParseTree parseTree) {
+        if (parseTree == null) {
+            return null;
+        }
+
+        if(treeNode == null) {
+            treeNode = new DefaultMutableTreeNode(parseTree);
+        }
+
+        return treeNode;
     }
 
     private class ParseWorker extends SwingWorker<ParseTree, SyntaxError> {
@@ -314,6 +327,20 @@ public class MScriptTestRig extends javax.swing.JFrame {
 
         @Override
         protected void done() {
+            try {
+                ParseTree parseTree = get();
+
+                DefaultTreeModel treeModel = (DefaultTreeModel) treeView.getModel();
+                if (treeModel == null) {
+                    treeModel = new DefaultTreeModel(null);
+                }
+
+                treeModel.setRoot(populate(null, parseTree));
+            } catch (Throwable throwable) {
+                JOptionPane.showMessageDialog(MScriptTestRig.this,
+                                              "Cannot parse the MScript source: " + throwable.getMessage() + "!",
+                                              "An error has occurred", JOptionPane.ERROR_MESSAGE);
+            }
             MScriptTestRig.this.getRootPane().setCursor(Cursor.getDefaultCursor());
         }
     };
@@ -376,6 +403,6 @@ public class MScriptTestRig extends javax.swing.JFrame {
     private javax.swing.JList errList;
     private javax.swing.JFileChooser scriptChooser;
     private javax.swing.JTextPane srcPane;
-    private javax.swing.JTree treeTree;
+    private javax.swing.JTree treeView;
     // End of variables declaration//GEN-END:variables
 }
