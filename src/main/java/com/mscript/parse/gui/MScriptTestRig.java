@@ -12,6 +12,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,7 +39,8 @@ import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.misc.Nullable;
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.Tree;
+import org.antlr.v4.runtime.tree.gui.TreeTextProvider;
+import org.antlr.v4.runtime.tree.gui.TreeViewer.DefaultTreeTextProvider;
 
 /**
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
@@ -47,6 +49,14 @@ import org.antlr.v4.runtime.tree.Tree;
 public class MScriptTestRig extends javax.swing.JFrame {
 
     public static void main(String args[]) {
+
+        // Try to load a default functions library file:
+        try {
+            Function.loadLibrary("functions.properties");
+        } catch (Throwable ex) {
+            Logger.getLogger(MScriptTestRig.class.getName()).log(Level.SEVERE, "Cannot load functions library", ex);
+        }
+
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Throwable ex) {
@@ -74,12 +84,6 @@ public class MScriptTestRig extends javax.swing.JFrame {
         UIManager.put("Tree.openIcon", empty);
         UIManager.put("Tree.leafIcon", empty);
 
-        try {
-            Function.loadLibrary("functions.properties");
-        } catch (IOException ex) {
-            Logger.getLogger(MScriptTestRig.class.getName()).log(Level.SEVERE, "Cannot load functions library", ex);
-        }
-
         SwingUtilities.invokeLater(new Runnable() {
 
             @Override
@@ -91,7 +95,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
 
     public MScriptTestRig() {
         initComponents();
-        setLocationRelativeTo(null);
+        setLocationRelativeTo(null); // position in center of the screen
 
         srcPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control O"), "openScript");
         srcPane.getActionMap().put("openScript", new AbstractAction("openScript") {
@@ -109,7 +113,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
                             source.append(line).append(NL);
                         }
 
-                        srcPane.setText(source.toString());
+                        srcPane.setText(source.toString()); // would have been better to use a SwingWorker...
                     } catch (IOException ioe) {
                         JOptionPane.showMessageDialog(MScriptTestRig.this,
                                                       "Cannot open/read file " + script.getAbsolutePath() + ": " +
@@ -256,10 +260,14 @@ public class MScriptTestRig extends javax.swing.JFrame {
         goToSyntaxError();
     }//GEN-LAST:event_errListFocusGained
 
+    /**
+     * Should be called from the <a href="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/dispatch.html">
+     * Event Dispatch Thread</a> since it delegates the actual parsing job to a {@link ParseWorker}.
+     */
     private void parse() {
-        MScriptTestRig.this.getRootPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        getRootPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         ((DefaultListModel<?>) errList.getModel()).clear();
-        new ParseWorker().execute();
+        new ParseWorker().execute(); // create a new ParseWorker every time; SwingWorkers are not normally reused!
     }
 
     private void goToSyntaxError() {
@@ -285,26 +293,44 @@ public class MScriptTestRig extends javax.swing.JFrame {
         }
     }
 
-    private DefaultMutableTreeNode populate(DefaultMutableTreeNode treeNode, ParseTree parseTree) {
+    private DefaultMutableTreeNode createViewTree(ParseTree parseTree, TreeTextProvider textProvider) {
         if (parseTree == null) {
             return null;
         }
 
-        if(treeNode == null) {
-            treeNode = new DefaultMutableTreeNode(parseTree);
+        String text = textProvider.getText(parseTree);
+        if (text != null) {
+            text = text.replaceAll("(\r?\n)|\r", "<NEWLINE>"); // make white spaces visible somehow...
         }
 
-        return treeNode;
+        DefaultMutableTreeNode viewTree = new DefaultMutableTreeNode(text);
+
+        int childCount = parseTree.getChildCount();
+        for (int i = 0; i < childCount; i++) {
+            viewTree.add(createViewTree(parseTree.getChild(i), textProvider));
+        }
+
+        return viewTree;
+    }
+
+    private void expandViewTree() {
+        int j = treeView.getRowCount(), i = 0;
+        while (i < j) {
+            treeView.expandRow(i++);
+            j = treeView.getRowCount();
+        }
     }
 
     private class ParseWorker extends SwingWorker<ParseTree, SyntaxError> {
 
+        private MScriptLexer mScriptLexer;
+
+        private MScriptParser mScriptParser;
+
         @Override
         protected ParseTree doInBackground() throws Exception {
-            MScriptLexer mScriptLexer = new MScriptLexer(new ANTLRInputStream(srcPane.getText()));
-            CommonTokenStream tokens = new CommonTokenStream(mScriptLexer);
-
-            MScriptParser mScriptParser = new MScriptParser(tokens);
+            mScriptLexer = new MScriptLexer(new ANTLRInputStream(srcPane.getText()));
+            mScriptParser = new MScriptParser(new CommonTokenStream(mScriptLexer));
             mScriptParser.addErrorListener(new BaseErrorListener() {
 
                 @Override
@@ -328,14 +354,14 @@ public class MScriptTestRig extends javax.swing.JFrame {
         @Override
         protected void done() {
             try {
-                ParseTree parseTree = get();
-
                 DefaultTreeModel treeModel = (DefaultTreeModel) treeView.getModel();
                 if (treeModel == null) {
                     treeModel = new DefaultTreeModel(null);
                 }
+                treeModel.setRoot(createViewTree(get(), new DefaultTreeTextProvider(Arrays.asList(mScriptParser.
+                                                 getRuleNames()))));
 
-                treeModel.setRoot(populate(null, parseTree));
+                expandViewTree();
             } catch (Throwable throwable) {
                 JOptionPane.showMessageDialog(MScriptTestRig.this,
                                               "Cannot parse the MScript source: " + throwable.getMessage() + "!",
