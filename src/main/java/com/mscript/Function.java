@@ -50,7 +50,10 @@ public class Function {
         } catch (IOException ioe) { // try to load the file from the classpath
             InputStream resource = Function.class.getResourceAsStream(libraryFilename);
             if (resource == null) { // no such file in the classpath - just throw the initial exception
-                throw ioe;
+                resource = Function.class.getResourceAsStream("/" + libraryFilename);
+                if (resource == null) {
+                    throw ioe;
+                }
             }
 
             try {
