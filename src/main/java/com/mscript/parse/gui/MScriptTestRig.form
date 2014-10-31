@@ -4,6 +4,9 @@
   <NonVisualComponents>
     <Component class="javax.swing.JFileChooser" name="scriptChooser">
       <Properties>
+        <Property name="currentDirectory" type="java.io.File" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+          <Connection code="Paths.get(&quot;.&quot;).toFile()" type="code"/>
+        </Property>
         <Property name="dialogTitle" type="java.lang.String" value="Open an MScript file"/>
         <Property name="fileFilter" type="javax.swing.filechooser.FileFilter" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
           <Connection code="MSCRIPT_FILTER" type="code"/>
@@ -133,9 +136,6 @@
                           </Border>
                         </CompoundBorder>
                       </Border>
-                    </Property>
-                    <Property name="font" type="java.awt.Font" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
-                      <Connection code="CODE_FONT" type="code"/>
                     </Property>
                     <Property name="model" type="javax.swing.tree.TreeModel" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
                       <Connection code="new DefaultTreeModel(null)" type="code"/>

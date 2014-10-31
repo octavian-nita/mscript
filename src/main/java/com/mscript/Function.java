@@ -6,12 +6,12 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.lang.Integer.parseInt;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * MScript function definitions are {@link #loadLibrary(String) loaded} from {@link java.util.Properties} files. A
@@ -47,11 +47,11 @@ public class Function {
         Properties definitions = new Properties();
         try (FileReader reader = new FileReader(libraryFilename)) {
             definitions.load(reader);
-        } catch (IOException ioe) { // try to load the file from the classpath
+        } catch (IOException ioe) {     // then try to load the file from the classpath, as initially named
             InputStream resource = Function.class.getResourceAsStream(libraryFilename);
-            if (resource == null) { // no such file in the classpath - just throw the initial exception
+            if (resource == null) {     // then try to load the file from the classpath, as absolute path
                 resource = Function.class.getResourceAsStream("/" + libraryFilename);
-                if (resource == null) {
+                if (resource == null) { // no such file in the classpath - just throw the initial exception
                     throw ioe;
                 }
             }
@@ -62,9 +62,8 @@ public class Function {
                 try {
                     resource.close();
                 } catch (IOException ioe2) {
-                    Logger.getLogger(Function.class.getName()).log(Level.WARNING,
-                                                                   "Cannot close functions library resource stream; ignoring...",
-                                                                   ioe2);
+                    Logger.getLogger(Function.class.getName())
+                          .log(Level.WARNING, "Cannot close functions library resource stream; ignoring...", ioe2);
                 }
             }
         }
@@ -77,9 +76,9 @@ public class Function {
 
             String minArity = arityMatcher.group(1);
             Function function =
-                minArity == null ? new Function((String) definition.getKey(), parseInt(arityMatcher.group(2))) :
-                     new Function((String) definition.getKey(), parseInt(minArity),
-                                  parseInt(arityMatcher.group(2)));
+                minArity == null ? new Function((String) definition.getKey(), parseInt(arityMatcher.group(2)))
+                                 : new Function((String) definition.getKey(), parseInt(minArity),
+                                                parseInt(arityMatcher.group(2)));
 
             library.put(function.qualifiedName, function);
         }
@@ -98,18 +97,21 @@ public class Function {
         if (qualifiedName.length() > 0 && qualifiedName.charAt(0) != '$') {
             qualifiedName.insert(0, '$');
         }
+
         Function function = library.get(qualifiedName.toString());
 
         if (function == null) {
             return CheckResult.NO_SUCH_FUNCTION;
         }
+
         if (argsNumber < function.minArity || argsNumber > function.maxArity) {
             return CheckResult.WRONG_NUM_OF_ARGS;
         }
+
         return CheckResult.OK;
     }
 
-    // One might consider refactoring this enum into an actual class and associate a particular error message with every
+    // Consider refactoring into a class and associate a particular error message with every instance, created on each
     // performed {@link #check(String, String, int)}.
     public static enum CheckResult {
         OK,
@@ -127,7 +129,7 @@ public class Function {
         if (qualifiedName == null) {
             throw new IllegalArgumentException("the (qualified) name of a function cannot be null");
         }
-        if (!qualifiedName.startsWith("$")) {
+        if (!(qualifiedName = qualifiedName.trim()).startsWith("$")) {
             qualifiedName = "$" + qualifiedName;
         }
         if (qualifiedName.equals("$")) {

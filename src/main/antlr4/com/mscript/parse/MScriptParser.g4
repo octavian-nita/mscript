@@ -49,9 +49,11 @@ case WRONG_NUM_OF_ARGS:
 
 } ;
 
-ifStat : IF NEWLN* LPAREN NEWLN* cond NEWLN* RPAREN NEWLN* ( ( LBRACE block RBRACE ) | ( stat ( NEWLN+ | SEMIC )? ) )
-         // Optional ELSE branch
-         ( NEWLN* ELSE NEWLN* ( ( LBRACE block RBRACE ) | ( stat ( NEWLN+ | SEMIC )? ) ) )? ;
+ifStat
+  : IF NEWLN* LPAREN NEWLN* cond NEWLN* RPAREN NEWLN*
+    ( LBRACE ( block? | ( NEWLN | SEMIC )* ) RBRACE | stat ( NEWLN+ | SEMIC )? )
+    ( NEWLN* ELSE NEWLN*  // optional ELSE branch
+      ( LBRACE block? | ( NEWLN | SEMIC )* RBRACE | stat ( NEWLN+ | SEMIC )? ) )? ;
 
 cond
   : expr NEWLN* ( EQ | NE | LE | LT | GE | GT ) NEWLN* expr
@@ -69,4 +71,4 @@ expr
   | ( ADD | SUB )? ID
   ;
 
-string : QUOTE ( ESC_CHAR | STR_CHARS | fncall | ( IN_STR_LBRACK expr RBRACK ) )* IN_STR_QUOTE ;
+string : QUOTE ( STR_CHARS | fncall | IN_STR_LBRACK expr RBRACK )* IN_STR_QUOTE ;

@@ -55,12 +55,12 @@ fragment INT : '0' | [1-9] [0-9]* ;
 // U+10000 to U+10FFFF; if needed, find missing bits at http://github.com/antlr/grammars-v4/blob/master/java8/Java8.g4
 ID : [a-zA-Z_] [a-zA-Z0-9_]* ;
 
+// In default mode, skip multi-line and single line comments and white spaces, other than new lines
+SKIP : ( '/*' .*? '*/' | '//' ~[\r\n]* | [ \t\f]+ ) -> skip ;
+
 // Statement separators, kept separate to allow new lines between tokens like IF and ( without marking end of statement.
 NEWLN : ( '\r'? '\n' ) | '\r' /* on mac */ ;
 SEMIC : ';' ;
-
-// In default mode, skip multi-line and single line comments and white spaces, other than new lines
-SKIP : ( '/*' .*? '*/' | '//' ~[\r\n]* | [ \t\f]+ ) -> skip ;
 
 // ---------- INside a quoted STRing ----------
 mode IN_STR;
@@ -71,7 +71,11 @@ IN_STR_LBRACK : '['  -> pushMode(DEFAULT_MODE) ;
 
 IN_STR_SIGIL  : '$'  -> type(SIGIL), pushMode(IN_FNC) ;
 
+// Any character apart from: \, ', $, [, ] OR an escape sequence
+STR_CHARS : ( ~( '\\' | '\'' | '$' | '[' | ']' ) | ESC_CHAR )+ ;
+
 // Allowed escape sequences: \\, \', \$, \[, \], \n, \r, \t
+fragment
 ESC_CHAR
   : '\\\\'
   | '\\\''
@@ -82,9 +86,6 @@ ESC_CHAR
   | '\\r'
   | '\\t'
   ;
-
-// Any character apart from: \, ', $, [, ]
-STR_CHARS : ( ~( '\\' | '\'' | '$' | '[' | ']' ) )+ ;
 
 // ---------- INside a FuNction Call ----------
 mode IN_FNC;

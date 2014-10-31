@@ -12,6 +12,11 @@
     <name>mscript-parser</name>
     <url>http://github.com/octavian-nita/mscript</url>
 
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.antlr</groupId>

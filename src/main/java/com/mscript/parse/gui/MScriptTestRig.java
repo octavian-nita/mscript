@@ -12,6 +12,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
@@ -162,6 +163,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
         javax.swing.JScrollPane srcScroll = new javax.swing.JScrollPane();
         srcPane = new javax.swing.JTextPane();
 
+        scriptChooser.setCurrentDirectory(Paths.get(".").toFile());
         scriptChooser.setDialogTitle("Open an MScript file");
         scriptChooser.setFileFilter(MSCRIPT_FILTER);
 
@@ -181,7 +183,6 @@ public class MScriptTestRig extends javax.swing.JFrame {
         treeScroll.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0), "Parse Tree", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, LABEL_FONT));
 
         treeView.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)), javax.swing.BorderFactory.createEmptyBorder(4, 4, 4, 4)));
-        treeView.setFont(CODE_FONT);
         treeView.setModel(new DefaultTreeModel(null));
         treeView.setAutoscrolls(true);
         treeScroll.setViewportView(treeView);
@@ -309,7 +310,6 @@ public class MScriptTestRig extends javax.swing.JFrame {
         for (int i = 0; i < childCount; i++) {
             viewTree.add(createViewTree(parseTree.getChild(i), textProvider));
         }
-
         return viewTree;
     }
 
@@ -410,7 +410,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
         @Override
         public boolean accept(File file) {
             String path = file.getAbsolutePath().toLowerCase();
-            return path.endsWith(".mscript") || path.endsWith(".ms");
+            return path.endsWith(".mscript") || path.endsWith(".ms") || file.isDirectory();
         }
 
         @Override
@@ -419,7 +419,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
         }
     };
 
-    private static final Font CODE_FONT = new Font(Font.MONOSPACED, Font.PLAIN, 14);
+    private static final Font CODE_FONT = new Font(Font.MONOSPACED, Font.BOLD, 14);
 
     private static final Font LABEL_FONT = new Font(Font.SANS_SERIF, Font.BOLD, 12);
 
