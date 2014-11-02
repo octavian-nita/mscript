@@ -114,6 +114,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
                             source.append(line).append(NL);
                         }
 
+                        srcPane.setText("");
                         srcPane.setText(source.toString()); // would have been better to use a SwingWorker...
                     } catch (IOException ioe) {
                         JOptionPane.showMessageDialog(MScriptTestRig.this,
@@ -139,7 +140,6 @@ public class MScriptTestRig extends javax.swing.JFrame {
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-                parse();
             }
         });
     }
