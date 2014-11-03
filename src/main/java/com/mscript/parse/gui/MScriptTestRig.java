@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
@@ -114,7 +115,6 @@ public class MScriptTestRig extends javax.swing.JFrame {
                             source.append(line).append(NL);
                         }
 
-                        srcPane.setText("");
                         srcPane.setText(source.toString()); // would have been better to use a SwingWorker...
                     } catch (IOException ioe) {
                         JOptionPane.showMessageDialog(MScriptTestRig.this,
@@ -130,12 +130,14 @@ public class MScriptTestRig extends javax.swing.JFrame {
 
             @Override
             public void insertUpdate(DocumentEvent e) {
-                parse();
+                getRootPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+                new ParseWorker().execute(); // create a new ParseWorker each time; SwingWorkers are not normally reused
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                parse();
+                getRootPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+                new ParseWorker().execute(); // create a new ParseWorker each time; SwingWorkers are not normally reused
             }
 
             @Override
@@ -261,16 +263,6 @@ public class MScriptTestRig extends javax.swing.JFrame {
         goToSyntaxError();
     }//GEN-LAST:event_errListFocusGained
 
-    /**
-     * Should be called from the <a href="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/dispatch.html">
-     * Event Dispatch Thread</a> since it delegates the actual parsing job to a {@link ParseWorker}.
-     */
-    private void parse() {
-        getRootPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        ((DefaultListModel<?>) errList.getModel()).clear();
-        new ParseWorker().execute(); // create a new ParseWorker every time; SwingWorkers are not normally reused!
-    }
-
     private void goToSyntaxError() {
         if (errList.isSelectionEmpty()) {
             return;
@@ -327,6 +319,8 @@ public class MScriptTestRig extends javax.swing.JFrame {
 
         private MScriptParser mScriptParser;
 
+        private final List<SyntaxError> syntaxErrors = new ArrayList<>();
+
         @Override
         protected ParseTree doInBackground() throws Exception {
             mScriptLexer = new MScriptLexer(new ANTLRInputStream(srcPane.getText()));
@@ -337,31 +331,30 @@ public class MScriptTestRig extends javax.swing.JFrame {
                 public void syntaxError(@NotNull Recognizer<?, ?> recognizer, @Nullable Object offendingSymbol, int line,
                                         int charPositionInLine, @NotNull String message,
                                         @Nullable RecognitionException exception) {
-                    publish(new SyntaxError(recognizer, offendingSymbol, line, charPositionInLine, message, exception));
+                    syntaxErrors.add(new SyntaxError(recognizer, offendingSymbol, line, charPositionInLine, message,
+                                                     exception));
                 }
             });
             return mScriptParser.script();
         }
 
         @Override
-        protected void process(List<SyntaxError> syntaxErrors) {
-            DefaultListModel<SyntaxError> errModel = (DefaultListModel<SyntaxError>) errList.getModel();
-            for (SyntaxError syntaxError : syntaxErrors) {
-                errModel.addElement(syntaxError);
-            }
-        }
-
-        @Override
         protected void done() {
             try {
-                DefaultTreeModel treeModel = (DefaultTreeModel) treeView.getModel();
-                if (treeModel == null) {
-                    treeModel = new DefaultTreeModel(null);
-                }
-                treeModel.setRoot(createViewTree(get(), new DefaultTreeTextProvider(Arrays.asList(mScriptParser.
-                                                 getRuleNames()))));
+                synchronized (MScriptTestRig.class) {
+                    // Update the syntax errors list:
+                    DefaultListModel<SyntaxError> errModel = (DefaultListModel<SyntaxError>) errList.getModel();
+                    errModel.clear();
+                    for (SyntaxError syntaxError : syntaxErrors) {
+                        errModel.addElement(syntaxError);
+                    }
 
-                expandViewTree();
+                    // Update the parse tree:
+                    DefaultTreeModel treeModel = (DefaultTreeModel) treeView.getModel();
+                    treeModel.setRoot(createViewTree(get(), new DefaultTreeTextProvider(Arrays.asList(mScriptParser.
+                                                     getRuleNames()))));
+                    expandViewTree();
+                }
             } catch (Throwable throwable) {
                 JOptionPane.showMessageDialog(MScriptTestRig.this,
                                               "Cannot parse the MScript source: " + throwable.getMessage() + "!",
