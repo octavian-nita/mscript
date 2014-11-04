@@ -53,7 +53,7 @@ ifStat
   : IF NEWLN* LPAREN NEWLN* cond NEWLN* RPAREN NEWLN*
     ( LBRACE ( block? | ( NEWLN | SEMIC )* ) RBRACE | stat ( NEWLN+ | SEMIC )? )
     ( NEWLN* ELSE NEWLN*  // optional ELSE branch
-      ( LBRACE block? | ( NEWLN | SEMIC )* RBRACE | stat ( NEWLN+ | SEMIC )? ) )? ;
+      ( LBRACE ( block? | ( NEWLN | SEMIC )* ) RBRACE | stat ( NEWLN+ | SEMIC )? ) )? ;
 
 cond
   : expr NEWLN* ( EQ | NE | LE | LT | GE | GT ) NEWLN* expr
