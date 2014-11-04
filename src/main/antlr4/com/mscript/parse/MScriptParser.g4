@@ -14,6 +14,16 @@ import com.mscript.Function.CheckResult;
 import com.mscript.parse.FunctionRecognitionException;
 }
 
+@parser::members { // members of the generated parser;
+
+    /**
+     * The current level of loop nesting (0 for top level statements). Used, for example, to determine at parse time
+     * whether a break or continue statement can be accepted.
+     */
+    protected int loopDepth;
+
+}
+
 script : block? EOF ;
 
 block : ( NEWLN | SEMIC )* stat ( ( NEWLN | SEMIC )+ stat? )* ;
