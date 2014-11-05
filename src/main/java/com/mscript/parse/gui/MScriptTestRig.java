@@ -416,7 +416,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
             this.message = message;
             this.recognitionException = exception;
 
-            asString = "error on line " + line + " at column " + charPositionInLine + ": " + message;
+            asString = "line " + line + ", column " + charPositionInLine + ": " + message;
         }
 
         @Override

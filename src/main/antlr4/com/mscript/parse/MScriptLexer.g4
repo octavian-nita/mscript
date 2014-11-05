@@ -57,13 +57,14 @@ ID : [a-zA-Z_] [a-zA-Z0-9_]* ;
 
 WHITE : [ \t\f]+ -> skip ; // in default mode, skip white spaces other than new lines
 
-SCOMM : '//' ~[\r\n]* ;
+SC : '//' ~[\r\n]* ;
 
-MCOMM : '/*' .*? '*/' ;
+MC : '/*' .*? '*/' ;
 
 // Statement separators, kept separate to allow new lines between tokens like IF and ( without marking end of statement.
-NEWLN : ( '\r'? '\n' ) | '\r' /* on mac */ ;
-SEMIC : ';' ;
+NL : ( '\r'? '\n' ) | '\r' /* on mac */ ;
+
+SEMI : ';' ;
 
 // ---------- INside a quoted STRing ----------
 mode IN_STR;
@@ -74,9 +75,8 @@ IN_STR_LBRACK : '['  -> pushMode(DEFAULT_MODE) ;
 
 IN_STR_SIGIL  : '$'  -> type(SIGIL), pushMode(IN_FNC) ;
 
-// Allowed escape sequences: \\, \', \$, \[, \], \n, \r, \t
 STR_CHARS : ( ~( '\\' | '\'' | '$' | '[' | ']' ) | ESC_CHAR )+ ;
-
+// Allowed escape sequences are \\, \', \$, \[, \], \n, \r, \t
 fragment ESC_CHAR : '\\\\' | '\\\'' | '\\$' | '\\[' | '\\]' | '\\n' | '\\r' | '\\t' ;
 
 // ---------- INside a FuNction Call ----------

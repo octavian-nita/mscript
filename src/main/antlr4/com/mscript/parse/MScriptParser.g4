@@ -26,9 +26,7 @@ protected int loopDepth;
 
 script : block? EOF ;
 
-block : ( SCOMM | MCOMM | NEWLN | SEMIC )* stmt ( ( SCOMM | MCOMM )* ( NEWLN | SEMIC ) ( SCOMM | MCOMM )* stmt? )* ;
-
-faux : ( SCOMM | MCOMM | NEWLN )* ;
+block : ( SC | MC | NL | SEMI )* stmt ( ( SC | MC )* ( NL | SEMI ) ( SC | MC )* stmt? )* ;
 
 stmt
   : assign
@@ -36,19 +34,24 @@ stmt
   | ifStmt
   ;
 
-assign : ID faux ASSIGN faux expr ;
+assign : ID ( SC | MC | NL )* ASSIGN ( SC | MC | NL )* expr ;
 
 fncall
 locals [int argsCount=0, String pluginName=null, String functionName=null]
   : SIGIL // rule hasn't ended; followed by...
 
-    // As we match the (eventual) plugin and function names, we store references to them:
-    ( ID {$pluginName = $ID.text;} DOT )? ID {$functionName = $ID.text;} // rule hasn't ended; followed by...
+    ( ID {$pluginName = $ID.text;} DOT )? ID {$functionName = $ID.text;} // match and store plugin and function names
 
-    // As we match arguments, we count them in order to validate the call:
-    LPAREN ( expr {$argsCount++;} ( COMMA expr {$argsCount++;} )* )? RPAREN {
+    ( SC | MC | NL )* // optional comments and new lines; quite a free-form language...
 
-// After matching the whole function call, validate the function name and arguments:
+    LPAREN ( SC | MC | NL )*
+
+    // match and count arguments to validate the call
+    ( expr {$argsCount++;} ( ( SC | MC | NL )* COMMA ( SC | MC | NL )* expr {$argsCount++;} )* )?
+
+    ( SC | MC | NL )* RPAREN {
+
+// After matching the whole function call, validate function name and arguments:
 switch (Function.check($pluginName, $functionName, $argsCount)) {
 case NO_SUCH_FUNCTION:
     throw new FunctionRecognitionException("no such function: $" + ($pluginName != null ? $pluginName + "." : "") +
@@ -59,28 +62,33 @@ case WRONG_NUM_OF_ARGS:
                                            $SIGIL);
 }
 
-} ;
+    } ;
 
-    ifStmt
-  : IF NEWLN* LPAREN NEWLN* cond NEWLN* RPAREN NEWLN*
-    ( LBRACE ( block? | ( NEWLN | SEMIC )* ) RBRACE | stmt ( NEWLN+ | SEMIC )? )
-    ( NEWLN* ELSE NEWLN*  // optional ELSE branch
-      ( LBRACE ( block? | ( NEWLN | SEMIC )* ) RBRACE | stmt ( NEWLN+ | SEMIC )? ) )? ;
+ifStmt
+  : IF ( SC | MC | NL )* LPAREN ( SC | MC | NL )* cond ( SC | MC | NL )* RPAREN ( SC | MC | NL )*
+
+    ( LBRACE ( block? | ( SC | MC | NL | SEMI )* ) RBRACE
+    | stmt ( ( SC | MC | NL )* SEMI ( SC | MC | NL )* )? )
+
+    // optional ELSE branch
+    ( ( SC | MC | NL )* ELSE ( SC | MC | NL )*
+      ( LBRACE ( block? | ( SC | MC | NL | SEMI )* ) RBRACE
+      | stmt ( ( SC | MC | NL )* SEMI ( SC | MC | NL )* )? ) )? ;
 
 cond
-  : expr NEWLN* ( EQ | NE | LE | LT | GE | GT ) NEWLN* expr
+  : expr ( SC | MC | NL )* ( EQ | NE | LE | LT | GE | GT ) ( SC | MC | NL )* expr
   | expr // in order to allow statements like while (v) { ... } or if ('true') { ... }
   ;
 
 expr
-  : expr ( MUL | DIV | MOD ) expr
-  | expr ( ADD | SUB ) expr
-  | ( ADD | SUB )? LPAREN expr RPAREN // parenthesized expression
-  | ( ADD | SUB )? fncall
-  | ( ADD | SUB )? string
-  | ( ADD | SUB )? BOOLEAN
-  | ( ADD | SUB )? NUMBER
-  | ( ADD | SUB )? ID
+  : expr ( SC | MC | NL )* ( MUL | DIV | MOD ) ( SC | MC | NL )* expr
+  | expr ( SC | MC | NL )* ( ADD | SUB ) ( SC | MC | NL )* expr
+  | ( ADD | SUB )? ( SC | MC | NL )* LPAREN ( SC | MC | NL )* expr ( SC | MC | NL )* RPAREN // parenthesized expression
+  | ( ADD | SUB )? ( SC | MC | NL )* fncall
+  | ( ADD | SUB )? ( SC | MC | NL )* string
+  | ( ADD | SUB )? ( SC | MC | NL )* BOOLEAN
+  | ( ADD | SUB )? ( SC | MC | NL )* NUMBER
+  | ( ADD | SUB )? ( SC | MC | NL )* ID
   ;
 
 string : QUOTE ( STR_CHARS | fncall | IN_STR_LBRACK expr RBRACK )* IN_STR_QUOTE ;
