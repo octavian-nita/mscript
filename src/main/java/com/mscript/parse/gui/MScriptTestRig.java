@@ -3,10 +3,7 @@ package com.mscript.parse.gui;
 import com.mscript.Function;
 import com.mscript.parse.MScriptLexer;
 import com.mscript.parse.MScriptParser;
-import java.awt.Component;
-import java.awt.Cursor;
-import java.awt.Font;
-import java.awt.Graphics;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.BufferedReader;
 import java.io.File;
@@ -31,6 +28,7 @@ import javax.swing.UIManager;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.text.JTextComponent;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import org.antlr.v4.runtime.ANTLRInputStream;
@@ -163,7 +161,13 @@ public class MScriptTestRig extends javax.swing.JFrame {
         javax.swing.JScrollPane errScroll = new javax.swing.JScrollPane();
         errList = new javax.swing.JList();
         javax.swing.JScrollPane srcScroll = new javax.swing.JScrollPane();
-        srcPane = new javax.swing.JTextPane();
+        srcPane = new javax.swing.JTextPane() {
+
+            @Override
+            public boolean getScrollableTracksViewportWidth() {
+                return getUI().getPreferredSize(this).width <= getParent().getSize().width;
+            }
+        };
 
         scriptChooser.setCurrentDirectory(Paths.get(".").toFile());
         scriptChooser.setDialogTitle("Open an MScript file");
@@ -235,6 +239,11 @@ public class MScriptTestRig extends javax.swing.JFrame {
 
         srcPane.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)), javax.swing.BorderFactory.createEmptyBorder(2, 2, 2, 2)));
         srcPane.setFont(CODE_FONT);
+        srcPane.addCaretListener(new javax.swing.event.CaretListener() {
+            public void caretUpdate(javax.swing.event.CaretEvent evt) {
+                srcPaneCaretUpdate(evt);
+            }
+        });
         srcScroll.setViewportView(srcPane);
 
         leftSplit.setLeftComponent(srcScroll);
@@ -262,6 +271,24 @@ public class MScriptTestRig extends javax.swing.JFrame {
     private void errListFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_errListFocusGained
         goToSyntaxError();
     }//GEN-LAST:event_errListFocusGained
+
+    private void srcPaneCaretUpdate(javax.swing.event.CaretEvent evt) {//GEN-FIRST:event_srcPaneCaretUpdate
+        final javax.swing.event.CaretEvent caretEvent = evt;
+        SwingUtilities.invokeLater(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    JTextComponent component = (JTextComponent) caretEvent.getSource();
+                    Rectangle r = component.modelToView(component.getCaretPosition());
+                    r.x += 2;
+                    component.scrollRectToVisible(r);
+                } catch (Exception exception) {
+                    Logger.getLogger(MScriptTestRig.class.getName()).log(Level.WARNING, null, exception);
+                }
+            }
+        });
+    }//GEN-LAST:event_srcPaneCaretUpdate
 
     private void goToSyntaxError() {
         if (errList.isSelectionEmpty()) {

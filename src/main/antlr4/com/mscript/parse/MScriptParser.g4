@@ -14,27 +14,29 @@ import com.mscript.Function.CheckResult;
 import com.mscript.parse.FunctionRecognitionException;
 }
 
-@parser::members { // members of the generated parser;
+@members {
 
-    /**
-     * The current level of loop nesting (0 for top level statements). Used, for example, to determine at parse time
-     * whether a break or continue statement can be accepted.
-     */
-    protected int loopDepth;
+/**
+ * The current level of loop nesting (0 for top level statements). Used, for example, to determine at parse time whether
+ * a break or continue statement can indeed be accepted.
+ */
+protected int loopDepth;
 
 }
 
 script : block? EOF ;
 
-block : ( NEWLN | SEMIC )* stat ( ( NEWLN | SEMIC )+ stat? )* ;
+block : ( SCOMM | MCOMM | NEWLN | SEMIC )* stmt ( ( SCOMM | MCOMM )* ( NEWLN | SEMIC ) ( SCOMM | MCOMM )* stmt? )* ;
 
-stat
+faux : ( SCOMM | MCOMM | NEWLN )* ;
+
+stmt
   : assign
   | fncall
-  | ifStat
+  | ifStmt
   ;
 
-assign : ID ASSIGN expr ;
+assign : ID faux ASSIGN faux expr ;
 
 fncall
 locals [int argsCount=0, String pluginName=null, String functionName=null]
@@ -59,11 +61,11 @@ case WRONG_NUM_OF_ARGS:
 
 } ;
 
-ifStat
+    ifStmt
   : IF NEWLN* LPAREN NEWLN* cond NEWLN* RPAREN NEWLN*
-    ( LBRACE ( block? | ( NEWLN | SEMIC )* ) RBRACE | stat ( NEWLN+ | SEMIC )? )
+    ( LBRACE ( block? | ( NEWLN | SEMIC )* ) RBRACE | stmt ( NEWLN+ | SEMIC )? )
     ( NEWLN* ELSE NEWLN*  // optional ELSE branch
-      ( LBRACE ( block? | ( NEWLN | SEMIC )* ) RBRACE | stat ( NEWLN+ | SEMIC )? ) )? ;
+      ( LBRACE ( block? | ( NEWLN | SEMIC )* ) RBRACE | stmt ( NEWLN+ | SEMIC )? ) )? ;
 
 cond
   : expr NEWLN* ( EQ | NE | LE | LT | GE | GT ) NEWLN* expr

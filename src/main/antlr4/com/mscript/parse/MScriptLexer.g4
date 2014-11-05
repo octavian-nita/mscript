@@ -23,6 +23,7 @@ LT : '<'  ;
 GE : '>=' ;
 GT : '>'  ;
 
+// Function call-related
 SIGIL : '$' -> pushMode(IN_FNC) ;
 DOT   : '.' ;
 COMMA : ',' ;
@@ -47,7 +48,6 @@ CONTINUE : 'continue' ;
 BOOLEAN : 'true' | 'false' ;
 
 NUMBER : INT ( DOT INT )? | DOT INT ;
-
 fragment INT : '0' | [1-9] [0-9]* ;
 
 // Keep ID definition AFTER literals so that for example, true would be interpreted as a BOOLEAN literal and not an ID.
@@ -55,8 +55,11 @@ fragment INT : '0' | [1-9] [0-9]* ;
 // U+10000 to U+10FFFF; if needed, find missing bits at http://github.com/antlr/grammars-v4/blob/master/java8/Java8.g4
 ID : [a-zA-Z_] [a-zA-Z0-9_]* ;
 
-// In default mode, skip multi-line and single line comments and white spaces, other than new lines
-SKIP : ( '/*' .*? '*/' | '//' ~[\r\n]* | [ \t\f]+ ) -> skip ;
+WHITE : [ \t\f]+ -> skip ; // in default mode, skip white spaces other than new lines
+
+SCOMM : '//' ~[\r\n]* ;
+
+MCOMM : '/*' .*? '*/' ;
 
 // Statement separators, kept separate to allow new lines between tokens like IF and ( without marking end of statement.
 NEWLN : ( '\r'? '\n' ) | '\r' /* on mac */ ;
@@ -71,21 +74,10 @@ IN_STR_LBRACK : '['  -> pushMode(DEFAULT_MODE) ;
 
 IN_STR_SIGIL  : '$'  -> type(SIGIL), pushMode(IN_FNC) ;
 
-// Any character apart from: \, ', $, [, ] OR an escape sequence
+// Allowed escape sequences: \\, \', \$, \[, \], \n, \r, \t
 STR_CHARS : ( ~( '\\' | '\'' | '$' | '[' | ']' ) | ESC_CHAR )+ ;
 
-// Allowed escape sequences: \\, \', \$, \[, \], \n, \r, \t
-fragment
-ESC_CHAR
-  : '\\\\'
-  | '\\\''
-  | '\\$'
-  | '\\['
-  | '\\]'
-  | '\\n'
-  | '\\r'
-  | '\\t'
-  ;
+fragment ESC_CHAR : '\\\\' | '\\\'' | '\\$' | '\\[' | '\\]' | '\\n' | '\\r' | '\\t' ;
 
 // ---------- INside a FuNction Call ----------
 mode IN_FNC;

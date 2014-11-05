@@ -278,6 +278,12 @@
                       <Connection code="CODE_FONT" type="code"/>
                     </Property>
                   </Properties>
+                  <Events>
+                    <EventHandler event="caretUpdate" listener="javax.swing.event.CaretListener" parameters="javax.swing.event.CaretEvent" handler="srcPaneCaretUpdate"/>
+                  </Events>
+                  <AuxValues>
+                    <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new javax.swing.JTextPane() {&#xa;&#xa;    @Override&#xa;    public boolean getScrollableTracksViewportWidth() {&#xa;        return getUI().getPreferredSize(this).width &lt;= getParent().getSize().width;&#xa;    }&#xa;}"/>
+                  </AuxValues>
                 </Component>
               </SubComponents>
             </Container>
