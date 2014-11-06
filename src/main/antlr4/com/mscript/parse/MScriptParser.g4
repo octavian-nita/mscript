@@ -22,6 +22,12 @@ import com.mscript.parse.MScriptRecognitionException;
  */
 protected int loopDepth;
 
+protected void check(boolean condition, String errorMessage) {
+    if (!condition) {
+        throw new MScriptRecognitionException(errorMessage, this);
+    }
+}
+
 }
 
 // ABOUT REPEATED COMMENT AND NEWLINE TOKENS:
@@ -40,7 +46,7 @@ protected int loopDepth;
 
 script : block? EOF ;
 
-block : ( COMM | NL | SEMI )* stmt ( COMM* ( NL | SEMI ) COMM* stmt? )* ;
+block : ( CM | NL | SEMI )* stmt ( CM* ( NL | SEMI ) CM* stmt? )* ;
 
 stmt
   : assign
@@ -51,85 +57,70 @@ stmt
   | continueStmt
   ;
 
-assign : ID ( COMM | NL )* ASSIGN ( COMM | NL )* expr ;
+assign : ID ( CM | NL )* ASSIGN ( CM | NL )* expr ;
 
 fncall
-locals [int argsCount=0, String pluginName=null, String functionName=null]
-  : SIGIL // rule hasn't ended; followed by...
+locals [int argc=0, String plugin=null, String function=null] // match and store plugin and function names
+  : SIGIL // followed by...
 
-    ( ID {$pluginName = $ID.text;} DOT )? ID {$functionName = $ID.text;} // match and store plugin and function names
-
-    ( COMM | NL )* // optional comments and new lines; quite a free-form language...
-
-    LPAREN ( COMM | NL )*
+    ( ID {$plugin = $ID.text;} DOT )? ID {$function = $ID.text;} ( CM | NL )*
 
     // match and count arguments to validate the call
-    ( expr {$argsCount++;} ( ( COMM | NL )* COMMA ( COMM | NL )* expr {$argsCount++;} )* )?
-
-                           ( COMM | NL )* RPAREN {
+    LPAREN ( CM | NL )* ( expr {$argc++;} ( ( CM | NL )* COMMA ( CM | NL )* expr {$argc++;} )* )? ( CM | NL )* RPAREN {
 
 // After matching the whole function call, validate function name and arguments:
-switch (Function.check($pluginName, $functionName, $argsCount)) {
+switch (Function.check($plugin, $function, $argc)) {
 case NO_SUCH_FUNCTION:
-    throw new MScriptRecognitionException("$" + ($pluginName != null ? $pluginName + "." : "") + $functionName +
-                                           ": no such function defined", this, $SIGIL);
+    throw new MScriptRecognitionException("$" + ($plugin != null ? $plugin + "." : "") + $function +
+                                          ": no such function defined", this, $SIGIL);
 case WRONG_NUM_OF_ARGS:
-    throw new MScriptRecognitionException("$" + ($pluginName != null ? $pluginName + "." : "") + $functionName +
-                                           ": function cannot be called with " + $argsCount + " arguments", this, $SIGIL);
+    throw new MScriptRecognitionException("$" + ($plugin != null ? $plugin + "." : "") + $function +
+                                          ": function cannot be called with " + $argc + " arguments", this, $SIGIL);
 }
 
     } ;
 
 ifStmt
-  : IF ( COMM | NL )* LPAREN ( COMM | NL )* cond ( COMM | NL )* RPAREN ( COMM | NL )*
+  : IF ( CM | NL )* LPAREN ( CM | NL )* cond ( CM | NL )* RPAREN ( CM | NL )*
 
-    ( LBRACE ( block? | ( COMM | NL | SEMI )* ) RBRACE
-    | stmt ( ( COMM | NL )* SEMI ( COMM | NL )* )? )
+    ( LBRACE ( block? | ( CM | NL | SEMI )* ) RBRACE | stmt ( ( CM | NL )* SEMI ( CM | NL )* )? )
 
     // optional ELSE branch
-    ( ( COMM | NL )* ELSE ( COMM | NL )*
+    ( ( CM | NL )* ELSE ( CM | NL )*
 
-      ( LBRACE ( block? | ( COMM | NL | SEMI )* ) RBRACE
-      | stmt ( ( COMM | NL )* SEMI ( COMM | NL )* )? ) )? ;
+      ( LBRACE ( block? | ( CM | NL | SEMI )* ) RBRACE | stmt ( ( CM | NL )* SEMI ( CM | NL )* )? ) )? ;
 
-    cond
-  : expr ( COMM | NL )* ( EQ | NE | LE | LT | GE | GT ) ( COMM | NL )* expr
+cond
+  : expr ( CM | NL )* ( EQ | NE | LE | LT | GE | GT ) ( CM | NL )* expr
   | expr // in order to allow statements like while (v) { ... } or if ('true') { ... }
   ;
 
 whileStmt
-  : WHILE ( COMM | NL )* LPAREN ( COMM | NL )* cond ( COMM | NL )* RPAREN ( COMM | NL )* {++loopDepth;}
+  : WHILE ( CM | NL )*
 
-  ( LBRACE ( block? | ( COMM | NL | SEMI )* ) RBRACE
-  | stmt ( ( COMM | NL )* SEMI ( COMM | NL )* )? ) {if (loopDepth > 0) { --loopDepth; }} ;
+    LPAREN ( CM | NL )* cond ( CM | NL )* ( ( CM | NL )* PIPE ( CM | NL )* whileOpts ( CM | NL )* )? RPAREN ( CM | NL )*
+    {++loopDepth;}
 
-breakStmt
-  : BREAK {
+    ( LBRACE ( block? | ( CM | NL | SEMI )* ) RBRACE | stmt ( ( CM | NL )* SEMI ( CM | NL )* )? )
+    {if (loopDepth > 0) { --loopDepth; }} ;
 
-if (loopDepth <= 0) {
-    throw new MScriptRecognitionException("break cannot be used outside of a loop", this);
-}
+whileOpts
+  : ID
+  ;
 
-  } ;
+breakStmt : BREAK {check(loopDepth > 0, "break cannot be used outside of a loop");} ;
 
-continueStmt
-  : CONTINUE {
-
-if (loopDepth <= 0) {
-    throw new MScriptRecognitionException("continue cannot be used outside of a loop", this);
-}
-
-  } ;
+continueStmt : CONTINUE {check(loopDepth > 0, "continue cannot be used outside of a loop");} ;
 
 expr
-  : expr ( COMM | NL )* ( MUL | DIV | MOD ) ( COMM | NL )* expr
-  | expr ( COMM | NL )* ( ADD | SUB ) ( COMM | NL )* expr
-  | ( ADD | SUB )? ( COMM | NL )* LPAREN ( COMM | NL )* expr ( COMM | NL )* RPAREN // parenthesized expression
-  | ( ADD | SUB )? ( COMM | NL )* fncall
-  | ( ADD | SUB )? ( COMM | NL )* string
-  | ( ADD | SUB )? ( COMM | NL )* BOOLEAN
-  | ( ADD | SUB )? ( COMM | NL )* NUMBER
-  | ( ADD | SUB )? ( COMM | NL )* ID
+  : expr ( CM | NL )* ( MUL | DIV | MOD ) ( CM | NL )* expr
+  | expr ( CM | NL )* ( ADD | SUB ) ( CM | NL )* expr
+  | ( ADD | SUB )? ( CM | NL )* LPAREN ( CM | NL )* expr ( CM | NL )* RPAREN // parenthesized expression
+  | ( ADD | SUB )? ( CM | NL )* fncall
+  | ( ADD | SUB )? ( CM | NL )* string
+  | ( ADD | SUB )? ( CM | NL )* BOOLEAN
+  | ( ADD | SUB )? ( CM | NL )* NUMBER
+  | ( ADD | SUB )? ( CM | NL )* ID
   ;
 
 string : QUOTE ( STR_CHARS | fncall | IN_STR_LBRACK expr RBRACK )* IN_STR_QUOTE ;
