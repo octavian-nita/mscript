@@ -60,7 +60,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Throwable ex) {
-            Logger.getLogger(MScriptTestRig.class.getName()).log(Level.WARNING, null, ex);
+            Logger.getLogger(MScriptTestRig.class.getName()).log(Level.WARNING, "", ex);
         }
 
         Icon empty = new Icon() {
@@ -186,7 +186,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
         rightPanel.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
 
         treeScroll.setBackground(javax.swing.UIManager.getDefaults().getColor("control"));
-        treeScroll.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0), "Parse Tree", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, LABEL_FONT));
+        treeScroll.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0), "Abstract Syntax Tree", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, LABEL_FONT));
 
         treeView.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)), javax.swing.BorderFactory.createEmptyBorder(4, 4, 4, 4)));
         treeView.setModel(new DefaultTreeModel(null));
@@ -284,7 +284,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
                     r.x += 2;
                     component.scrollRectToVisible(r);
                 } catch (Exception exception) {
-                    Logger.getLogger(MScriptTestRig.class.getName()).log(Level.WARNING, null, exception);
+                    Logger.getLogger(MScriptTestRig.class.getName()).log(Level.WARNING, "", exception);
                 }
             }
         });
@@ -346,7 +346,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
 
         private MScriptParser mScriptParser;
 
-        private final List<SyntaxError> syntaxErrors = new ArrayList<>();
+        private final List<SyntaxError> syntaxErrors = new ArrayList<>(); // accumulates errors for later reporting
 
         @Override
         protected ParseTree doInBackground() throws Exception {
@@ -386,6 +386,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
                 JOptionPane.showMessageDialog(MScriptTestRig.this,
                                               "Cannot parse the MScript source: " + throwable.getMessage() + "!",
                                               "An error has occurred", JOptionPane.ERROR_MESSAGE);
+                Logger.getLogger(MScriptTestRig.class.getName()).log(Level.SEVERE, "", throwable);
             }
             MScriptTestRig.this.getRootPane().setCursor(Cursor.getDefaultCursor());
         }

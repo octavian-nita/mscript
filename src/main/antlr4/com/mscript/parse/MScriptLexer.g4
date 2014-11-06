@@ -48,6 +48,7 @@ CONTINUE : 'continue' ;
 BOOLEAN : 'true' | 'false' ;
 
 NUMBER : INT ( DOT INT )? | DOT INT ;
+
 fragment INT : '0' | [1-9] [0-9]* ;
 
 // Keep ID definition AFTER literals so that for example, true would be interpreted as a BOOLEAN literal and not an ID.
@@ -55,16 +56,14 @@ fragment INT : '0' | [1-9] [0-9]* ;
 // U+10000 to U+10FFFF; if needed, find missing bits at http://github.com/antlr/grammars-v4/blob/master/java8/Java8.g4
 ID : [a-zA-Z_] [a-zA-Z0-9_]* ;
 
-WHITE : [ \t\f]+ -> skip ; // in default mode, skip white spaces other than new lines
+COMM : '/*' .*? '*/' | '//' ~[\r\n]* ;
 
-SC : '//' ~[\r\n]* ;
+// Statement separators kept separate to allow newlines between tokens like IF and ( without an marking end of statement
+SEMI : ';' ;
 
-MC : '/*' .*? '*/' ;
-
-// Statement separators, kept separate to allow new lines between tokens like IF and ( without marking end of statement.
 NL : ( '\r'? '\n' ) | '\r' /* on mac */ ;
 
-SEMI : ';' ;
+WS : [ \t\f]+ -> skip ; // in default mode, skip white spaces other than new lines
 
 // ---------- INside a quoted STRing ----------
 mode IN_STR;
@@ -76,6 +75,7 @@ IN_STR_LBRACK : '['  -> pushMode(DEFAULT_MODE) ;
 IN_STR_SIGIL  : '$'  -> type(SIGIL), pushMode(IN_FNC) ;
 
 STR_CHARS : ( ~( '\\' | '\'' | '$' | '[' | ']' ) | ESC_CHAR )+ ;
+
 // Allowed escape sequences are \\, \', \$, \[, \], \n, \r, \t
 fragment ESC_CHAR : '\\\\' | '\\\'' | '\\$' | '\\[' | '\\]' | '\\n' | '\\r' | '\\t' ;
 
