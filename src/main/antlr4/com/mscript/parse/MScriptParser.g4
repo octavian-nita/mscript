@@ -30,6 +30,7 @@ protected void check(boolean condition, String errorMessage) {
 
 }
 
+//
 // ABOUT REPEATED COMMENT AND NEWLINE TOKENS:
 //
 // Currently, the requirement is to keep comments (both single and multi-line) in the abstract syntax tree (AST).
@@ -43,30 +44,24 @@ protected void check(boolean condition, String errorMessage) {
 // (apart from how one writes the grammar). One solution would be to traverse the AST created by parsing and manually
 // build a new one using the ANTLR API, in an additional parsing phase. This would also allow one to clean up / remove
 // useless tokens like surrounding quotes for strings, operator nodes, etc.
+//
 
 script : block? EOF ;
 
-block : ( CM | NL | SEMI )* stmt ( CM* ( NL | SEMI ) CM* stmt? )* ;
+block  : ( COMM | NL | SEMI )* stmt ( COMM* ( NL | SEMI ) COMM* stmt? )* ;
 
-stmt
-  : assign
-  | fncall
-  | ifStmt
-  | whileStmt
-  | breakStmt
-  | continueStmt
-  ;
+stmt   : assign | fncall | ifStmt | whileStmt | breakStmt | continueStmt ;
 
-assign : ID ( CM | NL )* ASSIGN ( CM | NL )* expr ;
+assign : ID pad* ASSIGN pad* expr ;
 
 fncall
 locals [int argc=0, String plugin=null, String function=null] // match and store plugin and function names
   : SIGIL // followed by...
 
-    ( ID {$plugin = $ID.text;} DOT )? ID {$function = $ID.text;} ( CM | NL )*
+    ( ID {$plugin = $ID.text;} DOT )? ID {$function = $ID.text;} pad*
 
     // match and count arguments to validate the call
-    LPAREN ( CM | NL )* ( expr {$argc++;} ( ( CM | NL )* COMMA ( CM | NL )* expr {$argc++;} )* )? ( CM | NL )* RPAREN {
+    LPAREN pad* ( expr {$argc++;} ( pad* COMMA pad* expr {$argc++;} )* )? pad* RPAREN {
 
 // After matching the whole function call, validate function name and arguments:
 switch (Function.check($plugin, $function, $argc)) {
@@ -81,46 +76,43 @@ case WRONG_NUM_OF_ARGS:
     } ;
 
 ifStmt
-  : IF ( CM | NL )* LPAREN ( CM | NL )* cond ( CM | NL )* RPAREN ( CM | NL )*
+  : IF pad* LPAREN pad* cond pad* RPAREN pad* ( LBRACE ( block? | ( COMM | NL | SEMI )* ) RBRACE | stmt )
 
-    ( LBRACE ( block? | ( CM | NL | SEMI )* ) RBRACE | stmt ( ( CM | NL )* SEMI ( CM | NL )* )? )
-
-    // optional ELSE branch
-    ( ( CM | NL )* ELSE ( CM | NL )*
-
-      ( LBRACE ( block? | ( CM | NL | SEMI )* ) RBRACE | stmt ( ( CM | NL )* SEMI ( CM | NL )* )? ) )? ;
+    ( pad* ELSE pad* ( LBRACE ( block? | ( COMM | NL | SEMI )* ) RBRACE | stmt ) )? ; // optional ELSE branch
 
 cond
-  : expr ( CM | NL )* ( EQ | NE | LE | LT | GE | GT ) ( CM | NL )* expr
+  : expr pad* ( EQ | NE | LE | LT | GE | GT ) pad* expr
   | expr // in order to allow statements like while (v) { ... } or if ('true') { ... }
   ;
 
 whileStmt
-  : WHILE ( CM | NL )*
+  : WHILE pad*
 
-    LPAREN ( CM | NL )* cond ( CM | NL )* ( ( CM | NL )* PIPE ( CM | NL )* whileOpts ( CM | NL )* )? RPAREN ( CM | NL )*
-    {++loopDepth;}
+    LPAREN pad* cond pad* ( pad* PIPE pad* whileOpts pad* )? RPAREN pad* {++loopDepth;}
 
-    ( LBRACE ( block? | ( CM | NL | SEMI )* ) RBRACE | stmt ( ( CM | NL )* SEMI ( CM | NL )* )? )
-    {if (loopDepth > 0) { --loopDepth; }} ;
+    ( LBRACE ( block? | ( COMM | NL | SEMI )* ) RBRACE | stmt ) {if (loopDepth > 0) { --loopDepth; }} ;
 
 whileOpts
-  : ID
+  : namedWhileOpts
   ;
 
-breakStmt : BREAK {check(loopDepth > 0, "break cannot be used outside of a loop");} ;
+namedWhileOpts : assign assign? assign? ;
 
-continueStmt : CONTINUE {check(loopDepth > 0, "continue cannot be used outside of a loop");} ;
+breakStmt : BREAK pad* ID? {check(loopDepth > 0, "break cannot be used outside of a loop");} ;
+
+continueStmt : CONTINUE pad* ID? {check(loopDepth > 0, "continue cannot be used outside of a loop");} ;
 
 expr
-  : expr ( CM | NL )* ( MUL | DIV | MOD ) ( CM | NL )* expr
-  | expr ( CM | NL )* ( ADD | SUB ) ( CM | NL )* expr
-  | ( ADD | SUB )? ( CM | NL )* LPAREN ( CM | NL )* expr ( CM | NL )* RPAREN // parenthesized expression
-  | ( ADD | SUB )? ( CM | NL )* fncall
-  | ( ADD | SUB )? ( CM | NL )* string
-  | ( ADD | SUB )? ( CM | NL )* BOOLEAN
-  | ( ADD | SUB )? ( CM | NL )* NUMBER
-  | ( ADD | SUB )? ( CM | NL )* ID
+  : expr pad* ( MUL | DIV | MOD ) pad* expr
+  | expr pad* ( ADD | SUB ) pad* expr
+  | ( ADD | SUB )? pad* LPAREN pad* expr pad* RPAREN // parenthesized expression
+  | ( ADD | SUB )? pad* fncall
+  | ( ADD | SUB )? pad* string
+  | ( ADD | SUB )? pad* BOOLEAN
+  | ( ADD | SUB )? pad* NUMBER
+  | ( ADD | SUB )? pad* ID
   ;
 
 string : QUOTE ( STR_CHARS | fncall | IN_STR_LBRACK expr RBRACK )* IN_STR_QUOTE ;
+
+pad : COMM | NL ; // comments and newlines can appear between (many) consecutive tokens

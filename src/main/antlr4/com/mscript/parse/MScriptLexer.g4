@@ -38,6 +38,7 @@ LBRACE : '{' ;
 RBRACE : '}' ;
 
 ASSIGN : '=' ;
+PIPE   : '|' ;
 
 IF       : 'if'    ;
 ELSE     : 'else'  ;
@@ -48,7 +49,6 @@ CONTINUE : 'continue' ;
 BOOLEAN : 'true' | 'false' ;
 
 NUMBER : INT ( DOT INT )? | DOT INT ;
-
 fragment INT : '0' | [1-9] [0-9]* ;
 
 // Keep ID definition AFTER literals so that for example, true would be interpreted as a BOOLEAN literal and not an ID.
@@ -56,12 +56,12 @@ fragment INT : '0' | [1-9] [0-9]* ;
 // U+10000 to U+10FFFF; if needed, find missing bits at http://github.com/antlr/grammars-v4/blob/master/java8/Java8.g4
 ID : [a-zA-Z_] [a-zA-Z0-9_]* ;
 
-COMM : '/*' .*? '*/' | '//' ~[\r\n]* ;
+COMM : '/*' .*? '*/' | '//' ~[\r\n]* ; // comments will be kept in the AST
 
 // Statement separators kept separate to allow newlines between tokens like IF and ( without an marking end of statement
 SEMI : ';' ;
 
-NL : ( '\r'? '\n' ) | '\r' /* on mac */ ;
+NL : ( '\r'? '\n' ) | '\r' /* mac */ ;
 
 WS : [ \t\f]+ -> skip ; // in default mode, skip white spaces other than new lines
 
