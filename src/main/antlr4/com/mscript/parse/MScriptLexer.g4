@@ -46,10 +46,9 @@ WHILE    : 'while' ;
 BREAK    : 'break' ;
 CONTINUE : 'continue' ;
 
+FLOAT   : INTEGER DOT INTEGER? | DOT INTEGER ;
+INTEGER : '0' | [1-9] [0-9]* ; // could have been a fragment but we need it as a token for maxLoopNum
 BOOLEAN : 'true' | 'false' ;
-
-NUMBER : INT ( DOT INT )? | DOT INT ;
-fragment INT : '0' | [1-9] [0-9]* ;
 
 // Keep ID definition AFTER literals so that for example, true would be interpreted as a BOOLEAN literal and not an ID.
 // We do not currently handle / cover "java letters" (characters) above 0xFF and UTF-16 surrogate pairs encodings from

@@ -48,7 +48,7 @@ protected void check(boolean condition, String errorMessage) {
 
 script : block? EOF ;
 
-block  : ( COMM | NL | SEMI )* stmt ( COMM* ( NL | SEMI ) COMM* stmt? )* ;
+block  : ( pad | SEMI )* stmt ( COMM* ( NL | SEMI ) COMM* stmt? )* ;
 
 stmt   : assign | fncall | ifStmt | whileStmt | breakStmt | continueStmt ;
 
@@ -76,9 +76,9 @@ case WRONG_NUM_OF_ARGS:
     } ;
 
 ifStmt
-  : IF pad* LPAREN pad* cond pad* RPAREN pad* ( LBRACE ( block? | ( COMM | NL | SEMI )* ) RBRACE | stmt )
+  : IF pad* LPAREN pad* cond pad* RPAREN pad* ( LBRACE ( block? | ( pad | SEMI )* ) RBRACE | stmt )
 
-    ( pad* ELSE pad* ( LBRACE ( block? | ( COMM | NL | SEMI )* ) RBRACE | stmt ) )? ; // optional ELSE branch
+    ( pad* ELSE pad* ( LBRACE ( block? | ( pad | SEMI )* ) RBRACE | stmt ) )? ; // optional ELSE branch
 
 cond
   : expr pad* ( EQ | NE | LE | LT | GE | GT ) pad* expr
@@ -90,13 +90,19 @@ whileStmt
 
     LPAREN pad* cond pad* ( pad* PIPE pad* whileOpts pad* )? RPAREN pad* {++loopDepth;}
 
-    ( LBRACE ( block? | ( COMM | NL | SEMI )* ) RBRACE | stmt ) {if (loopDepth > 0) { --loopDepth; }} ;
+    ( LBRACE ( block? | ( pad | SEMI )* ) RBRACE | stmt ) {if (loopDepth > 0) { --loopDepth; }} ;
 
 whileOpts
   : namedWhileOpts
+  | ID ( pad* SEMI pad* ( INTEGER | namedWhileOpts )
+  )?
   ;
 
-namedWhileOpts : assign assign? assign? ;
+namedWhileOpts : namedWhileOpt ( pad* SEMI pad* namedWhileOpt )? ( pad* SEMI pad* namedWhileOpt )? ; // simulate {,3}
+
+namedWhileOpt : ID pad* ASSIGN pad* (ID | INTEGER) {
+// TODO: check correct 'pseudo-tokens' and values
+};
 
 breakStmt : BREAK pad* ID? {check(loopDepth > 0, "break cannot be used outside of a loop");} ;
 
@@ -106,11 +112,7 @@ expr
   : expr pad* ( MUL | DIV | MOD ) pad* expr
   | expr pad* ( ADD | SUB ) pad* expr
   | ( ADD | SUB )? pad* LPAREN pad* expr pad* RPAREN // parenthesized expression
-  | ( ADD | SUB )? pad* fncall
-  | ( ADD | SUB )? pad* string
-  | ( ADD | SUB )? pad* BOOLEAN
-  | ( ADD | SUB )? pad* NUMBER
-  | ( ADD | SUB )? pad* ID
+  | ( ADD | SUB )? pad* ( fncall | string | FLOAT | INTEGER | BOOLEAN | ID )
   ;
 
 string : QUOTE ( STR_CHARS | fncall | IN_STR_LBRACK expr RBRACK )* IN_STR_QUOTE ;
