@@ -28,22 +28,25 @@ protected void check(boolean condition, String errorMessage) {
     }
 }
 
+protected static class WhileOptions {
+    public boolean hasIndex;
+    public boolean hasLabel;
+    public boolean hasMaxLoopNum;
+}
+
 }
 
 //
 // ABOUT REPEATED COMMENT AND NEWLINE TOKENS:
 //
-// Currently, the requirement is to keep comments (both single and multi-line) in the abstract syntax tree (AST).
-// Therefore, they cannot be skipped in lexer but kept as tokens that must be repeated in all parser rules where
-// comments may appear (normally between any two consecutive tokens). We also choose to allow newlines in-between
-// tokens of a parser rule.
-// (see http://stackoverflow.com/questions/12485132/catching-and-keeping-all-comments-with-antlr)
+// Currently, the requirement is to keep comments in the abstract syntax tree (AST). Therefore, they cannot be skipped
+// in the lexer but kept as tokens and repeatedly specified in all parser rules where comments may appear, between any
+// two consecutive tokens. We also allow newlines between many consecutive tokens.
+// (see http://stackoverflow.com/questions/12485132/catching-and-keeping-all-comments-with-antlr).
 //
-// Also, ANTLR v4+ automatically builds the AST, does not include tokens on other channels that the default one (unless
-// one extends CommonTokenStream) and does not really give the developer much choice in manually (re)organizing the AST
-// (apart from how one writes the grammar). One solution would be to traverse the AST created by parsing and manually
-// build a new one using the ANTLR API, in an additional parsing phase. This would also allow one to clean up / remove
-// useless tokens like surrounding quotes for strings, operator nodes, etc.
+// Other points to remember: ANTLR v4+ automatically builds an AST, does not include tokens on channels other that the
+// default one (unless one extends CommonTokenStream) and does not really give the developer much choice to manually
+// (re)organize the AST (apart from how one writes the grammar).
 //
 
 script : block? EOF ;
@@ -55,7 +58,7 @@ stmt   : assign | fncall | ifStmt | whileStmt | breakStmt | continueStmt ;
 assign : ID pad* ASSIGN pad* expr ;
 
 fncall
-locals [int argc=0, String plugin=null, String function=null] // match and store plugin and function names
+locals [int argc, String plugin, String function] // match and store plugin and function names
   : SIGIL // followed by...
 
     ( ID {$plugin = $ID.text;} DOT )? ID {$function = $ID.text;} pad*
@@ -92,16 +95,72 @@ whileStmt
 
     ( LBRACE ( block? | ( pad | SEMI )* ) RBRACE | stmt ) {if (loopDepth > 0) { --loopDepth; }} ;
 
+//
+// Trying to be as specfic as possible when describing the named while options in order to catch as
+// many errors as possible and to take advantage of the ANTLR's built-in error handling mechanism.
+//
+
 whileOpts
-  : namedWhileOpts
-  | ID ( pad* SEMI pad* ( INTEGER | namedWhileOpts )
-  )?
+locals [WhileOptions options=new WhileOptions()]
+  : namedWhileOpts[$options]
+  | ID {$options.hasIndex = true;}
+
+  | ID {$options.hasIndex = true;} pad* SEMI pad*
+    namedWhileOpts[$options]
+
+  | ID {$options.hasIndex = true;} pad* SEMI pad*
+    INTEGER {$options.hasMaxLoopNum = true;}
+
+  | ID {$options.hasIndex = true;} pad* SEMI pad*
+    INTEGER {$options.hasMaxLoopNum = true;} pad* SEMI pad*
+    namedWhileOpts[$options]
+
+  | ID {$options.hasIndex = true;} pad* SEMI pad*
+    ID {$options.hasLabel = true;}
+
+  | ID {$options.hasIndex = true;} pad* SEMI pad*
+    ID {$options.hasLabel = true;} pad* SEMI pad*
+    namedWhileOpts[$options]
+
+  | ID {$options.hasIndex = true;} pad* SEMI pad*
+    INTEGER {$options.hasMaxLoopNum = true;} pad* SEMI pad*
+    ID {$options.hasLabel = true;}
+
+  | ID {$options.hasIndex = true;} pad* SEMI pad*
+    INTEGER {$options.hasMaxLoopNum = true;} pad* SEMI pad*
+    ID {$options.hasLabel = true;} pad* SEMI pad*
+    namedWhileOpts[$options]
   ;
 
-namedWhileOpts : namedWhileOpt ( pad* SEMI pad* namedWhileOpt )? ( pad* SEMI pad* namedWhileOpt )? ; // simulate {,3}
+namedWhileOpts[WhileOptions options]
+  : namedWhileOpt[$options] ( pad* SEMI pad* namedWhileOpt[$options] )? ( pad* SEMI pad* namedWhileOpt[$options] )? ;
 
-namedWhileOpt : ID pad* ASSIGN pad* (ID | INTEGER) {
-// TODO: check correct 'pseudo-tokens' and values
+namedWhileOpt[WhileOptions options]
+  : optionName=ID pad* ASSIGN pad* (optionVal=ID | optionIntVal=INTEGER) {
+
+if (options != null) {
+    String optionName = $optionName.getText();
+    switch (optionName) {
+    case "index":
+        check(!options.hasIndex, "'index' already defined for the current loop");
+        check($optionVal != null, "'index' can only be assigned an identifier");
+        options.hasIndex = true;
+        break;
+    case "maxLoopNum":
+        check(!options.hasMaxLoopNum, "'maxLoopNum' already defined for the current loop");
+        check($optionIntVal != null, "'maxLoopNum' can only be assigned a positive integer");
+        options.hasMaxLoopNum = true;
+        break;
+    case "label":
+        check(!options.hasLabel, "'label' already defined for the current loop");
+        check($optionVal != null, "'label' can only be assigned an identifier");
+        options.hasLabel = true;
+        break;
+    default:
+        throw new MScriptRecognitionException("unexpected loop option '" + optionName + "'", this);
+    }
+}
+
 };
 
 breakStmt : BREAK pad* ID? {check(loopDepth > 0, "break cannot be used outside of a loop");} ;
