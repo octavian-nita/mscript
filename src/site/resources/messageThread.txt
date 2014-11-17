@@ -1,3 +1,263 @@
+Octav... N.
+Status Report for week of Nov 03, 2014
+
+Hi Yaxiong,
+
+I will put together a small doc / README file.
+
+Yes, I'd be interested in helping you.
+Nov 13, 2014
+6:10 pm
+Yaxiong L.
+Status Report for week of Nov 03, 2014
+
+Hi Octavian,
+
+Thank you for completing the parser. I am testing it and so far so good. I do need the documentation instruction that shows me how to take the mscript definition run through antlr to generate the java parser. Could you get that to me soon?
+
+I might need some more help in creating simple java methods to invoke the parser for syntax checking and execute mscript using the parser that you have help created. It should be a fairly small task, let me know if this is of interest to you.
+
+I look forward to hearing from you.
+
+Yaxiong
+Nov 13, 2014
+2:42 pm
+Octav... N.
+Well, it does simplify things quite a bit but, at a second, very thorough look, I managed to write the grammar so that it is not very cluttered by keeping comment tokens and it allows comments in most places. I am almost done -- I will post a new version soon.
+
+Also, I will validate break and continue tokens to be allowed only when in loops
+Nov 05, 2014
+6:30 pm
+Yaxiong L.
+Hi Octavian,
+
+Let's keep the string interpolation supported as you have suggested. I am fine with keeping the single quote in the parsed tree.
+
+Regarding the comments, we just need to support entire line comment, i.e. no comments mixed within script that you have mentioned.
+
+That is, the comments will be:
+// comment on entire line
+/*
+* comments
+*/
+/* comment
+comment 2
+*/
+
+So does that help reduce the complexity? I look forward to your reply.
+Nov 04, 2014
+6:28 pm
+Octav... N.
+Hi,
+
+
+01. I've fixed the else branch of the if statement -- a copy-paste issue, from the if block to the else...
+
+
+02 & 04 & more are closely related :) So:
+
+Since we initially needed to support string interpolation for function calls (after $) and expressions (between [ and ]), I had to describe / define a string literal with a parser rule rather than with a lexer token (the usual case). This is, apparently, the way other ANTLR-based parsers do it (though I've not found many with this request :) ). Also, when you said you wouldn't require it any more, I was thinking that since it had already been done, we could just as well keep it, as it seemed a nice-to-have feature...
+
+The price of this choice was to keep the quotes around the string parts under the string rule since ANTLR v4+ does NOT allow any more the developer to build the parse tree, but builds one automatically for him and we cannot change that tree (except if, after the parsing phase, we traverse the resulting parse tree and manually build another one, removing or merging unneeded tokens / rules)
+
+However: if we decide NOT to support string interpolation IN ANY FORM, i.e. NO 'xy$f()z' AND NO 'ab[1 + 3]', I can revert and consider a string as a token and try to remove the sub-tokens made up from the quotes. And again, in this case we won't have any sort of string embedding... one would only have to concatenate strings.
+
+Are you OK with this?
+
+
+03. About keeping the comments: do you really want to keep the comments in the parse tree or just have them available somehow at parse time in order to be processed along with the parse tree?
+
+I am asking because I think this would greatly complicates things: multi-line comments can be spread around and interspersed amongst all sorts of tokens and before and after any statement and the single-line comments could appear at the end of every line as well. That means the rules of the parser grammar would have to take into account this and repeat checks between every token. The parser grammar would become illegible.
+
+Moreover, if we have a statement like:
+
+v = 1 + /* comment */ 3 // uh
+
+part of the generated tree would look like:
+
+asgn
++-- expr
++-- 1
++-- +
++-- comment
++-- expr
++-- 3
++-- comment
+
+This tree would be bigger, harder to traverse and have the useless comment tokens ignored.
+Nov 04, 2014
+11:06 am
+Yaxiong L.
+Hi Octavian,
+
+Thanks for fixing the issues and the updated demo.
+
+I have a few issues for you to look into:
+1. The simple if /else seems to have problem, maybe you are still working on if/else construct?
+if (true) {
+v = 2;
+}
+else {
+v = 1;
+}
+
+2. Can you remove the single quote from the parsed tree for string parameters as the type of "string" already indicate the elements are text string.
+3. I need comments to be preserved and included in the parsed tree in the exact order that they appear in the mscript.
+4. We no longer need to support implicit string concatenation, i.e. the following should no longer valid expression:
+var1 = 'xyz$getValue('abc')'
+
+The valid expression should be
+var1 = 'xyz' + $getValue('abc')
+
+Also the parameters in nested function call should not be quoted, i.e following is not valid:
+$getValue ('$getRand('10')')
+Instead the following is valid:
+$getValue($getRand('10'))
+
+You do not need to fix the ctrl-o/open file issue. I am ok just use copy/paste as long as that works.
+
+I do need the error reporting to be as much user friendly as possible.
+
+Please let me know if you have any questions. When do you think you will have while loop and the rest completed?
+
+Thanks.
+
+Yaxiong
+Nov 04, 2014
+1:01 am
+Octav... N.
+Hey there,
+
+Thanks for the encouragements! My answers below/inline :)
+
+01. $isPresent('US\$test(where \$test is not a function call)')
+can "US\$test(where \$test is not a function call)" be a single string and not be broken down into pieces?
+
+A.: Done. Indeed, it is much cleaner to organize the string literal like that -- thanks for the nice catch! I had initially separated the escape sequences and regular chars while thinking on how to implement the interpolation of function calls and expressions but they are not related anyway ...
+
+
+02. $web._nativeFunc1('abc')
+"_" is replaced by a space char. Please keep "_" in the parsed function name
+
+A.: that was a displaying / font issues :) The function name retains all characters, I have adjusted the font of the tree to properly display such names.
+
+03. comments seem to be stripped off: /* xxx */ and //
+
+A.: Yes, they are. They are usually ignored by parsers and other tools eventually extract them, if needed. However, I can keep them in the parse tree if you wanted to...
+
+04. allow empty block for "if"
+
+A.: Done.
+
+05. while seems not defined, e.g. following gives error:
+
+while (var1 != 'xyz') {
+$web.click('f2')
+}
+
+A.: Yes, I am still working on it. (I had mentioned it amongst the last lines of my previous description). The loop options are not obvious to get right but not impossible either.
+
+06. Also a line with just static text should be considered error, e.g.
+'abc'
+abc
+123
+
+A.: But it is, isn't it? Indeed, if I enter the 3 lines above one after the other in the source code, I only get one error reported, that is, for the first line; apparently ANTLR cannot recover well in this situation. What behaviour would you have in mind?
+
+I've also noticed that there's a problem when loading files with Ctrl+O: many errors are duplicated and parsing does not really work but if you copy + paste the code, it works just fine. It is obviously a limitation if the small test app which I will probably fix but after implementing WHILE.
+
+One more thing about error reporting: in general, creating good / eloquent error messages for a parser is not obvious. By default, ANTLR-generated parsers report in terms of what's expected as input since they don't really know about the context of a token.
+
+I've attached a new build (as usual, the sources are also available at https://github.com/octavian-nita/mscript ).
+Oct 31, 2014
+11:01 am
+Yaxiong L.
+Hi Octavian,
+
+Thanks for the test app, that is nice. I played with it with a few mscript variations and found a few issues for you to look into:
+
+1. $isPresent('US\$test(where \$test is not a function call)')
+    can "US\$test(where \$test is not a function call)" be a single string and not be broken down into pieces?
+2. $web._nativeFunc1('abc')
+    "_" is replaced by a space char. Please keep "_" in the parsed function name
+3. comments seem to be stripped off: /* xxx */ and //
+4. allow empty block for "if"
+5. while seems not defined, e.g. following gives error:
+while (var1 != 'xyz') {
+    $web.click('f2')
+}
+6. Also a line with just static text should be considered error, e.g.
+'abc'
+abc
+123
+
+I look forward to the updates.
+
+Yaxiong
+Oct 31, 2014
+12:17 am
+Octav... N.
+Hi Yaxiong,
+
+I've attached (archived) the entire project folder, including a build of the current sources in a small app that you can use in order to test the parser. You need only have Java (at least 7) installed and the PATH environment set and you are good to go.
+
+TO TEST:
+
+01. unzip the mscript-parser.zip archive to a location of your choosing; it already contains a folder named mscript
+
+02. navigate to mscript/target directory and double click on the mscript-parser-jar-with-dependencies.jar; a small (but resizable) window should open with 3 sections
+
+03. one can adjust the size of each of the 3 sections using the sliders / dividers in-between them;
+
+03. in the MScript section, one can input MScript code; upon editing, the code is parsed and any eventual parse / syntax errors appear in the list in the section below the code; one can also click a particular error message and the cursor is placed in the source code, at the offending token
+
+04. also upon editing, the section Parse Tree will display a representation of the current parse tree that is automatically built by ANTLR; this way, one can check that the generated tree respects the logical structure of the language
+
+05. by pressing Ctrl + O anywhere in the window, one can open an existing MScript file; upon opening, the file will be parsed; there is no save feature and nothing will be overwritten if the loaded code is edited
+
+AVAILABLE MSCRIPT FEATURES:
+
+01. the available functions are the ones provided by you in the test file; I've also added 3 more to be able to quickly test expressions, etc.:
+
+# Simple function names for tests and quick examples:
+f=0,3
+g=0,2
+h=0,1
+
+02. the only unsupported statement is the WHILE statement, which I am currently implementing!
+
+Let me know how it goes!
+Tavi
+mscript-parser.zip
+Oct 30, 2014
+11:58 am
+Yaxiong L.
+That will be great. I'll look forward to it.
+
+Yaxiong
+
+> On Oct 27, 2014, at 1:48 PM, Octavian N via Elance <E62236593-WR@workroom.elance.com> wrote:
+>
+>
+>
+Oct 27, 2014
+2:50 pm
+Octav... N.
+Hello,
+
+I will create a small app tonight that uses the parser (one would also see how to call the parser from outside the unit tests) and renders the resulting abstract tree or lists errors in case of any. Would that be OK?
+Oct 27, 2014
+2:48 pm
+Yaxiong L.
+Hi Octavian,
+
+I see that you have completed 90%, that's great. Is there any way that I can try it just to review what you have accomplished and find any issues earlier if any?
+
+Thanks,
+
+Yaxiong
+Oct 26, 2014
+11:13 pm
 Yaxiong L.
 Thanks for the follow up. You are correct that we will still need to allow quoted literal string. If you can make it to support both, that will be fine.
 
@@ -165,6 +425,16 @@ Regards,
 Octavian
 Oct 02, 2014
 8:17 am
+Elance
+Congratulations on beginning your job together!
+
+To help you achieve the best outcome, make sure you both have payment protection, via Elance's free Escrow Protection. Simply work and pay safely using project milestones and Elance Escrow. Learn more here.
+
+Contact us anytime if you have questions about your job.
+
+Have a great project.
+Sep 24, 2014
+11:48 am
 Octav... N.
 Hey there!
 
@@ -373,3 +643,4 @@ Thank you for the proposal and suggestions. I have updated the spec and added te
 Yaxiong
 Sep 16, 2014
 2:21 am
+All times are in EST (UTC-05:00)
