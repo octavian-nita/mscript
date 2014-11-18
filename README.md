@@ -9,18 +9,18 @@ Generating the parser Java source code from the ANTLR lexer and parser grammar s
 This project is [Maven](http://maven.apache.org/)-based and as such, the ANTLR (v4) lexer and parser grammar
 specifications (i.e. .g4 source files) are organised / stored under `src/main/antlr4/com/mscript/parse`.
 
-The generation of the parser Java source code should obviously be done prior to compiling the project. One can achieve
-this by invoking the [ANTLR tool][antlr-tool] from the command line (which requires downloading [`antlr-4.x-complete.jar`]
-(http://www.antlr.org/download/antlr-4.4-complete.jar) as well as setting the `CLASSPATH` environment variable) or by
-invoking the Maven `generate-sources` phase like in the following example (normally much simpler since the ANTLR runtime
-dependencies are taken care of):
+The generation of the parser Java source code should obviously be done prior to compiling the project. To do this either
+invoke the [ANTLR tool][antlr-tool] from the command line (this requires downloading [`antlr-4.x-complete.jar`]
+(http://www.antlr.org/download/antlr-4.4-complete.jar) as well as setting the `CLASSPATH` environment variable) or
+invoke the Maven `generate-sources` phase, like in the following example (simpler since the ANTLR runtime dependencies
+are taken care of):
 
     mvn generate-sources
 
 The parser Java source code generated this way can be found under `target/generated-sources/antlr4` (in the
 `com.mscript.parse` package).
 
-However if the project is built using Maven (the regular case), this phase is included by default in the build process:
+However, if the project is built using Maven (the regular case), this phase is included by default in the build process:
 
     mvn clean install -Dmaven.test.skip=true
 
