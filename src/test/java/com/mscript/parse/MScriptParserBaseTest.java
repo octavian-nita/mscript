@@ -5,6 +5,7 @@ import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.misc.Nullable;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -30,10 +31,11 @@ public class MScriptParserBaseTest {
     protected static class MScriptParserTestErrorListener extends BaseErrorListener {
 
         @Override
-        public void syntaxError(@NotNull Recognizer<?, ?> recognizer, @Nullable Object offendingSymbol, int line,
-                                int charPositionInLine, @NotNull String msg, @Nullable RecognitionException e) {
-            fail(offendingSymbol + "@" + line + ":" + charPositionInLine + ": " + msg +
-                 (e != null && e.getMessage() != null ? " [" + e.getMessage() + "]" : ""));
+        public <T extends Token> void syntaxError(@NotNull Recognizer<T, ?> recognizer, @Nullable T offendingSymbol,
+                                                  int line, int charPositionInLine, @NotNull String message,
+                                                  @Nullable RecognitionException exception) {
+            fail(offendingSymbol + "@" + line + ":" + charPositionInLine + ": " + message +
+                 (exception != null && exception.getMessage() != null ? " [" + exception.getMessage() + "]" : ""));
         }
     }
 

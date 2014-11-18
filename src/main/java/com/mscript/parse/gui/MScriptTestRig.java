@@ -3,6 +3,7 @@ package com.mscript.parse.gui;
 import com.mscript.Function;
 import com.mscript.parse.MScriptLexer;
 import com.mscript.parse.MScriptParser;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.BufferedReader;
@@ -31,11 +32,13 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.text.JTextComponent;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.misc.Nullable;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -117,8 +120,8 @@ public class MScriptTestRig extends javax.swing.JFrame {
                     } catch (IOException ioe) {
                         JOptionPane.showMessageDialog(MScriptTestRig.this,
                                                       "Cannot open/read file " + script.getAbsolutePath() + ": " +
-                                                      ioe.getMessage() + "!",
-                                                      "An error has occurred", JOptionPane.ERROR_MESSAGE);
+                                                      ioe.getMessage() + "!", "An error has occurred",
+                                                      JOptionPane.ERROR_MESSAGE);
                     }
                 }
             }
@@ -186,9 +189,15 @@ public class MScriptTestRig extends javax.swing.JFrame {
         rightPanel.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
 
         treeScroll.setBackground(javax.swing.UIManager.getDefaults().getColor("control"));
-        treeScroll.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0), "Abstract Syntax Tree", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, LABEL_FONT));
+        treeScroll.setBorder(javax.swing.BorderFactory
+                                 .createTitledBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0),
+                                                     "Abstract Syntax Tree",
+                                                     javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
+                                                     javax.swing.border.TitledBorder.DEFAULT_POSITION, LABEL_FONT));
 
-        treeView.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)), javax.swing.BorderFactory.createEmptyBorder(4, 4, 4, 4)));
+        treeView.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+            javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)),
+            javax.swing.BorderFactory.createEmptyBorder(4, 4, 4, 4)));
         treeView.setModel(new DefaultTreeModel(null));
         treeView.setAutoscrolls(true);
         treeScroll.setViewportView(treeView);
@@ -197,12 +206,11 @@ public class MScriptTestRig extends javax.swing.JFrame {
         rightPanel.setLayout(rightPanelLayout);
         rightPanelLayout.setHorizontalGroup(
             rightPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(treeScroll, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 212, Short.MAX_VALUE)
-        );
+                            .addComponent(treeScroll, javax.swing.GroupLayout.Alignment.TRAILING,
+                                          javax.swing.GroupLayout.DEFAULT_SIZE, 212, Short.MAX_VALUE));
         rightPanelLayout.setVerticalGroup(
             rightPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(treeScroll, javax.swing.GroupLayout.DEFAULT_SIZE, 517, Short.MAX_VALUE)
-        );
+                            .addComponent(treeScroll, javax.swing.GroupLayout.DEFAULT_SIZE, 517, Short.MAX_VALUE));
 
         mainSplit.setRightComponent(rightPanel);
 
@@ -213,19 +221,27 @@ public class MScriptTestRig extends javax.swing.JFrame {
         leftSplit.setResizeWeight(0.5);
 
         errScroll.setBackground(javax.swing.UIManager.getDefaults().getColor("control"));
-        errScroll.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0), "Syntax Errors", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, LABEL_FONT));
+        errScroll.setBorder(javax.swing.BorderFactory
+                                .createTitledBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0),
+                                                    "Syntax Errors",
+                                                    javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
+                                                    javax.swing.border.TitledBorder.DEFAULT_POSITION, LABEL_FONT));
 
-        errList.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)), javax.swing.BorderFactory.createEmptyBorder(2, 2, 2, 2)));
+        errList.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+            javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)),
+            javax.swing.BorderFactory.createEmptyBorder(2, 2, 2, 2)));
         errList.setFont(CODE_FONT);
         errList.setForeground(new java.awt.Color(255, 51, 51));
         errList.setModel(new DefaultListModel<SyntaxError>());
         errList.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         errList.addListSelectionListener(new javax.swing.event.ListSelectionListener() {
+
             public void valueChanged(javax.swing.event.ListSelectionEvent evt) {
                 errListValueChanged(evt);
             }
         });
         errList.addFocusListener(new java.awt.event.FocusAdapter() {
+
             public void focusGained(java.awt.event.FocusEvent evt) {
                 errListFocusGained(evt);
             }
@@ -235,11 +251,18 @@ public class MScriptTestRig extends javax.swing.JFrame {
         leftSplit.setRightComponent(errScroll);
 
         srcScroll.setBackground(javax.swing.UIManager.getDefaults().getColor("control"));
-        srcScroll.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0), "MScript (Ctrl+O to open existing file)", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, LABEL_FONT));
+        srcScroll.setBorder(javax.swing.BorderFactory
+                                .createTitledBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0),
+                                                    "MScript (Ctrl+O to open existing file)",
+                                                    javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
+                                                    javax.swing.border.TitledBorder.DEFAULT_POSITION, LABEL_FONT));
 
-        srcPane.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)), javax.swing.BorderFactory.createEmptyBorder(2, 2, 2, 2)));
+        srcPane.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+            javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)),
+            javax.swing.BorderFactory.createEmptyBorder(2, 2, 2, 2)));
         srcPane.setFont(CODE_FONT);
         srcPane.addCaretListener(new javax.swing.event.CaretListener() {
+
             public void caretUpdate(javax.swing.event.CaretEvent evt) {
                 srcPaneCaretUpdate(evt);
             }
@@ -252,14 +275,11 @@ public class MScriptTestRig extends javax.swing.JFrame {
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(mainSplit, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 700, Short.MAX_VALUE)
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(mainSplit, javax.swing.GroupLayout.Alignment.TRAILING)
-        );
+        layout.setHorizontalGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(mainSplit, javax.swing.GroupLayout.Alignment.TRAILING,
+                                                      javax.swing.GroupLayout.DEFAULT_SIZE, 700, Short.MAX_VALUE));
+        layout.setVerticalGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                      .addComponent(mainSplit, javax.swing.GroupLayout.Alignment.TRAILING));
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -307,9 +327,8 @@ public class MScriptTestRig extends javax.swing.JFrame {
             srcPane.setCaretPosition(error.charPositionInLine + caretPos);
             srcPane.requestFocusInWindow();
         } catch (Throwable throwable) {
-            Logger.getLogger(MScriptTestRig.class.getName()).log(Level.SEVERE,
-                                                                 "Cannot go to the syntax error location in code",
-                                                                 throwable);
+            Logger.getLogger(MScriptTestRig.class.getName())
+                  .log(Level.SEVERE, "Cannot go to the syntax error location in code", throwable);
         }
     }
 
@@ -355,11 +374,12 @@ public class MScriptTestRig extends javax.swing.JFrame {
             mScriptParser.addErrorListener(new BaseErrorListener() {
 
                 @Override
-                public void syntaxError(@NotNull Recognizer<?, ?> recognizer, @Nullable Object offendingSymbol, int line,
-                                        int charPositionInLine, @NotNull String message,
-                                        @Nullable RecognitionException exception) {
-                    syntaxErrors.add(new SyntaxError(recognizer, offendingSymbol, line, charPositionInLine, message,
-                                                     exception));
+                public <T extends Token> void syntaxError(@NotNull Recognizer<T, ?> recognizer,
+                                                          @Nullable T offendingSymbol, int line, int charPositionInLine,
+                                                          @NotNull String message,
+                                                          @Nullable RecognitionException exception) {
+                    syntaxErrors.add(
+                        new SyntaxError(recognizer, offendingSymbol, line, charPositionInLine, message, exception));
                 }
             });
             return mScriptParser.script();
@@ -379,7 +399,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
                     // Update the parse tree:
                     DefaultTreeModel treeModel = (DefaultTreeModel) treeView.getModel();
                     treeModel.setRoot(createViewTree(get(), new DefaultTreeTextProvider(Arrays.asList(mScriptParser.
-                                                     getRuleNames()))));
+                                                                                                                       getRuleNames()))));
                     expandViewTree();
                 }
             } catch (Throwable throwable) {
@@ -390,7 +410,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
             }
             MScriptTestRig.this.getRootPane().setCursor(Cursor.getDefaultCursor());
         }
-    };
+    }
 
     private static class SyntaxError {
 

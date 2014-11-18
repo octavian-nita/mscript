@@ -22,7 +22,7 @@ public class MScriptRecognitionException extends RecognitionException {
      */
     public MScriptRecognitionException(String message, @NotNull Parser recognizer, @NotNull Token offendingToken) {
         super(message, recognizer, recognizer.getInputStream(), recognizer.getContext());
-        setOffendingToken(offendingToken);
+        setOffendingToken(recognizer, offendingToken);
     }
 
     public MScriptRecognitionException(String message, @NotNull Parser recognizer) {
