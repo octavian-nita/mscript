@@ -14,39 +14,39 @@ import static org.junit.Assert.fail;
 
 public class MScriptParserAutoTest extends MScriptParserBaseTest {
 
-    protected static final Logger log = Logger.getLogger(MScriptParserAutoTest.class.getName());
+    protected static final Logger logger = Logger.getLogger(MScriptParserAutoTest.class.getName());
 
     protected static final String NL = System.getProperty("line.separator", "\n");
 
-    protected static final FileFilter M_SCRIPT_FILE_FILTER = new FileFilter() {
+    protected static final FileFilter MSCRIPT_FILE_FILTER = new FileFilter() {
 
         @Override
         public boolean accept(File pathname) {
-            String name = pathname.getName();
+            String name = pathname.getName().toLowerCase();
             return pathname.isFile() && (name.endsWith(".mscript") || name.endsWith(".mst") || name.endsWith(".ms"));
         }
     };
 
     @Test
     public void testScriptParsing() throws IOException {
-        Function.loadLibrary("pluginFuncList.properties");
+        Function.loadLibrary("functions.properties");
 
-        File scriptBaseDir = new File("mscript");
+        File scriptBaseDir = new File("mscript"); // automatically parse all MScript files in this directory
         if (!scriptBaseDir.isDirectory()) {
             fail(scriptBaseDir.getAbsolutePath() + " is not a directory or does not exist");
         }
 
         Map<String, Throwable> failures = new HashMap<>();
 
-        log.info("Parsing MScript files in " + scriptBaseDir.getAbsolutePath() + "..." + NL);
-        for (File script : scriptBaseDir.listFiles(M_SCRIPT_FILE_FILTER)) {
+        logger.info("Parsing MScript files in " + scriptBaseDir.getAbsolutePath() + "..." + NL);
+        for (File script : scriptBaseDir.listFiles(MSCRIPT_FILE_FILTER)) {
             String absolutePath = script.getAbsolutePath();
-            log.info("Parsing " + absolutePath + " ...");
+            logger.info("Parsing " + absolutePath + " ...");
             try {
                 parse(script);
-                log.info("[OK]" + NL);
+                logger.info("[OK]" + NL);
             } catch (Throwable throwable) {
-                log.info("[ERROR]" + NL);
+                logger.info("[ERROR]" + NL);
                 failures.put(absolutePath, throwable);
             }
         }

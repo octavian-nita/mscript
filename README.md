@@ -22,7 +22,7 @@ The parser Java source code generated this way can be found under `target/genera
 
 However, if the project is built using Maven (the regular case), this phase is included by default in the build process:
 
-    mvn clean install -Dmaven.test.skip=true
+    mvn clean install
 
 (One could also generate the Java source code in various IDEs by using specific ANTLR plugins but this varies from one
 IDE / plugin to another.)

@@ -4,6 +4,7 @@ FAQ
  - case sensitive language
  - case sensitive literals (e.g. True / tRUe), ony valid boolean literals being true and false
    > Question: what about the internal conversions for strings like 'TrUE'?
+   >   Answer: will yield a string and not a boolean value
  - allow empty scripts as input
  - allow empty statements, e.g. ;
  - string interpolation for variables: '[varName]' (i.e. the [] operator)

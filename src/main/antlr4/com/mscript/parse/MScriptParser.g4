@@ -18,7 +18,7 @@ import com.mscript.parse.MScriptRecognitionException;
 
 /**
  * The current level of loop nesting (0 for top level statements). Used, for example, to determine at parse time whether
- * a break or continue statement can indeed be accepted.
+ * a matched break or continue statement can indeed be accepted.
  */
 protected int loopDepth;
 
@@ -49,7 +49,7 @@ protected static class WhileOptions {
 // (re)organize the AST (apart from how one writes the grammar).
 //
 
-script : block? EOF ;
+script : ( pad | SEMI )* block? EOF ;
 
 block  : ( pad | SEMI )* stmt ( COMM* ( NL | SEMI ) COMM* stmt? )* ;
 
@@ -174,6 +174,6 @@ expr
   | ( ADD | SUB )? pad* ( fncall | string | FLOAT | INTEGER | BOOLEAN | ID )
   ;
 
-string : QUOTE ( STR_CHARS | fncall | IN_STR_LBRACK expr RBRACK )* IN_STR_QUOTE ;
+string : QUOTE ( IN_STR_CHARS | fncall | IN_STR_LBRACK expr RBRACK )* IN_STR_QUOTE ;
 
 pad : COMM | NL ; // comments and newlines can appear between (many) consecutive tokens

@@ -1,0 +1,234 @@
+/*
+This is a set of sample scripts and is not a complete
+exhausted list of all scenarios to fully test
+the parser. Please consult specification document for
+other scenarios that are not covered by this sample.
+function calls are highlighted in orange.
+Note $test is not a function as "test" is not in the
+function list.
+Valid functions:
+ $getValue=2,2
+ $web.getValue=2,2
+ $rand=0,1
+ $isPresent=1,1
+ $web.isPresent=1,1
+ $size=1,1
+ $web.click=1,1
+ $getTitle=0,0
+ $increment=1,1
+ $isEven=1,1
+ $dblClick=1,1
+ $_myFunc=0,1
+ $web._nativeFunc1
+*/
+
+/*
+  ==== various variable assignment syntax ====
+  simple assignment
+  assignment with function calls
+  multi-assignment on same line
+*/
+
+var1 = 1
+var1 = '1'
+_var1 = 10.2
+var2 = 'xyz'; _var2 = true
+var2 = var1
+var3 = $getValue('f1','attr1')
+var4 = 'xyz$getValue('f1','attr1')'
+var5 = 'xyz$web.getValue('f1','attr1')'
+_var5 = 'xyz$size('It\'s a nice day')'
+var5 = $not(var3)
+
+$getValue('f2','attr3')
+$rand()
+$rand('5')
+$rand(); $web.click('f3')
+$web._nativeFunc1('abc')
+$isPresent('US\$test(where \$test is not a function call)')
+
+/*
+ * if loop scripts
+ * and various syntax variations
+ */
+// complete if with else and expressions
+if (var1 == 'xyz') {
+var1 = 1
+var1 = '1'
+_var1 = 10.2
+var2 = 'xyz'; _var2 = true
+var2 = var1
+var3 = $getValue('f1','attr1')
+var4 = 'xyz$getValue('f1','attr1')'
+var5 = 'xyz$web.getValue('f1','attr1')'
+_var5 = 'xyz$size('It\'s a nice day')'
+var5 = $not(var3)
+
+$getValue('f2','attr3')
+$rand()
+$rand('5')
+$rand(); $web.click('f3')
+
+}
+else {
+var1 = 1
+var1 = '1'
+_var1 = 10.2
+var2 = 'xyz'; _var2 = true
+var2 = var1
+var3 = $getValue('f1','attr1')
+var4 = 'xyz$getValue('f1','attr1')'
+var5 = 'xyz$web.getValue('f1','attr1')'
+_var5 = 'xyz$size('It\'s a nice day')'
+var5 = $not(var3)
+
+$getValue('f2','attr3')
+$rand()
+$rand('5')
+$rand(); $web.click('f3')
+
+}
+
+// simple if with different operators and values
+if (var1 != 'xyz') {
+	$web.click('f2')
+}
+
+if (var1 > 'xyz') {
+	$web.click('f2')
+}
+
+if ($rand() >= 0.5) {
+	$web.click('f2')
+}
+
+if ($size('$getValue('f1','attr2')') < 20) {
+	$web.click('f2')
+}
+
+if ('$size('\'xyz$getValue('f2','attr3')xxx$getTitle()')' <= var2) {
+	$web.click('f2')
+}
+
+if (var1 > $rand('1')) {
+	$web.click('f2')
+}
+
+if ($web.isPresent('f2')) {
+	$web.click('f2')
+}
+
+if ('$isEven('$rand('5')')') {
+	$web.click('f2')
+}
+
+
+/*
+ * while loop scripts
+ * and various syntax variations of its boolean expressions
+*/
+
+// complete while with expressions
+while (var1 == 'xyz') {
+var1 = 1
+var1 = '1'
+_var1 = 10.2
+var2 = 'xyz'; _var2 = true
+var2 = var1
+var3 = $getValue('f1','attr1')
+var4 = 'xyz$getValue('f1','attr1')'
+var5 = 'xyz$web.getValue('f1','attr1')'
+_var5 = 'xyz$size('It\'s a nice day')'
+var5 = $not(var3)
+
+$getValue('f2','attr3')
+$rand()
+$rand('5')
+$rand(); $web.click('f3')
+
+}
+
+// simple while loop with diff boolean expression syntax
+while (var1 != 'xyz') {
+	$web.click('f2')
+}
+
+while (var1 > 'xyz') {
+	$web.click('f2')
+}
+
+while ($rand() >= 0.5) {
+	$web.click('f2')
+}
+
+while ($size('$getValue('f1','attr2')') < 20) {
+	$web.click('f2')
+}
+
+while ('$size('\'xyz$getValue('f2','attr3')xxx$getTitle()')' <= var2) {
+	$web.click('f2')
+}
+
+while (var1 > $rand('1')) {
+	$web.click('f2')
+}
+
+while ($web.isPresent('f2')) {
+	$web.click('f2')
+}
+
+while ('$isEven('$rand('5')')') {
+	$web.click('f2')
+}
+
+
+// while with optional attributes
+while ($rand('[var2]') > 2  | index=loopIdxVar) {
+	$increment ('var2')
+}
+while ($isEven('[var2]') | maxLoopNum = 5) {
+	var2 = $rand('10')
+}
+while ($isEven('[var2]') | loopIdxVar) {
+	var2 = $rand('10')
+}
+while ($isEven('[var2]') | label=outerLoop) {
+	var2 = $rand('10')
+}
+
+// default 1st option index & 2nd position maxLoopNum
+// 3rd label
+while ($isEven('[var2]') | loopIdxVar; 5; outerLoop) {
+	var2 = $rand('10')
+}
+
+// mixture of positional and named option
+while ($isEven('[var2]') | loopIdxVar; label=outerLoop) {
+	var2 = $rand('10')
+}
+
+/**
+ * nested loop and if
+ */
+
+if ($rand('5')>3) {
+	while ('$_myFunc()' | idx; label=outerLoop) {
+		if (idx >3) {
+			while('true' | maxLoopNum = 4) {
+				if ('$rand()' < 0.5) {
+					break outerLoop;
+				}
+				if ($rand('3') > 1) {
+					continue outerLoop;
+				}
+			}
+			break;
+		}
+		else {
+			$dblClick('f4')
+			continue;
+		}
+	}
+}
+
+

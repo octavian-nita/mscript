@@ -1,5 +1,8 @@
 package com.mscript.parse.gui;
 
+import static java.util.logging.Level.SEVERE;
+import static java.util.logging.Level.WARNING;
+
 import com.mscript.Function;
 import com.mscript.parse.MScriptLexer;
 import com.mscript.parse.MScriptParser;
@@ -14,7 +17,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.DefaultListModel;
@@ -51,19 +53,21 @@ import org.antlr.v4.runtime.tree.gui.TreeViewer.DefaultTreeTextProvider;
  */
 public class MScriptTestRig extends javax.swing.JFrame {
 
+    private static final Logger logger = Logger.getLogger(MScriptTestRig.class.getName());
+
     public static void main(String args[]) {
 
         // Try to load a default functions library file:
         try {
             Function.loadLibrary("functions.properties");
         } catch (Throwable ex) {
-            Logger.getLogger(MScriptTestRig.class.getName()).log(Level.SEVERE, "Cannot load functions library", ex);
+            logger.log(SEVERE, "Cannot load functions library", ex);
         }
 
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Throwable ex) {
-            Logger.getLogger(MScriptTestRig.class.getName()).log(Level.WARNING, "", ex);
+            logger.log(WARNING, "", ex);
         }
 
         Icon empty = new Icon() {
@@ -98,31 +102,32 @@ public class MScriptTestRig extends javax.swing.JFrame {
 
     public MScriptTestRig() {
         initComponents();
-        setLocationRelativeTo(null); // position in center of the screen
+        setLocationRelativeTo(null); // position in the center of the screen
 
         srcPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control O"), "openScript");
         srcPane.getActionMap().put("openScript", new AbstractAction("openScript") {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (JFileChooser.APPROVE_OPTION == scriptChooser.showOpenDialog(MScriptTestRig.this)) {
-                    File script = scriptChooser.getSelectedFile();
+                if (JFileChooser.APPROVE_OPTION != scriptChooser.showOpenDialog(MScriptTestRig.this)) {
+                    return;
+                }
 
-                    try (BufferedReader reader = new BufferedReader(new FileReader(script))) {
-                        StringBuilder source = new StringBuilder();
+                File script = scriptChooser.getSelectedFile();
+                try (BufferedReader reader = new BufferedReader(new FileReader(script))) {
+                    StringBuilder source = new StringBuilder();
 
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            source.append(line).append(NL);
-                        }
-
-                        srcPane.setText(source.toString()); // would have been better to use a SwingWorker...
-                    } catch (IOException ioe) {
-                        JOptionPane.showMessageDialog(MScriptTestRig.this,
-                                                      "Cannot open/read file " + script.getAbsolutePath() + ": " +
-                                                      ioe.getMessage() + "!", "An error has occurred",
-                                                      JOptionPane.ERROR_MESSAGE);
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        source.append(line).append(NL);
                     }
+
+                    srcPane.setText(source.toString()); // would have been better to use a SwingWorker to load scripts
+                } catch (IOException ioe) {
+                    JOptionPane.showMessageDialog(MScriptTestRig.this,
+                                                  "Cannot open/read file " + script.getAbsolutePath() + ": " +
+                                                  ioe.getMessage() + "!", "An error has occurred",
+                                                  JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
@@ -294,7 +299,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
 
     private void srcPaneCaretUpdate(javax.swing.event.CaretEvent evt) {//GEN-FIRST:event_srcPaneCaretUpdate
         final javax.swing.event.CaretEvent caretEvent = evt;
-        SwingUtilities.invokeLater(new Runnable() {
+        SwingUtilities.invokeLater(new Runnable() { // scroll the text component so that the caret remains visible...
 
             @Override
             public void run() {
@@ -304,7 +309,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
                     r.x += 2;
                     component.scrollRectToVisible(r);
                 } catch (Exception exception) {
-                    Logger.getLogger(MScriptTestRig.class.getName()).log(Level.WARNING, "", exception);
+                    logger.log(WARNING, "", exception);
                 }
             }
         });
@@ -327,8 +332,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
             srcPane.setCaretPosition(error.charPositionInLine + caretPos);
             srcPane.requestFocusInWindow();
         } catch (Throwable throwable) {
-            Logger.getLogger(MScriptTestRig.class.getName())
-                  .log(Level.SEVERE, "Cannot go to the syntax error location in code", throwable);
+            logger.log(SEVERE, "Cannot go to the syntax error location in code", throwable);
         }
     }
 
@@ -399,14 +403,14 @@ public class MScriptTestRig extends javax.swing.JFrame {
                     // Update the parse tree:
                     DefaultTreeModel treeModel = (DefaultTreeModel) treeView.getModel();
                     treeModel.setRoot(createViewTree(get(), new DefaultTreeTextProvider(Arrays.asList(mScriptParser.
-                                                                                                                       getRuleNames()))));
+                                                     getRuleNames()))));
                     expandViewTree();
                 }
             } catch (Throwable throwable) {
                 JOptionPane.showMessageDialog(MScriptTestRig.this,
                                               "Cannot parse the MScript source: " + throwable.getMessage() + "!",
                                               "An error has occurred", JOptionPane.ERROR_MESSAGE);
-                Logger.getLogger(MScriptTestRig.class.getName()).log(Level.SEVERE, "", throwable);
+                logger.log(SEVERE, "", throwable);
             }
             MScriptTestRig.this.getRootPane().setCursor(Cursor.getDefaultCursor());
         }
@@ -450,13 +454,13 @@ public class MScriptTestRig extends javax.swing.JFrame {
 
         @Override
         public boolean accept(File file) {
-            String path = file.getAbsolutePath().toLowerCase();
-            return path.endsWith(".mscript") || path.endsWith(".ms") || file.isDirectory();
+            String path = file.getName().toLowerCase();
+            return path.endsWith(".mscript") || path.endsWith(".mst") || path.endsWith(".ms") || file.isDirectory();
         }
 
         @Override
         public String getDescription() {
-            return "MScript files (*.mscript, *.ms)";
+            return "MScript files (*.mscript, *.mst, *.ms)";
         }
     };
 

@@ -70,7 +70,7 @@ public class MScriptParserBaseTest {
     /**
      * Defines what it means to <a href="http://xunitpatterns.com/exercise%20SUT.html">exercise</a> the <a
      * href="http://xunitpatterns.com/SUT.html">system under test (or SUT)</a> for simple {@link
-     * com.mscript.parse.MScriptParser} tests, i.e. to parse streams containing MScript code and return resulting {@link
+     * com.mscript.parse.MScriptParser} tests: parse streams containing MScript code and return resulting {@link
      * ParseTree parse tree}. Encapsulates the code required to call the MScript parser from an application. If the
      * parsing process fails, tests calling this method will also fail.
      *

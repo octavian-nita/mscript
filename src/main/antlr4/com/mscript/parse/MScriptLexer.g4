@@ -6,7 +6,7 @@
  */
 lexer grammar MScriptLexer;
 
-// ---------- Default "mode": everything OUTSIDE a quoted string ----------
+// ---------- Default "mode": everything OUTSIDE a quoted string or a function call ----------
 
 // Arithmetic operators
 MUL : '*' ;
@@ -46,7 +46,7 @@ WHILE    : 'while' ;
 BREAK    : 'break' ;
 CONTINUE : 'continue' ;
 
-// Literals, apart from string since this is defined in the parser
+// Literals, apart from string since this one is defined in the parser
 FLOAT   : INTEGER DOT INTEGER? | DOT INTEGER ;
 INTEGER : '0' | [1-9] [0-9]* ; // could have been a fragment but we need it as a token for maxLoopNum
 BOOLEAN : 'true' | 'false' ;
@@ -74,7 +74,7 @@ IN_STR_LBRACK : '['  -> pushMode(DEFAULT_MODE) ;
 
 IN_STR_SIGIL  : '$'  -> type(SIGIL), pushMode(IN_FNC) ;
 
-STR_CHARS : ( ~( '\\' | '\'' | '$' | '[' | ']' ) | ESC_CHAR )+ ;
+IN_STR_CHARS  : ( ~( '\\' | '\'' | '$' | '[' | ']' ) | ESC_CHAR )+ ;
 
 // Allowed escape sequences are \\, \', \$, \[, \], \n, \r, \t
 fragment ESC_CHAR : '\\\\' | '\\\'' | '\\$' | '\\[' | '\\]' | '\\n' | '\\r' | '\\t' ;

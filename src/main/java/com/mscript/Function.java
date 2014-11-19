@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 import static java.lang.Integer.parseInt;
 
 /**
- * MScript function definitions are {@link #loadLibrary(String) loaded} from {@link java.util.Properties} files. A
+ * MScript function definitions can be {@link #loadLibrary(String) loaded} from {@link java.util.Properties} files. A
  * function reference is prefixed by a sigil ($) and the name can optionally be prefixed by a plugin name. MScript
  * functions are <a href="http://en.wikipedia.org/wiki/Variadic_function">variadic</a>.
  *
@@ -23,12 +23,55 @@ import static java.lang.Integer.parseInt;
  */
 public class Function {
 
+    protected static final Logger logger = Logger.getLogger(Function.class.getName());
+
     /**
      * {@link Pattern Regular expression} used to parse a function's arity.
      */
     protected static final Pattern ARITY_PATTERN = Pattern.compile("(?:\\s*(\\d+)\\s*,)?\\s*(\\d+)\\s*");
 
-    protected static final Map<String, Function> library = new HashMap<>();
+    protected static final Map<String, Function> library = new HashMap<>(); // a library of defined functions
+
+    public static void loadLibrary(String libraryFilename) throws IOException {
+        Properties definitions = new Properties();
+        try (FileReader reader = new FileReader(libraryFilename)) {
+            definitions.load(reader);
+        } catch (IOException ioe) {     // then try to load the file from the classpath, as initially named
+            InputStream resource = Function.class.getResourceAsStream(libraryFilename);
+            if (resource == null) {     // then try to load the file from the classpath, as absolute path
+                resource = Function.class.getResourceAsStream("/" + libraryFilename);
+                if (resource == null) { // no such file in the classpath - just throw the initial exception
+                    throw ioe;
+                }
+            }
+            try {
+                definitions.load(resource);
+            } finally {
+                try {
+                    resource.close();
+                } catch (IOException ioe2) {
+                    logger.log(Level.WARNING, "Cannot close functions library resource stream; ignoring...", ioe2);
+                }
+            }
+        }
+
+        for (Map.Entry<Object, Object> definition : definitions.entrySet()) {
+            Matcher arityMatcher = ARITY_PATTERN.matcher((String) definition.getValue());
+            if (!arityMatcher.matches()) { // for now just skip the incorrectly defined functions but...
+                logger.warning(
+                    "Cannot parse the arity specification for function " + definition.getKey() + "; skipping...");
+                continue;
+            }
+
+            String minArity = arityMatcher.group(1);
+            Function function =
+                minArity == null ? new Function((String) definition.getKey(), parseInt(arityMatcher.group(2)))
+                                 : new Function((String) definition.getKey(), parseInt(minArity),
+                                                parseInt(arityMatcher.group(2)));
+
+            library.put(function.qualifiedName, function);
+        }
+    }
 
     public static void define(String qualifiedName, int minArity, int maxArity) {
         Function function = new Function(qualifiedName, minArity, maxArity);
@@ -43,49 +86,8 @@ public class Function {
         library.clear();
     }
 
-    public static void loadLibrary(String libraryFilename) throws IOException {
-        Properties definitions = new Properties();
-        try (FileReader reader = new FileReader(libraryFilename)) {
-            definitions.load(reader);
-        } catch (IOException ioe) {     // then try to load the file from the classpath, as initially named
-            InputStream resource = Function.class.getResourceAsStream(libraryFilename);
-            if (resource == null) {     // then try to load the file from the classpath, as absolute path
-                resource = Function.class.getResourceAsStream("/" + libraryFilename);
-                if (resource == null) { // no such file in the classpath - just throw the initial exception
-                    throw ioe;
-                }
-            }
-
-            try {
-                definitions.load(resource);
-            } finally {
-                try {
-                    resource.close();
-                } catch (IOException ioe2) {
-                    Logger.getLogger(Function.class.getName())
-                          .log(Level.WARNING, "Cannot close functions library resource stream; ignoring...", ioe2);
-                }
-            }
-        }
-
-        for (Map.Entry<Object, Object> definition : definitions.entrySet()) {
-            Matcher arityMatcher = ARITY_PATTERN.matcher((String) definition.getValue());
-            if (!arityMatcher.matches()) { // for now just skip the incorrectly defined functions but...
-                continue; // TODO: eventually log something before going to the next function definition
-            }
-
-            String minArity = arityMatcher.group(1);
-            Function function =
-                minArity == null ? new Function((String) definition.getKey(), parseInt(arityMatcher.group(2)))
-                                 : new Function((String) definition.getKey(), parseInt(minArity),
-                                                parseInt(arityMatcher.group(2)));
-
-            library.put(function.qualifiedName, function);
-        }
-    }
-
     /**
-     * An MScript parser normally matches separately the plugin, the function name and every passed argument so the
+     * An MScript parser normally matches separately the plugin, function name and every passed argument so the
      * signature of this methods makes it easy to be called upon a successful function call match.
      */
     public static CheckResult check(String pluginName, String functionName, int argsNumber) {
@@ -111,8 +113,6 @@ public class Function {
         return CheckResult.OK;
     }
 
-    // Consider refactoring into a class and associate a particular error message with every instance, created on each
-    // performed {@link #check(String, String, int)}.
     public static enum CheckResult {
         OK,
         NO_SUCH_FUNCTION,

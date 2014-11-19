@@ -8,7 +8,8 @@ import org.antlr.v4.runtime.misc.NotNull;
 /**
  * Thrown by the {@link com.mscript.parse.MScriptParser MScript parser} when (MScript-) specific parse errors occur
  * (e.g. a function call is successfully matched but either the function is not defined or the number of arguments
- * passed is wrong).
+ * passed is wrong; currently, function existence is checked at parse time as opposed to the usual case in which a
+ * semantic analysis phase would handle it).
  *
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
  * @version 1.0, Oct 21, 2014
