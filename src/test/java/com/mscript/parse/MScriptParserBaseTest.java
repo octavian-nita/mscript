@@ -34,8 +34,7 @@ public class MScriptParserBaseTest {
         public <T extends Token> void syntaxError(@NotNull Recognizer<T, ?> recognizer, @Nullable T offendingSymbol,
                                                   int line, int charPositionInLine, @NotNull String message,
                                                   @Nullable RecognitionException exception) {
-            fail(offendingSymbol + "@" + line + ":" + charPositionInLine + ": " + message +
-                 (exception != null && exception.getMessage() != null ? " [" + exception.getMessage() + "]" : ""));
+            fail(offendingSymbol + "@" + line + ":" + charPositionInLine + ": " + message);
         }
     }
 

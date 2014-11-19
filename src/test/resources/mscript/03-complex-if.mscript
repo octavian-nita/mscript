@@ -4,14 +4,14 @@ if
   - '3'
   )
 {
-  $print('OK if ()\n$f00() {}');
+  $print('OK if ()\n$f() {}');
   if(1 > 3) $print('Oh no!' + 4)
 
 
 
   else
 
-    $foo();
-  $boo();
+    $g();
+  $h();
 
 }
