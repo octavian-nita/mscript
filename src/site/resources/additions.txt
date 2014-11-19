@@ -1,0 +1,107 @@
+
+MScript Execution using MScript Antlr Parser
+
+// performs mscript syntax check per MScript parser rules and
+// returns a list of parser errors (MScriptError) detected. Newline separates mscript lines.
+// Instead of having function name/definition in a properties file, the functions should
+//    be dynamically retrieved with java reflection on sysFunc_p and pluginList_p.
+// Function call without plugin id must be checked against sysFunc_p first, if not found then check pluginList_p,
+//  and find the first plugin that has implemented the function (and parameters) (annotated by @MSCRIPT_METHOD).
+//  Note that the native function calls are prefixed with "_" but the function name declared in plugin class
+//  does not have "_".
+public List<MScriptError> checkMScript (String mscript_p, MScriptExecutor sysFunc_p, List<PluginAncestor> pluginList_p);
+
+// executes an mscript expression and returns the string array with each row of array containing the result
+// of each mscript line.
+// Must not wrap the exception thrown by
+// the functions in the mscript exception. I.e. if $rand() throws MyException, $executeMScript('$rand()', sysFunc, pluginList) call
+// must rethrow MyException thrown by $rand() and NOT InvocationException.
+public String executeMScript (String mscriptExpr_p, MScriptExecutor sysFunc_p, List<PluginAncestor> pluginList_p) throws Exception;
+
+
+// Below are a few java skeleton classes to get you started.
+public class MScriptError {
+	private String mscript;
+	private int lineNum;
+	private int charNum;
+	private String errorCtxText; // e.g. in $getValue('loc1','attr1','xxx'), the error is at 'xxx' (extra parameter), so errorCtxText is set to 'xxx'.
+	private String errorCode; // e.g. PARAM.TOOMANY
+	private String errorText; // free text description of the error that matches errorCode resolved from a java property file.
+}
+
+// This java method retrieves a list of methods implemented by a class.
+public static List<Method> getMScriptMethodDeclareList(Class class_p, Class filterClass_p) {
+	Method [] methods = class_p.getMethods();
+	List <Method> methodList = new java.util.ArrayList<Method>(methods.length);
+	for (int i=0; i<methods.length; i++) {
+		if (filterClass_p==null || methods[i].isAnnotationPresent(filterClass_p)) {
+			methodList.add(methods[i]);
+		}
+	}
+	return methodList;
+}
+
+// All plugins are descendants of this class PluginAncester.
+abstract public class PluginAncestor {
+	abstract public String getPluginID(); // to return plugin name/id like web, win, etc.
+}
+
+// This annotation interface is used to identify MScript functions implemented by the plugin or in SystemFunction class.
+public @interface MSCRIPT_METHOD { }
+
+// WebPlugin is an example of typical plugin interiting from PluginAncestor.
+public class WebPlugin extends PluginAncestor {
+	public String getPluginID() { return "Web"; }
+
+	// plugin functions, called with $Web.click('elem1') or $click('elem1')
+	@MSCRIPT_METHOD
+	public void click(String loc_p);
+
+	@MSCRIPT_METHOD
+	public void click(String loc_p, String opt_p);
+
+	@MSCRIPT_METHOD
+	public boolean isPresent(String loc_p);
+
+	@MSCRIPT_METHOD
+	public String getValue(String loc_p, String propName_p);
+
+	// native function not annotated with @MSCRIPT_METHOD,
+	// must be called with $Web._myFunc1(), $Web._myFunc2('param 1')
+	public int myFunc1 ();
+	public float myFunc2 (String p1_p);
+}
+
+// system functions without plugin name: called with $rand(), $getData('ds1','f1')
+public class MScriptExecutor {
+	// for handling basic operations
+	//  10 + $rand() => $add(10, $rand())
+	//  'aa' + $Web.getValue('elem1','value') => $add('aa', $Web.getValue('elem1','value'))
+	@MSCRIPT_METHOD
+	public String add (String val1_p, String val2_p);
+
+	// 5 * $rand() => $multiply(5,$rand())
+	@MSCRIPT_METHOD
+	public String multiply (String val1_p, String val2_p);
+
+	@MSCRIPT_METHOD
+	public String divide (String val1_p, String val2_p);
+
+	// variable assignment: var1 = 'abc' => $setVar('var1','abc')
+	@MSCRIPT_METHOD
+	public String setVar(String varName_p, String varVal_p);
+
+	// variable retrieval: $isPresent('[var1]') => $isPresent($getVar('var1'))
+	//	Is there a better way to reference var? like $isPresent($var1)
+	public String getVar(String varName_p);
+
+	@MSCRIPT_METHOD
+	public String getData(String dsName_p, String fieldName_p);
+
+	@MSCRIPT_METHOD
+	public float rand();
+
+	@MSCRIPT_METHOD
+	public int rand(String range_p);
+	...
+}
