@@ -3,7 +3,7 @@ MScript Execution using MScript Antlr Parser
 
 // performs mscript syntax check per MScript parser rules and
 // returns a list of parser errors (MScriptError) detected. Newline separates mscript lines.
-// Instead of having function name/definition in a properties file, the functions should
+// Instead of having function name/definition in a properties file, the functions should 
 //    be dynamically retrieved with java reflection on sysFunc_p and pluginList_p.
 // Function call without plugin id must be checked against sysFunc_p first, if not found then check pluginList_p,
 //  and find the first plugin that has implemented the function (and parameters) (annotated by @MSCRIPT_METHOD).
@@ -11,11 +11,13 @@ MScript Execution using MScript Antlr Parser
 //  does not have "_".
 public List<MScriptError> checkMScript (String mscript_p, MScriptExecutor sysFunc_p, List<PluginAncestor> pluginList_p);
 
-// executes an mscript expression and returns the string array with each row of array containing the result
-// of each mscript line.
+// executes an mscript expression and returns the string array with each row of array containing the result 
+// of each mscript line.  MScript expression may contain boolean expression (expression in if/while, e.g. "$getData($var1) > 10" as in if ($getData($var1) > 10)).
 // Must not wrap the exception thrown by
 // the functions in the mscript exception. I.e. if $rand() throws MyException, $executeMScript('$rand()', sysFunc, pluginList) call
 // must rethrow MyException thrown by $rand() and NOT InvocationException.
+// The order of operation must follow http://en.wikibooks.org/wiki/Arithmetic/Order_of_Operations.
+// This function must be implement thread-safe. I.e it will be called by cocurrent java threads.
 public String executeMScript (String mscriptExpr_p, MScriptExecutor sysFunc_p, List<PluginAncestor> pluginList_p) throws Exception;
 
 
@@ -26,7 +28,7 @@ public class MScriptError {
 	private int charNum;
 	private String errorCtxText; // e.g. in $getValue('loc1','attr1','xxx'), the error is at 'xxx' (extra parameter), so errorCtxText is set to 'xxx'.
 	private String errorCode; // e.g. PARAM.TOOMANY
-	private String errorText; // free text description of the error that matches errorCode resolved from a java property file.
+	private String errorText; // free text description of the error that matches errorCode resolved from a java property file. 
 }
 
 // This java method retrieves a list of methods implemented by a class.
@@ -40,7 +42,7 @@ public static List<Method> getMScriptMethodDeclareList(Class class_p, Class filt
 	}
 	return methodList;
 }
-
+	
 // All plugins are descendants of this class PluginAncester.
 abstract public class PluginAncestor {
 	abstract public String getPluginID(); // to return plugin name/id like web, win, etc.
@@ -52,7 +54,7 @@ public @interface MSCRIPT_METHOD { }
 // WebPlugin is an example of typical plugin interiting from PluginAncestor.
 public class WebPlugin extends PluginAncestor {
 	public String getPluginID() { return "Web"; }
-
+	
 	// plugin functions, called with $Web.click('elem1') or $click('elem1')
 	@MSCRIPT_METHOD
 	public void click(String loc_p);
@@ -65,8 +67,8 @@ public class WebPlugin extends PluginAncestor {
 
 	@MSCRIPT_METHOD
 	public String getValue(String loc_p, String propName_p);
-
-	// native function not annotated with @MSCRIPT_METHOD,
+	
+	// native fuction not annotated with @MSCRIPT_METHOD, 
 	// must be called with $Web._myFunc1(), $Web._myFunc2('param 1')
 	public int myFunc1 ();
 	public float myFunc2 (String p1_p);
@@ -94,7 +96,7 @@ public class MScriptExecutor {
 	// variable retrieval: $isPresent('[var1]') => $isPresent($getVar('var1'))
 	//	Is there a better way to reference var? like $isPresent($var1)
 	public String getVar(String varName_p);
-
+	
 	@MSCRIPT_METHOD
 	public String getData(String dsName_p, String fieldName_p);
 
