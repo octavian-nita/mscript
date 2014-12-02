@@ -71,9 +71,12 @@ switch (Function.check($plugin, $function, $argc)) {
 case NO_SUCH_FUNCTION:
     throw new MScriptRecognitionException("$" + ($plugin != null ? $plugin + "." : "") + $function +
                                           ": no such function defined", this, $SIGIL);
-case WRONG_NUM_OF_ARGS:
+case TOO_FEW_ARGUMENTS:
     throw new MScriptRecognitionException("$" + ($plugin != null ? $plugin + "." : "") + $function +
-                                          ": function cannot be called with " + $argc + " arguments", this, $SIGIL);
+                                          ": too few arguments (" + $argc + ") provided", this, $SIGIL);
+case TOO_MANY_ARGUMENTS:
+    throw new MScriptRecognitionException("$" + ($plugin != null ? $plugin + "." : "") + $function +
+                                          ": too many arguments (" + $argc + ") provided", this, $SIGIL);
 }
 
     } ;

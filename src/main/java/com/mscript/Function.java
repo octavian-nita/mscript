@@ -3,9 +3,9 @@ package com.mscript;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -30,7 +30,7 @@ public class Function {
      */
     protected static final Pattern ARITY_PATTERN = Pattern.compile("(?:\\s*(\\d+)\\s*,)?\\s*(\\d+)\\s*");
 
-    protected static final Map<String, Function> library = new HashMap<>(); // a library of defined functions
+    protected static final Map<String, Function> library = new ConcurrentHashMap<>(); // a library of defined functions
 
     public static void loadLibrary(String libraryFilename) throws IOException {
         Properties definitions = new Properties();
@@ -106,8 +106,12 @@ public class Function {
             return CheckResult.NO_SUCH_FUNCTION;
         }
 
-        if (argsNumber < function.minArity || argsNumber > function.maxArity) {
-            return CheckResult.WRONG_NUM_OF_ARGS;
+        if (argsNumber < function.minArity) {
+            return CheckResult.TOO_FEW_ARGUMENTS;
+        }
+
+        if (argsNumber > function.maxArity) {
+            return CheckResult.TOO_MANY_ARGUMENTS;
         }
 
         return CheckResult.OK;
@@ -116,7 +120,8 @@ public class Function {
     public static enum CheckResult {
         OK,
         NO_SUCH_FUNCTION,
-        WRONG_NUM_OF_ARGS
+        TOO_FEW_ARGUMENTS,
+        TOO_MANY_ARGUMENTS
     }
 
     public final String qualifiedName;

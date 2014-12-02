@@ -1,9 +1,12 @@
-1. Implement the two public functions as described in MScript_Execution_Spec.txt
-2. Must include JUnit tests in the project for both syntax check and execution method.
-3. Documented options used to generate java parser classes from antlr4.
-4. Appropriate caching and other technique must be used for maximum performance as the mscript execution function
-   could potentially be called tens of thousands of times in a short time.
-5. Ensure no memory leak with repetitive calls.
-6. MScript execution function must be thread-safe.
-7. The java codes must be well documented in the source code.
-8. Compile with JDK 1.7.
+[ ] 1. Implement the two public functions as described in MScript_Execution_Spec.txt
+[ ] 2. Must include JUnit tests in the project for both syntax check and execution method.
+
+[v] 3. Documented options used to generate java parser classes from antlr4.
+
+[ ] 4. Appropriate caching and other technique must be used for maximum performance as the mscript
+       execution function could potentially be called tens of thousands of times in a short time.
+[ ] 5. Ensure no memory leak with repetitive calls.
+[ ] 6. MScript execution function must be thread-safe.
+
+[v] 7. The java codes must be well documented in the source code.
+[v] 8. Compile with JDK 1.7.
