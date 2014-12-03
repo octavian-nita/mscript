@@ -1,3 +1,210 @@
+Yaxiong L.
+Hi Octavian,
+
+Here are my answers to your questions:
+1. The build-in (system functions) are instance functions from the MbtScriptExecutor class. This is a stateful object that is specific for the current process and must be passed as parameter calling execMScript(). But you can cache the function list for validating the function calls though for performance.
+
+2. Plugin objects are instance object as they are stateful and there could be multiple processes running concurrently each with its own plugin object of the same java plugin class. Some plugin functions are static but most of them are instance methods. But once the server /app starts, the plugin functions will not change, so that's an opportunity to cache the plugin function declarations keyed on plugin ID (even though getPluginID() is not static). Also number of different plugins used could also vary depending of if the license purchased.
+
+3. MSCRIPT_METHOD is an interface that we have been using, so the name must stay exactly as is.
+
+Please be aware that ThreadLocal should be used with caution as a process may spawn multiple threads to call MScript and the expectation is that these spawn threads will need to use the same MbtScriptExecutor (system function objectc) and plugin objects.
+
+Please let me know if it's still not clear to you.
+
+Sincerely,
+
+
+Yaxiong
+Yesterday
+8:56 pm
+Octav... N.
+Hi Yaxiong,
+
+While thinking how to implement the MScript runtime / engine in order to provide for scalability yet cache commonly used objects, I stumbled over these questions:
+
+* the built-in functions / plugins: will they be the same for all scripts? (this is the usual case, i.e. a function library doesn't change much at runtime)
+* will the MScript functions (in or out of a plugin) map on (i.e. be implemented by) Java STATIC or INSTANCE methods? I would incline towards static methods since they are easy to call given the fact that one does not need an object instance to call a static method... They are also probably stateless...
+
+The idea is that if the functions are know at program start time, one does not need to provide sysFunc_p and pluginList_p every time a script is checked or executed. One can pass them to the "discovery" mechanism of the MScript "engine" prior to starting to expect calls for parsing or execution...
+
+It's true that if the functions are static Java methods, the plugin ID would also need to be static...
+
+And another question: is the naming convention fixed or can I changed a bit? (e.g., I think renaming MSCRIPT_METHOD to MScriptFunction would be more like "idiomatic Java" since annotations follow the camel case naming convention usually...)
+
+Thanks an regards,
+Octavian
+Yesterday
+6:21 pm
+Octav... N.
+Hi Yaxiong,
+
+There are currently 5 tests running, in 2 methods in the MScriptParserAutoTest class:
+
+* testStringInterpolatedFunctionCall : separate test method for string interpolation
+* testScriptParsing : test method that automatically loads all *.mscript (or *.ms or *.mst) files under the mscript directory (can be found under test/resources project folder) and parses them; there are currently .mscript 4 files that are being parsed: 3 of them with more or less odd / curious syntax combinations and the last one containing the concatenation of all the scripts you added in the initial MScript spec document. In order to add a new test one has only to add a .mscript file in the specified directory and it will automatically be parsed.
+
+Since you were able to build the project and get the test rig running, it means you already generated the Java source code :) Java parser generation in one of the first phases performed by the Maven build when creating the final delivery / .jar file. One can generate the Java files for the parser at any time by running just
+
+mvn generate-sources
+
+instead of
+
+mvn install
+
+You can also make sure previously generated files are deleted by including the "clean" Maven goal:
+
+mvn clean generate-sources
+
+I chose to use Maven since it's almost the de-facto standard in building / managing Java projects and it can also easily / automatically download dependencies such as ANTLR libraries. The trick was to correctly configure it so that it would generate the Java source code for the parser prior to compiling the code, when building the project.
+
+Yes, I will do my best to finish the project in 2 weeks time.
+
+Regards,
+Tavi
+Nov 24, 2014
+10:53 am
+Yaxiong L.
+Please review these requirement and specification. Let me know if you have any questions.
+Task_Requirement.txt
+MScript_Execution_Spec.txt
+Nov 20, 2014
+9:32 pm
+Yaxiong L.
+Hi Octavian:
+
+I got the GUI app working, but still unsure how to run antlr4 to generate the parser java codes with the eclipse project. Can you provide the instruction to do that? Also did you include all of your junit tests in the project? I didn't see much Junit tests in the project.
+
+I have discussed your proposal with my team, I am still trying to get it approved without going the bidding process. Will let you know. Just to confirm, you will complete the work in 2 weeks starting on the job award date, correct?
+
+Yaxiong
+Nov 20, 2014
+9:19 pm
+Octav... N.
+Hey,
+
+I set up the project to use Java 1.7+ and I have a bit of code that uses Java 7 features (mostly reading files) but if you need it, I can convert it to Java 6 straight away.
+
+I've attached the entire project's source code folder as an Eclipse project you can import. Are you sure you're getting the exact same exception?
+
+If you are available on Skype or TeamViewer we could set up a meeting.
+
+/Tavi
+mscript-1.0-src-eclipse.zip
+Nov 20, 2014
+5:41 am
+Yaxiong L.
+What JDK version are you using?
+Nov 19, 2014
+9:21 pm
+Yaxiong L.
+Hi Octavian,
+
+I am still getting the error with your updated project, pointing to antlr 4 jar file is missing in the project.
+
+Could you try to build an eclipse project and test it out?
+
+I will review your proposal with my project team and get back to you.
+
+Thanks.
+
+Yaxiong
+
+Nov 19, 2014
+6:23 pm
+Octav... N.
+Hi Yaxiong,
+
+I've corrected the build-related issues and added remaining unit tests: the problem was that in order for Maven to download the latest version of ANTLR (that we needed, i.e. 4.4), we had to use the "com.tunnelvisionlabs" group Id and not the regular one.
+
+So if you just pull the project again and import it in Eclipse as a Maven project, everything should work just fine.
+
+I will try to implement the new requirements in 2 weeks since they don't seem very difficult. I would require 300 USD. Is that OK with you?
+
+Octavian
+Nov 19, 2014
+12:05 pm
+Yaxiong L.
+Forgot to answer your question on execution of mscriptiion, it's just expression, no if, while, etc. the if, then, else and while are handled by our app. You just execute the MScript expression that may contain nested calls. So it should be a simple Java class implementation, I think.
+
+By the way, did you finish the junky tests development?
+
+Yaxiong
+
+
+> On Nov 17, 2014, at 2:46 PM, Octavian N via Elance <E62236593-WR@workroom.elance.com> wrote:
+>
+>
+>
+Nov 18, 2014
+1:31 am
+Yaxiong L.
+Hi Octavian,
+
+I am getting the following error when I tried running mvn generate-source. Is there anything I've missed to install/setup in my Eclipse workspace?
+
+Regarding the add on task, I have some flexibility this time with the scheduling but not a lot. Please give me a proposal that you feel comfortable with good degree of comfidence: cost and time.
+
+Thanks.
+
+Yaxiong
+
+
+SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBin... for further details.
+[INFO] Scanning for projects...
+[INFO]
+[INFO] ------------------------------------------------------------------------
+[INFO] Building mscript-parser 1.0-SNAPSHOT
+[INFO] ------------------------------------------------------------------------
+[WARNING] The POM for org.antlr:antlr4-maven-plugin:jar:4.4-SNAPSHOT is missing, no dependency information available
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 0.102s
+[INFO] Finished at: Mon Nov 17 23:35:53 CST 2014
+[INFO] Final Memory: 6M/122M
+[INFO] ------------------------------------------------------------------------
+[ERROR] Plugin org.antlr:antlr4-maven-plugin:4.4-SNAPSHOT or one of its dependencies could not be resolved: Failed to read artifact descriptor for org.antlr:antlr4-maven-plugin:jar:4.4-SNAPSHOT: Could not find artifact org.antlr:antlr4-maven-plugin:pom:4.4-SNAPSHOT -> [Help 1]
+[ERROR]
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR]
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVE...
+
+Nov 18, 2014
+12:41 am
+Octav... N.
+Hey there,
+
+I'm attaching a new README file (Markdown format). You can read it (for your convenience) at https://github.com/octavian-nita/mscript.
+
+I've read the additions -- they look OK but I can't guarantee 2 weeks since I am not working 100% on it. How flexible are you in terms of time?
+
+Also, about the execution of an MScript expression: what should the array contain in the case of a loop? because a loop is not an expression but a statement; likewise for an if statement or an assignment statement or a function that does not return anything?
+README.md
+Nov 17, 2014
+3:44 pm
+Yaxiong L.
+Attached specification.
+additions.txt
+Nov 16, 2014
+4:50 pm
+Yaxiong L.
+Hi Octavian,
+
+Please get the doc completed ASAP so that we can move on to the next task.
+
+I have attached the spec for the next task. Please review it and give me a proposal of cost and time. I need this task completed in the next 2 weeks. Let me know if you have any questions.
+
+Thanks.
+
+
+Yaxiong
+Nov 16, 2014
+4:48 pm
 Octav... N.
 Status Report for week of Nov 03, 2014
 
