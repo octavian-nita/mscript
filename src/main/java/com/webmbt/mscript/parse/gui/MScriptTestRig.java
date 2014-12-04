@@ -1,9 +1,9 @@
-package com.mscript.parse.gui;
+package com.webmbt.mscript.parse.gui;
 
 import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;
 
-import com.mscript.Function;
+import com.webmbt.mscript.Function;
 import com.mscript.parse.MScriptLexer;
 import com.mscript.parse.MScriptParser;
 

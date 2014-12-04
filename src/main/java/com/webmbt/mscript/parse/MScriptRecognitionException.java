@@ -1,4 +1,4 @@
-package com.mscript.parse;
+package com.webmbt.mscript.parse;
 
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.RecognitionException;

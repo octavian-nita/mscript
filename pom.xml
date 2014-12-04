@@ -73,7 +73,7 @@
           </descriptorRefs>
           <archive>
             <manifest>
-              <mainClass>com.mscript.parse.gui.MScriptTestRig</mainClass>
+              <mainClass>com.webmbt.mscript.parse.gui.MScriptTestRig</mainClass>
             </manifest>
           </archive>
         </configuration>

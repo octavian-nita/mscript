@@ -1,5 +1,7 @@
-package com.mscript.parse;
+package com.webmbt.mscript.parse;
 
+import com.mscript.parse.MScriptLexer;
+import com.mscript.parse.MScriptParser;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CommonTokenStream;

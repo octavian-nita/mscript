@@ -9,9 +9,9 @@ parser grammar MScriptParser;
 options { tokenVocab=MScriptLexer; }
 
 @header {
-import com.mscript.Function;
-import com.mscript.Function.CheckResult;
-import com.mscript.parse.MScriptRecognitionException;
+import com.webmbt.mscript.Function;
+import com.webmbt.mscript.Function.CheckResult;
+import com.webmbt.mscript.parse.MScriptRecognitionException;
 }
 
 @members {
@@ -58,7 +58,7 @@ stmt   : assign | fncall | ifStmt | whileStmt | breakStmt | continueStmt ;
 assign : ID pad* ASSIGN pad* expr ;
 
 fncall
-locals [int argc, String plugin, String function] // match and store plugin and function names
+locals [String plugin, String function, int argc] // match and store plugin and function names
   : SIGIL // followed by...
 
     ( ID {$plugin = $ID.text;} DOT )? ID {$function = $ID.text;} pad*

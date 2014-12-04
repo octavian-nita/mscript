@@ -1,4 +1,4 @@
-package com.mscript;
+package com.webmbt.mscript;
 
 /**
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)

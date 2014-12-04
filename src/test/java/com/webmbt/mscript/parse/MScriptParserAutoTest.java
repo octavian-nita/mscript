@@ -1,6 +1,6 @@
-package com.mscript.parse;
+package com.webmbt.mscript.parse;
 
-import com.mscript.Function;
+import com.webmbt.mscript.Function;
 import org.junit.Test;
 
 import java.io.File;
