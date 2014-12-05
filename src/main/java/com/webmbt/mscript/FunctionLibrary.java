@@ -21,24 +21,21 @@ import static java.util.logging.Level.WARNING;
  */
 public class FunctionLibrary {
 
-    /**
-     * {@link java.util.regex.Pattern Regular expression} used to parse a function's arity.
-     */
-    protected static final Pattern ARITY_PATTERN = Pattern.compile("(?:\\s*(\\d+)\\s*,)?\\s*(\\d+)\\s*");
+    protected static final String SYSTEM_FUNCTIONS = "__SYS__";
 
-    protected static final Logger logger = Logger.getLogger(FunctionLibrary.class.getName());
-
-    protected final Map<String, Function> library = new ConcurrentHashMap<>();
+    protected final Map<String, Map<String, Function>> library = new ConcurrentHashMap<>();
 
     public void load(String libraryFilename) throws IOException {
+        Logger log = Logger.getLogger(FunctionLibrary.class.getName());
+
         Properties signatures = new Properties();
         try (FileReader reader = new FileReader(libraryFilename)) {
             signatures.load(reader);
-        } catch (IOException ioe) {     // then try to load the file from the classpath, as initially named
+        } catch (IOException ioe) {     // try to load the file from the classpath, as initially specified
             InputStream resource = Function.class.getResourceAsStream(libraryFilename);
-            if (resource == null) {     // then try to load the file from the classpath, as absolute path
+            if (resource == null) {     // try to load the file from the classpath, as absolute path
                 resource = Function.class.getResourceAsStream("/" + libraryFilename);
-                if (resource == null) { // no such file in the classpath - just throw the initial exception
+                if (resource == null) { // no such file in the classpath, just throw the initial exception
                     throw ioe;
                 }
             }
@@ -48,25 +45,35 @@ public class FunctionLibrary {
                 try {
                     resource.close();
                 } catch (IOException ioe2) {
-                    logger.log(WARNING, "Cannot close function library definition resource stream; ignoring...", ioe2);
+                    log.log(WARNING, "cannot close function library definition resource stream; ignoring...", ioe2);
                 }
             }
         }
 
+        Pattern namesPattern = Pattern.compile("\\$?(?:([a-zA-Z_][a-zA-Z_0-9]*)\\.)?([a-zA-Z_][a-zA-Z_0-9]*)");
+        Pattern arityPattern = Pattern.compile("(?:\\s*(\\d+)\\s*,)?\\s*(\\d+)\\s*");
+
         for (Map.Entry<Object, Object> signature : signatures.entrySet()) {
-            Matcher arityMatcher = ARITY_PATTERN.matcher((String) signature.getValue());
-            if (!arityMatcher.matches()) { // for now just skip the incorrectly defined functions but...
-                logger.warning("Cannot parse arity for function " + signature.getKey() + "; skipping...");
-                continue;
+            try {
+                Matcher namesMatcher = namesPattern.matcher((String) signature.getKey());
+
+                Matcher arityMatcher = arityPattern.matcher((String) signature.getValue());
+                if (!arityMatcher.matches()) { // for now just skip the incorrectly defined functions but...
+                    log.warning("cannot parse function arity for " + signature.getKey() + "; skipping...");
+                    continue;
+                }
+
+                String minArity = arityMatcher.group(1);
+                Function function =
+                    minArity == null ? new Function((String) signature.getKey(), parseInt(arityMatcher.group(2)))
+                                     : new Function((String) signature.getKey(), parseInt(minArity),
+                                                    parseInt(arityMatcher.group(2)));
+
+                add(function);
+            } catch (Throwable throwable) {
+                log.log(WARNING, "cannot parse function signature for " + signature.getValue() + "; skipping...",
+                        throwable);
             }
-
-            String minArity = arityMatcher.group(1);
-            Function function =
-                minArity == null ? new Function((String) signature.getKey(), parseInt(arityMatcher.group(2)))
-                                 : new Function((String) signature.getKey(), parseInt(minArity),
-                                                parseInt(arityMatcher.group(2)));
-
-            library.put(function.qualifiedName, function);
         }
     }
 
@@ -75,6 +82,9 @@ public class FunctionLibrary {
     }
 
     public void clear() {
+        for (Map.Entry<String, Map<String, Function>> libEntry : library.entrySet()) {
+            libEntry.getValue().clear();
+        }
         library.clear();
     }
 
