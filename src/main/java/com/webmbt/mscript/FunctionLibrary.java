@@ -50,24 +50,29 @@ public class FunctionLibrary {
             }
         }
 
-        Pattern namesPattern = Pattern.compile("\\$?(?:([a-zA-Z_][a-zA-Z_0-9]*)\\.)?([a-zA-Z_][a-zA-Z_0-9]*)");
+        Pattern namesPattern = Pattern.compile("\\s*\\$?(?:([a-zA-Z_][a-zA-Z_0-9]*)\\.)?([a-zA-Z_][a-zA-Z_0-9]*)\\s*");
         Pattern arityPattern = Pattern.compile("(?:\\s*(\\d+)\\s*,)?\\s*(\\d+)\\s*");
 
         for (Map.Entry<Object, Object> signature : signatures.entrySet()) {
             try {
                 Matcher namesMatcher = namesPattern.matcher((String) signature.getKey());
+                if (!namesMatcher.matches()) { // for now just skip the incorrectly defined functions...
+                    log.warning("cannot parse function plugin and/or name for " + signature.getKey() + "; skipping...");
+                    continue;
+                }
 
                 Matcher arityMatcher = arityPattern.matcher((String) signature.getValue());
-                if (!arityMatcher.matches()) { // for now just skip the incorrectly defined functions but...
+                if (!arityMatcher.matches()) { // for now just skip the incorrectly defined functions...
                     log.warning("cannot parse function arity for " + signature.getKey() + "; skipping...");
                     continue;
                 }
 
+                String name = namesMatcher.group(2);
+                String plugin = namesMatcher.group(1);
                 String minArity = arityMatcher.group(1);
-                Function function =
-                    minArity == null ? new Function((String) signature.getKey(), parseInt(arityMatcher.group(2)))
-                                     : new Function((String) signature.getKey(), parseInt(minArity),
-                                                    parseInt(arityMatcher.group(2)));
+                Function function = minArity == null ? new Function(name, plugin, parseInt(arityMatcher.group(2)))
+                                                     : new Function(name, plugin, parseInt(minArity),
+                                                                    parseInt(arityMatcher.group(2)));
 
                 add(function);
             } catch (Throwable throwable) {
@@ -78,7 +83,17 @@ public class FunctionLibrary {
     }
 
     public void add(Function function) {
-        library.put(function.qualifiedName, function);
+        String plugin = function.isSystemFunction() ? SYSTEM_FUNCTIONS : function.getPluginName();
+
+        // Not exactly thread-safe but the assumption is that we build / add to the functions library once,
+        // at the beginning of the process!
+        Map<String, Function> functions = library.get(plugin);
+        if (functions == null) {
+            functions = new ConcurrentHashMap<>();
+            library.put(plugin, functions);
+        }
+
+        functions.put(function.getName(), function);
     }
 
     public void clear() {
@@ -93,17 +108,16 @@ public class FunctionLibrary {
      * signature of this methods is designed so that it would be easily callable upon a successful function call match.
      */
     public CheckResult check(String pluginName, String functionName, int argsNumber) {
-        StringBuilder qualifiedName = new StringBuilder(pluginName == null ? "" : pluginName.trim());
-        if (qualifiedName.length() > 0) {
-            qualifiedName.append('.');
-        }
-        qualifiedName.append(functionName == null ? "" : functionName.trim());
-        if (qualifiedName.length() > 0 && qualifiedName.charAt(0) != '$') {
-            qualifiedName.insert(0, '$');
+        if (pluginName == null || (pluginName = pluginName.trim()).length() == 0) {
+            pluginName = SYSTEM_FUNCTIONS;
         }
 
-        Function function = library.get(qualifiedName.toString());
+        Map<String, Function> functions = library.get(pluginName);
+        if (functions == null) {
+            return CheckResult.NO_SUCH_FUNCTION;
+        }
 
+        Function function = functions.get(functionName);
         if (function == null) {
             return CheckResult.NO_SUCH_FUNCTION;
         }
