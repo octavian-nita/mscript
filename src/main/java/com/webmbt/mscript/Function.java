@@ -4,7 +4,7 @@ package com.webmbt.mscript;
  * <p>
  * MScript function signatures can be inferred by scanning {@link com.webmbt.plugin.MScriptInterface.MSCRIPT_METHOD
  * MSCRIPT_METHOD}-annotated Java methods or {@link com.webmbt.mscript.FunctionLibrary#load(String) loaded} from {@link
- * java.util.Properties} files.
+ * java.util.Properties Properties} files.
  * </p>
  * <p>
  * In MScript code, a function reference is prefixed by a sigil ($) and the name can optionally be prefixed by a
@@ -16,6 +16,9 @@ package com.webmbt.mscript;
  */
 public class Function {
 
+    /**
+     * <code>null</code> or empty for 'system' functions.
+     */
     protected String pluginName;
 
     protected String name;
@@ -48,12 +51,12 @@ public class Function {
         if (name == null || (name = name.trim()).length() == 0) {
             throw new IllegalArgumentException("the name of a function cannot be null or empty");
         }
+
         this.name = name;
 
         if (pluginName != null) {
             this.pluginName = pluginName.trim();
         }
-
         setMinArity(minArity);
         setMaxArity(maxArity);
     }
