@@ -6,4 +6,6 @@ package com.webmbt.mscript;
  */
 public class MScriptEngine {
 
+    protected FunctionLibrary library = new FunctionLibrary();
+
 }

@@ -9,18 +9,12 @@ parser grammar MScriptParser;
 options { tokenVocab=MScriptLexer; }
 
 @header {
-import com.webmbt.mscript.Function;
-import com.webmbt.mscript.Function.CheckResult;
+import com.webmbt.mscript.FunctionLibrary;
+import com.webmbt.mscript.FunctionLibrary.CheckResult;
 import com.webmbt.mscript.parse.MScriptRecognitionException;
 }
 
 @members {
-
-/**
- * The current level of loop nesting (0 for top level statements). Used, for example, to determine at parse time whether
- * a matched break or continue statement can indeed be accepted.
- */
-protected int loopDepth;
 
 protected void check(boolean condition, String errorMessage) {
     if (!condition) {
@@ -32,6 +26,24 @@ protected static class WhileOptions {
     public boolean hasIndex;
     public boolean hasLabel;
     public boolean hasMaxLoopNum;
+}
+
+/**
+ * The current level of loop nesting (0 for top level statements). Used, for example, to determine at parse time whether
+ * a matched break or continue statement can indeed be accepted.
+ */
+protected int loopDepth;
+
+protected FunctionLibrary library;
+
+public MScriptParser(TokenStream input, FunctionLibrary library) {
+		this(input);
+		this.library = library;
+}
+
+public MScriptParser setLibrary(FunctionLibrary library) {
+		this.library = library;
+		return this;
 }
 
 }
@@ -67,7 +79,13 @@ locals [String plugin, String function, int argc] // match and store plugin and 
     LPAREN pad* ( expr {$argc++;} ( pad* COMMA pad* expr {$argc++;} )* )? pad* RPAREN {
 
 // After matching the whole function call, validate function name and arguments:
-switch (Function.check($plugin, $function, $argc)) {
+
+if (library == null) {
+    throw new MScriptRecognitionException("$" + ($plugin != null ? $plugin + "." : "") + $function +
+                                          ": no function function specified for the parser", this, $SIGIL);
+}
+
+switch (library.check($plugin, $function, $argc)) {
 case NO_SUCH_FUNCTION:
     throw new MScriptRecognitionException("$" + ($plugin != null ? $plugin + "." : "") + $function +
                                           ": no such function defined", this, $SIGIL);

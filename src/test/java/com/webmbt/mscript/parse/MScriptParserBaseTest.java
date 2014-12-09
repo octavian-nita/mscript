@@ -1,7 +1,8 @@
 package com.webmbt.mscript.parse;
 
-import com.mscript.parse.MScriptLexer;
-import com.mscript.parse.MScriptParser;
+import com.webmbt.mscript.FunctionLibrary;
+import com.webmbt.mscript.parse.MScriptLexer;
+import com.webmbt.mscript.parse.MScriptParser;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -43,48 +44,49 @@ public class MScriptParserBaseTest {
     /**
      * Equivalent to <code>parse(new ANTLRInputStream(text))</code>.
      *
-     * @see #parse(ANTLRInputStream)
+     * @see #parse(ANTLRInputStream, FunctionLibrary)
      */
-    protected ParseTree parseText(String text) {
-        return parse(new ANTLRInputStream(text));
+    protected ParseTree parseText(String text, FunctionLibrary library) {
+        return parse(new ANTLRInputStream(text), library);
     }
 
     /**
      * Equivalent to <code>parse(new File(filename))</code>.
      *
-     * @see #parse(File)
+     * @see #parse(File, FunctionLibrary)
      */
-    protected ParseTree parse(String filename) throws IOException {
-        return parse(new File(filename));
+    protected ParseTree parse(String filename, FunctionLibrary library) throws IOException {
+        return parse(new File(filename), library);
     }
 
     /**
      * Equivalent to <code>parse(new ANTLRInputStream(new FileReader(file)))</code>.
      *
-     * @see #parse(ANTLRInputStream)
+     * @see #parse(ANTLRInputStream, FunctionLibrary)
      */
-    protected ParseTree parse(File file) throws IOException {
+    protected ParseTree parse(File file, FunctionLibrary library) throws IOException {
         try (FileReader reader = new FileReader(file)) {
-            return parse(new ANTLRInputStream(reader));
+            return parse(new ANTLRInputStream(reader), library);
         }
     }
 
     /**
      * Defines what it means to <a href="http://xunitpatterns.com/exercise%20SUT.html">exercise</a> the <a
      * href="http://xunitpatterns.com/SUT.html">system under test (or SUT)</a> for simple {@link
-     * com.mscript.parse.MScriptParser} tests: parse streams containing MScript code and return resulting {@link
+     * com.webmbt.mscript.parse.MScriptParser} tests: parse streams containing MScript code and return resulting {@link
      * ParseTree parse tree}. Encapsulates the code required to call the MScript parser from an application. If the
      * parsing process fails, tests calling this method will also fail.
      *
-     * @param chars <a href="http://xunitpatterns.com/test%20fixture%20-%20xUnit.html">fixture</a> {@link
-     *              ANTLRInputStream input stream} to be parsed
+     * @param chars   <a href="http://xunitpatterns.com/test%20fixture%20-%20xUnit.html">fixture</a> {@link
+     *                ANTLRInputStream input stream} to be parsed
+     * @param library {@link FunctionLibrary function library} used by the parser to validate function calls
      * @return the {@link ParseTree parse tree} resulting after the parsing process
      */
-    protected ParseTree parse(ANTLRInputStream chars) {
+    protected ParseTree parse(ANTLRInputStream chars, FunctionLibrary library) {
         MScriptLexer mScriptLexer = new MScriptLexer(chars);
 
         CommonTokenStream tokens = new CommonTokenStream(mScriptLexer);
-        MScriptParser mScriptParser = new MScriptParser(tokens);
+        MScriptParser mScriptParser = new MScriptParser(tokens, library);
 
         // Set up a custom error listener that forces a test to fail upon the first parsing error:
         mScriptParser.addErrorListener(new MScriptParserTestErrorListener());

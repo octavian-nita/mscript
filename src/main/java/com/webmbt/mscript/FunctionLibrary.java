@@ -55,6 +55,15 @@ public class FunctionLibrary {
             }
         }
 
+        load(signatures);
+    }
+
+    public void load(Properties signatures) {
+        if (signatures == null) {
+            throw new NullPointerException("cannot load function library from a null signatures specification");
+        }
+
+        Logger log = Logger.getLogger(getClass().getName());
         Pattern namesPattern = Pattern.compile("\\s*\\$?(?:([a-zA-Z_][a-zA-Z_0-9]*)\\.)?([a-zA-Z_][a-zA-Z_0-9]*)\\s*");
         Pattern arityPattern = Pattern.compile("(?:\\s*(\\d+)\\s*,)?\\s*(\\d+)\\s*");
 
@@ -104,13 +113,6 @@ public class FunctionLibrary {
         }
 
         pluginFunctions.put(function.getName(), function);
-    }
-
-    public void clear() {
-        for (ConcurrentMap.Entry<String, ConcurrentMap<String, Function>> libEntry : library.entrySet()) {
-            libEntry.getValue().clear();
-        }
-        library.clear();
     }
 
     /**

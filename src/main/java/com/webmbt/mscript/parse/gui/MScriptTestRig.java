@@ -3,9 +3,9 @@ package com.webmbt.mscript.parse.gui;
 import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;
 
-import com.webmbt.mscript.Function;
-import com.mscript.parse.MScriptLexer;
-import com.mscript.parse.MScriptParser;
+import com.webmbt.mscript.FunctionLibrary;
+import com.webmbt.mscript.parse.MScriptLexer;
+import com.webmbt.mscript.parse.MScriptParser;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -58,8 +58,9 @@ public class MScriptTestRig extends javax.swing.JFrame {
     public static void main(String args[]) {
 
         // Try to load a default functions library file:
+        FunctionLibrary library = new FunctionLibrary();
         try {
-            Function.loadLibrary("functions.properties");
+            library.load("functions.properties");
         } catch (Throwable ex) {
             logger.log(SEVERE, "Cannot load functions library", ex);
         }

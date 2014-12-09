@@ -11,6 +11,10 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  */
 public interface MScriptInterface {
 
+    /**
+     * Methods annotated with {@link com.webmbt.plugin.MScriptInterface.MSCRIPT_METHOD} represent MScript function
+     * implementations and should only have {@link java.lang.String} parameters.
+     */
     @Retention(value = RUNTIME)
     @Target(value = METHOD)
     public static @interface MSCRIPT_METHOD {}

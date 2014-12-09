@@ -11,17 +11,17 @@ public class MbtScriptExecutor implements MScriptInterface {
     public String f() { return "f()"; }
 
     @MSCRIPT_METHOD
-    public int g(int arg0) { return 1; }
+    public String g(String arg0) { return "1"; }
 
     @MSCRIPT_METHOD
-    public int g(int arg0, String arg1) { return 2; }
+    public int g(String arg0, String arg1) { return 2; }
 
     @MSCRIPT_METHOD
-    public int g(int arg0, String arg1, float arg2, int arg3) { return 4; }
+    public int g(String arg0, String arg1, String arg2, String arg3) { return 4; }
 
     @MSCRIPT_METHOD
-    public String h(int arg0, double arg1) { return "2"; }
+    public String h(String arg0, String arg1) { return "2"; }
 
     @MSCRIPT_METHOD
-    public int h(int arg0, String arg1, double arg2, String arg3, String arg4) { return 5; }
+    public int h(String arg0, String arg1, String arg2, String arg3, String arg4) { return 5; }
 }
