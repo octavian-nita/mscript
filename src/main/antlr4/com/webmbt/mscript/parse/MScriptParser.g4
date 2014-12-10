@@ -61,11 +61,11 @@ public MScriptParser setLibrary(FunctionLibrary library) {
 // (re)organize the AST (apart from how one writes the grammar).
 //
 
-script : ( pad | SEMI )* block? EOF ;
+script : ( pad | SEMI )* stats? EOF ;
 
-block  : ( pad | SEMI )* stmt ( COMM* ( NL | SEMI ) COMM* stmt? )* ;
+stats  : ( pad | SEMI )* stat ( COMM* ( NL | SEMI ) COMM* stat? )* ;
 
-stmt   : assign | fncall | ifStmt | whileStmt | breakStmt | continueStmt ;
+stat   : assign | fncall | ifStat | whileStat | breakStat | continueStat ;
 
 assign : ID pad* ASSIGN pad* expr ;
 
@@ -99,22 +99,22 @@ case TOO_MANY_ARGUMENTS:
 
     } ;
 
-ifStmt
-  : IF pad* LPAREN pad* cond pad* RPAREN pad* ( LBRACE ( block? | ( pad | SEMI )* ) RBRACE | stmt )
+ifStat
+  : IF pad* LPAREN pad* cond pad* RPAREN pad* ( LBRACE ( stats? | ( pad | SEMI )* ) RBRACE | stat )
 
-    ( pad* ELSE pad* ( LBRACE ( block? | ( pad | SEMI )* ) RBRACE | stmt ) )? ; // optional ELSE branch
+    ( pad* ELSE pad* ( LBRACE ( stats? | ( pad | SEMI )* ) RBRACE | stat ) )? ; // optional ELSE branch
 
 cond
   : expr pad* ( EQ | NE | LE | LT | GE | GT ) pad* expr
   | expr // in order to allow statements like while (v) { ... } or if ('true') { ... }
   ;
 
-whileStmt
+whileStat
   : WHILE pad*
 
     LPAREN pad* cond pad* ( pad* PIPE pad* whileOpts pad* )? RPAREN pad* {++loopDepth;}
 
-    ( LBRACE ( block? | ( pad | SEMI )* ) RBRACE | stmt ) {if (loopDepth > 0) { --loopDepth; }} ;
+    ( LBRACE ( stats? | ( pad | SEMI )* ) RBRACE | stat ) {if (loopDepth > 0) { --loopDepth; }} ;
 
 //
 // Trying to be as specfic as possible when describing the named while options in order to catch as
@@ -184,9 +184,9 @@ if (options != null) {
 
 };
 
-breakStmt : BREAK pad* ID? {check(loopDepth > 0, "break cannot be used outside of a loop");} ;
+breakStat : BREAK pad* ID? {check(loopDepth > 0, "break cannot be used outside of a loop");} ;
 
-continueStmt : CONTINUE pad* ID? {check(loopDepth > 0, "continue cannot be used outside of a loop");} ;
+continueStat : CONTINUE pad* ID? {check(loopDepth > 0, "continue cannot be used outside of a loop");} ;
 
 expr
   : expr pad* ( MUL | DIV | MOD ) pad* expr

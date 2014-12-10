@@ -134,11 +134,11 @@ public class FunctionLibrary {
             return CheckResult.NO_SUCH_FUNCTION;
         }
 
-        if (argsNumber < function.minArity) {
+        if (argsNumber < function.getMinArity()) {
             return CheckResult.TOO_FEW_ARGUMENTS;
         }
 
-        if (argsNumber > function.maxArity) {
+        if (argsNumber > function.getMaxArity()) {
             return CheckResult.TOO_MANY_ARGUMENTS;
         }
 

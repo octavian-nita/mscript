@@ -7,8 +7,9 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * <p>
  * MScript function signatures can be inferred by scanning {@link com.webmbt.plugin.MScriptInterface.MSCRIPT_METHOD
- * MSCRIPT_METHOD}-annotated Java methods or {@link com.webmbt.mscript.FunctionLibrary#load(String) loaded} from {@link
- * java.util.Properties Properties} files.
+ * MSCRIPT_METHOD}-annotated Java methods or loaded from {@link java.util.Properties Properties} {@link
+ * com.webmbt.mscript.FunctionLibrary#load(java.util.Properties) instances} or {@link
+ * com.webmbt.mscript.FunctionLibrary#load(String) files}.
  * </p>
  * <p>
  * In MScript code, a function reference is prefixed by a sigil ($) and the name can optionally be prefixed by a
@@ -20,23 +21,15 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class Function {
 
-    /**
-     * <code>null</code> or empty for 'system' functions.
-     */
-    protected String pluginName;
+    private String pluginName;
 
-    protected String name;
+    private String name;
 
-    protected int minArity;
+    private int minArity;
 
-    protected int maxArity;
+    private int maxArity;
 
-    /**
-     * An MScript function can have multiple implementations in the form of (eventually overloaded) Java methods. These
-     * methods should only take parameters of type {@link java.lang.String} and selecting which actual method is called
-     * is based on the number of arguments provided in the MScript call.
-     */
-    protected final ConcurrentMap<Integer, Method> implementations = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Integer, Method> implementations = new ConcurrentHashMap<>();
 
     public Function(String name) {
         this(name, null, 0, 0);
@@ -68,8 +61,15 @@ public class Function {
             this.pluginName = pluginName.trim();
         }
 
-        setMinArity(minArity);
-        setMaxArity(maxArity);
+        if (minArity < 0) {
+            throw new IllegalArgumentException("the minimum arity of a function cannot be less than 0");
+        }
+        this.minArity = minArity;
+
+        if (maxArity < minArity) {
+            throw new IllegalArgumentException("the maximum arity of a function cannot be less than its minimum arity");
+        }
+        this.maxArity = maxArity;
     }
 
     public boolean isSystemFunction() {
@@ -80,6 +80,9 @@ public class Function {
         return name;
     }
 
+    /**
+     * @return <code>null</code> or empty for 'system' functions
+     */
     public String getPluginName() {
         return pluginName;
     }
@@ -88,29 +91,21 @@ public class Function {
         return minArity;
     }
 
-    public Function setMinArity(int minArity) {
-        if (minArity < 0) {
-            throw new IllegalArgumentException("the minimum arity of a function cannot be less than 0");
-        }
-        this.minArity = minArity;
-        return this;
-    }
-
     public int getMaxArity() {
         return maxArity;
     }
 
-    public Function setMaxArity(int maxArity) {
-        if (maxArity < minArity) {
-            throw new IllegalArgumentException("the maximum arity of a function cannot be less than its minimum arity");
-        }
-        this.maxArity = maxArity;
-        return this;
-    }
-
     /**
-     * From this method's point of view, the name of the added <code>method</code> does not really matter in identifying
-     * the function; this might provide for increased flexibility.
+     * <p>
+     * An MScript function can have multiple implementations in the form of (eventually overloaded) Java methods.
+     * Currently, the requirement is these methods to only take {@link java.lang.String} parameters (no varargs) and
+     * selecting which actual method is called is done based on the method's arity and the number of arguments provided
+     * in the MScript call.
+     * </p>
+     * <p>
+     * The name of the added <code>method</code> does not really matter in identifying the function; this might provide
+     * for increased flexibility.
+     * </p>
      */
     public Function addImplementation(Method method) {
         if (method == null) {
