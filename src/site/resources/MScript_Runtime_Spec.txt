@@ -68,7 +68,7 @@ public class WebPlugin extends PluginAncestor {
 	@MSCRIPT_METHOD
 	public String getValue(String loc_p, String propName_p);
 
-	// native fuction not annotated with @MSCRIPT_METHOD,
+	// native function not annotated with @MSCRIPT_METHOD,
 	// must be called with $Web._myFunc1(), $Web._myFunc2('param 1')
 	public int myFunc1 ();
 	public float myFunc2 (String p1_p);

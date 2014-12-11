@@ -5,16 +5,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * <p>
- * MScript function signatures can be inferred by scanning {@link com.webmbt.plugin.MScriptInterface.MSCRIPT_METHOD
- * MSCRIPT_METHOD}-annotated Java methods or loaded from {@link java.util.Properties Properties} {@link
- * com.webmbt.mscript.FunctionLibrary#load(java.util.Properties) instances} or {@link
- * com.webmbt.mscript.FunctionLibrary#load(String) files}.
- * </p>
- * <p>
  * In MScript code, a function reference is prefixed by a sigil ($) and the name can optionally be prefixed by a
  * plugin name. MScript functions are <a href="http://en.wikipedia.org/wiki/Variadic_function">variadic</a>.
- * </p>
  *
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
  * @version 1.1, Dec 04, 2014
@@ -72,6 +64,12 @@ public class Function {
         this.maxArity = maxArity;
     }
 
+    /**
+     * <em>System</em> (or <em>built-in</em>) functions do not belong to any plugin (the {@link #getPluginName()
+     * plugin name} is either <code>null</code> or empty) and can be called from MScript without any prefix.
+     *
+     * @return <code>true</code> if <code>this</code> is a system function and <code>false</code> otherwise
+     */
     public boolean isSystemFunction() {
         return pluginName == null || pluginName.trim().length() == 0;
     }
@@ -81,7 +79,7 @@ public class Function {
     }
 
     /**
-     * @return <code>null</code> or empty for 'system' functions
+     * @return <code>null</code> or empty (whitespace-only) for <em>{@link #isSystemFunction() system}</em> functions
      */
     public String getPluginName() {
         return pluginName;
@@ -97,30 +95,38 @@ public class Function {
 
     /**
      * <p>
-     * An MScript function can have multiple implementations in the form of (eventually overloaded) Java methods.
-     * Currently, the requirement is these methods to only take {@link java.lang.String} parameters (no varargs) and
-     * selecting which actual method is called is done based on the method's arity and the number of arguments provided
-     * in the MScript call.
+     * An MScript function can have multiple implementations in the form of (eventually overloaded) Java {@link Method
+     * methods}. Currently, the requirement is these methods to only take {@link java.lang.String} parameters (no
+     * varargs) and selecting which actual method is called is done based on the method's arity and the number of
+     * arguments provided in the MScript call.
      * </p>
      * <p>
-     * The name of the added <code>method</code> does not really matter in identifying the function; this might provide
-     * for increased flexibility.
+     * The name of the added <code>method</code> does not really matter in identifying the function; this provides
+     * for increased flexibility (different naming / calling conventions in MScript, etc.).
      * </p>
      */
     public Function addImplementation(Method method) {
         if (method == null) {
-            throw new NullPointerException("cannot add a null function implementation");
+            throw new NullPointerException("cannot add a null function (Java) implementation");
         }
 
-        int parameterCount = method.getParameterCount();
-        implementations.put(parameterCount, method); // replaces previously added implementation having the same arity!
+        Class<?>[] parameterTypes = method.getParameterTypes();
+        for (Class<?> parametersType : parameterTypes) {
+            if (parametersType != String.class) {
+                throw new IllegalArgumentException(
+                    "function (Java) implementations should only take parameters of type java.lang.String");
+            }
+        }
+
+        implementations
+            .put(parameterTypes.length, method); // replaces previously added implementation having the same arity!
 
         // Update arity, if necessary:
-        if (parameterCount < minArity) {
-            minArity = parameterCount;
+        if (parameterTypes.length < minArity) {
+            minArity = parameterTypes.length;
         }
-        if (parameterCount > maxArity) {
-            maxArity = parameterCount;
+        if (parameterTypes.length > maxArity) {
+            maxArity = parameterTypes.length;
         }
 
         return this;

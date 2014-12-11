@@ -86,6 +86,9 @@ if (library == null) {
 }
 
 switch (library.check($plugin, $function, $argc)) {
+case NO_SUCH_PLUGIN:
+    throw new MScriptRecognitionException("$" + ($plugin != null ? $plugin + "." : "") + $function +
+                                          ": no such plugin defined", this, $SIGIL);
 case NO_SUCH_FUNCTION:
     throw new MScriptRecognitionException("$" + ($plugin != null ? $plugin + "." : "") + $function +
                                           ": no such function defined", this, $SIGIL);

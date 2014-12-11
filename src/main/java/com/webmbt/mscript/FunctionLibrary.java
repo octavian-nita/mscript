@@ -1,8 +1,11 @@
 package com.webmbt.mscript;
 
+import com.webmbt.plugin.PluginAncestor;
+
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -14,8 +17,15 @@ import static java.lang.Integer.parseInt;
 import static java.util.logging.Level.WARNING;
 
 /**
- * A library of defined MScript functions, grouped by plugin names and having the 'system' functions grouped under
- * the {@link #SYSTEM_FUNCTIONS} name/key.
+ * <p>
+ * A library of defined MScript {@link Function functions}, grouped by plugin names and having the <em>{@link
+ * Function#isSystemFunction() system}</em> functions under the {@link #SYSTEM_FUNCTIONS} name / key.
+ * </p>
+ * <p>
+ * MScript function signatures can be inferred by scanning {@link com.webmbt.plugin.MScriptInterface.MSCRIPT_METHOD
+ * MSCRIPT_METHOD}-annotated Java methods or loaded from {@link Properties} {@link #load(java.util.Properties)
+ * instances} or {@link #load(String) files}.
+ * </p>
  *
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
  * @version 1.0, Dec 04, 2014
@@ -23,7 +33,7 @@ import static java.util.logging.Level.WARNING;
 public class FunctionLibrary {
 
     /**
-     * Key for the 'system' functions symbol (sub)table.
+     * Key for the <em>{@link Function#isSystemFunction() system}</em> functions symbol (sub)table.
      */
     protected static final String SYSTEM_FUNCTIONS = "__SYS__";
 
@@ -31,7 +41,6 @@ public class FunctionLibrary {
 
     public void load(String libraryFilename) throws IOException {
         Class<?> klass = getClass();
-        Logger log = Logger.getLogger(klass.getName());
 
         Properties signatures = new Properties();
         try (FileReader reader = new FileReader(libraryFilename)) {
@@ -50,7 +59,8 @@ public class FunctionLibrary {
                 try {
                     resource.close();
                 } catch (IOException ioe2) {
-                    log.log(WARNING, "cannot close function library definition resource stream; ignoring...", ioe2);
+                    Logger.getLogger(klass.getName())
+                          .log(WARNING, "cannot close function library definition resource stream; ignoring...", ioe2);
                 }
             }
         }
@@ -90,7 +100,7 @@ public class FunctionLibrary {
 
                 add(function);
             } catch (Throwable throwable) {
-                log.log(WARNING, "cannot parse function signature for " + signature.getValue() + "; skipping...",
+                log.log(WARNING, "cannot parse function signature for " + signature.getKey() + "; skipping...",
                         throwable);
             }
         }
@@ -115,22 +125,44 @@ public class FunctionLibrary {
         pluginFunctions.put(function.getName(), function);
     }
 
+    public CheckResult check(String pluginName, String functionName, int argsNumber) {
+        return check(pluginName, functionName, argsNumber, null);
+    }
+
     /**
      * An MScript parser normally matches separately the plugin name, the function name and every passed argument; the
      * signature of this methods is designed so that it would be easily callable upon a successful function call match.
+     *
+     * @param plugins if non-<code>null</code> and if a function without a plugin name is not found under system
+     *                functions, the provided plugins are checked in the provided order
      */
-    public CheckResult check(String pluginName, String functionName, int argsNumber) {
+    public CheckResult check(String pluginName, String functionName, int argsNumber, List<PluginAncestor> plugins) {
         if (pluginName == null || (pluginName = pluginName.trim()).length() == 0) {
             pluginName = SYSTEM_FUNCTIONS;
         }
 
         ConcurrentMap<String, Function> functions = library.get(pluginName);
         if (functions == null) {
-            return CheckResult.NO_SUCH_FUNCTION;
+            return CheckResult.NO_SUCH_PLUGIN;
         }
 
         Function function = functions.get(functionName);
+        out:
         if (function == null) {
+            if (plugins != null) {
+                for (PluginAncestor plugin : plugins) {
+                    if (plugin != null) {
+                        functions = library.get(plugin.getPluginID());
+                        if (functions != null) {
+                            function = functions.get(functionName);
+                            if (function != null) {
+                                break out;
+                            }
+                        }
+                    }
+                }
+            }
+
             return CheckResult.NO_SUCH_FUNCTION;
         }
 
@@ -147,6 +179,7 @@ public class FunctionLibrary {
 
     public static enum CheckResult {
         OK,
+        NO_SUCH_PLUGIN,
         NO_SUCH_FUNCTION,
         TOO_FEW_ARGUMENTS,
         TOO_MANY_ARGUMENTS
