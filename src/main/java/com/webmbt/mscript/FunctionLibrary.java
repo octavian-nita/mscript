@@ -18,13 +18,13 @@ import static java.util.logging.Level.WARNING;
 
 /**
  * <p>
- * A library of defined MScript {@link Function functions}, grouped by plugin names and having the <em>{@link
- * Function#isSystemFunction() system}</em> functions under the {@link #SYSTEM_FUNCTIONS} name / key.
+ * A library of predefined MScript {@link Function functions}, grouped by {@link Function#getPluginName() plugin names},
+ * having the <em>{@link Function#isSystemFunction() system}</em> functions under the {@link #SYSTEM_FUNCTIONS} name.
  * </p>
  * <p>
  * MScript function signatures can be inferred by scanning {@link com.webmbt.plugin.MScriptInterface.MSCRIPT_METHOD
- * MSCRIPT_METHOD}-annotated Java methods or loaded from {@link Properties} {@link #load(java.util.Properties)
- * instances} or {@link #load(String) files}.
+ * MSCRIPT_METHOD}-annotated Java methods or loaded from {@link Properties} {@link #load(Properties) instances} or
+ * {@link #load(String) files}.
  * </p>
  *
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
@@ -139,6 +139,11 @@ public class FunctionLibrary {
     public CheckResult check(String pluginName, String functionName, int argsNumber, List<PluginAncestor> plugins) {
         if (pluginName == null || (pluginName = pluginName.trim()).length() == 0) {
             pluginName = SYSTEM_FUNCTIONS;
+
+
+
+        } else {
+
         }
 
         ConcurrentMap<String, Function> functions = library.get(pluginName);

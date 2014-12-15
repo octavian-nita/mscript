@@ -4,10 +4,12 @@ import com.webmbt.plugin.MbtScriptExecutor;
 import com.webmbt.plugin.PluginAncestor;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.webmbt.plugin.MScriptInterface.MSCRIPT_METHOD;
+import static java.lang.reflect.Modifier.isPublic;
 
 /**
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
@@ -26,14 +28,19 @@ public class MScriptEngine {
             for (Method method : systemFunctions.getMethods()) {
                 if (method.isAnnotationPresent(MSCRIPT_METHOD.class)) {
                     library.add(new Function(method.getName()).addImplementation(method));
+                } else if (isPublic(method.getModifiers())) {
+                    library.add(new Function("_" + method.getName()).addImplementation(method));
                 }
             }
         }
+
         if (plugins != null) {
             for (PluginAncestor plugin : plugins) {
                 for (Method method : plugin.getClass().getMethods()) {
                     if (method.isAnnotationPresent(MSCRIPT_METHOD.class)) {
                         library.add(new Function(method.getName(), plugin.getPluginID()).addImplementation(method));
+                    } else if (isPublic(method.getModifiers())) {
+                        library.add(new Function("_" + method.getName()).addImplementation(method));
                     }
                 }
             }
