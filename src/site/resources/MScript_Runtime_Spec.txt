@@ -1,14 +1,14 @@
 
 MScript Execution using MScript Antlr Parser
 
-// performs mscript syntax check per MScript parser rules and
-// returns a list of parser errors (MScriptError) detected. Newline separates mscript lines.
+// Performs mscript syntax check per MScript parser rules and
+//   returns a list of parser errors (MScriptError) detected. Newline separates mscript lines.
 // Instead of having function name/definition in a properties file, the functions should
-//    be dynamically retrieved with java reflection on sysFunc_p and pluginList_p.
+//   be dynamically retrieved with java reflection on sysFunc_p and pluginList_p.
 // Function call without plugin id must be checked against sysFunc_p first, if not found then check pluginList_p,
-//  and find the first plugin that has implemented the function (and parameters) (annotated by @MSCRIPT_METHOD).
-//  Note that the native function calls are prefixed with "_" but the function name declared in plugin class
-//  does not have "_".
+//   and find the first plugin that has implemented the function (and parameters) (annotated by @MSCRIPT_METHOD).
+// Note that the native function calls are prefixed with "_" but the function name declared in plugin class
+//   does not have "_".
 public List<MScriptError> checkMScript (String mscript_p, MScriptExecutor sysFunc_p, List<PluginAncestor> pluginList_p);
 
 // executes an mscript expression and returns the string array with each row of array containing the result

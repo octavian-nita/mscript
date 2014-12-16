@@ -140,15 +140,13 @@ public class FunctionLibrary {
         if (pluginName == null || (pluginName = pluginName.trim()).length() == 0) {
             pluginName = SYSTEM_FUNCTIONS;
 
-
-
         } else {
 
         }
 
         ConcurrentMap<String, Function> functions = library.get(pluginName);
         if (functions == null) {
-            return CheckResult.NO_SUCH_PLUGIN;
+            return CheckResult.PLUGIN_NOT_FOUND;
         }
 
         Function function = functions.get(functionName);
@@ -168,7 +166,7 @@ public class FunctionLibrary {
                 }
             }
 
-            return CheckResult.NO_SUCH_FUNCTION;
+            return CheckResult.FUNCTION_NOT_FOUND;
         }
 
         if (argsNumber < function.getMinArity()) {
@@ -183,10 +181,19 @@ public class FunctionLibrary {
     }
 
     public static enum CheckResult {
+
         OK,
-        NO_SUCH_PLUGIN,
-        NO_SUCH_FUNCTION,
-        TOO_FEW_ARGUMENTS,
-        TOO_MANY_ARGUMENTS
+
+        PLUGIN_NOT_FOUND,
+        PLUGIN_NOT_ACCESSIBLE,
+
+        FUNCTION_NOT_FOUND,
+        TOO_MANY_ARGUMENTS,
+        TOO_FEW_ARGUMENTS;
+
+        @Override
+        public String toString() {
+            return super.toString().toLowerCase().replaceAll("_+", ".");
+        }
     }
 }

@@ -8,7 +8,9 @@ Here are my answers to your questions:
 
 3. MSCRIPT_METHOD is an interface that we have been using, so the name must stay exactly as is.
 
-Please be aware that ThreadLocal should be used with caution as a process may spawn multiple threads to call MScript and the expectation is that these spawn threads will need to use the same MbtScriptExecutor (system function objectc) and plugin objects.
+Please be aware that ThreadLocal should be used with caution as a process may spawn multiple threads to call MScript and
+the expectation is that these spawn threads will need to use the same MbtScriptExecutor (system function objects) and
+plugin objects.
 
 Please let me know if it's still not clear to you.
 
