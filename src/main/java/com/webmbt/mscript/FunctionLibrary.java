@@ -5,6 +5,7 @@ import com.webmbt.plugin.PluginAncestor;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,8 +19,9 @@ import static java.util.logging.Level.WARNING;
 
 /**
  * <p>
- * A library of predefined MScript {@link Function functions}, grouped by {@link Function#getPluginName() plugin names},
- * having the <em>{@link Function#isSystemFunction() system}</em> functions under the {@link #SYSTEM_FUNCTIONS} name.
+ * A collection of predefined MScript {@link Function functions}, grouped by {@link Function#getPluginName() plugin
+ * names}, having the <em>{@link Function#isSystemFunction() system}</em> functions under the {@link
+ * #SYSTEM_FUNCTIONS} name.
  * </p>
  * <p>
  * MScript function signatures can be inferred by scanning {@link com.webmbt.plugin.MScriptInterface.MSCRIPT_METHOD
@@ -111,18 +113,40 @@ public class FunctionLibrary {
             throw new NullPointerException("cannot add a null function to a library");
         }
 
-        String plugin = function.isSystemFunction() ? SYSTEM_FUNCTIONS : function.getPluginName();
+        String pluginName = function.isSystemFunction() ? SYSTEM_FUNCTIONS : function.getPluginName();
 
         // Not exactly thread-safe but the assumption is that we build / add to the functions library once, at the
         // beginning of the process. We could use ConcurrentMap.putIfAbsent() but then we would create (local but)
         // unnecessary ConcurrentHashMap instances.
-        ConcurrentMap<String, Function> pluginFunctions = library.get(plugin);
+        ConcurrentMap<String, Function> pluginFunctions = library.get(pluginName);
         if (pluginFunctions == null) {
             pluginFunctions = new ConcurrentHashMap<>();
-            library.put(plugin, pluginFunctions);
+            library.put(pluginName, pluginFunctions);
         }
 
         pluginFunctions.put(function.getName(), function);
+    }
+
+    public void add(String pluginName, String functionName, Method method) {
+        if (functionName == null || (functionName = functionName.trim()).length() == 0) {
+            throw new NullPointerException("cannot add a function with a null or empty name");
+        }
+
+        if (pluginName == null || (pluginName = pluginName.trim()).length() == 0) {
+            pluginName = SYSTEM_FUNCTIONS;
+        }
+        ConcurrentMap<String, Function> pluginFunctions = library.get(pluginName);
+        if (pluginFunctions == null) {
+            pluginFunctions = new ConcurrentHashMap<>();
+            library.put(pluginName, pluginFunctions);
+        }
+
+        Function function = pluginFunctions.get(functionName);
+        if (function == null) {
+            pluginFunctions.put(functionName, function =
+                new Function(functionName, pluginName == SYSTEM_FUNCTIONS ? null : pluginName));
+        }
+        function.addImplementation(method);
     }
 
     public CheckResult check(String pluginName, String functionName, int argsNumber) {
