@@ -128,13 +128,16 @@ public class FunctionLibrary {
     }
 
     public void add(String pluginName, String functionName, Method method) {
-        if (functionName == null || (functionName = functionName.trim()).length() == 0) {
-            throw new NullPointerException("cannot add a function with a null or empty name");
+        if (method == null) {
+            throw new NullPointerException("cannot add a function with a null (Java) implementation");
         }
-
+        if (functionName == null || (functionName = functionName.trim()).length() == 0) {
+            throw new IllegalArgumentException("cannot add a function with a null or empty name");
+        }
         if (pluginName == null || (pluginName = pluginName.trim()).length() == 0) {
             pluginName = SYSTEM_FUNCTIONS;
         }
+
         ConcurrentMap<String, Function> pluginFunctions = library.get(pluginName);
         if (pluginFunctions == null) {
             pluginFunctions = new ConcurrentHashMap<>();
@@ -143,9 +146,10 @@ public class FunctionLibrary {
 
         Function function = pluginFunctions.get(functionName);
         if (function == null) {
-            pluginFunctions.put(functionName, function =
-                new Function(functionName, pluginName == SYSTEM_FUNCTIONS ? null : pluginName));
+            function = new Function(functionName, pluginName == SYSTEM_FUNCTIONS ? null : pluginName);
+            pluginFunctions.put(functionName, function);
         }
+
         function.addImplementation(method);
     }
 

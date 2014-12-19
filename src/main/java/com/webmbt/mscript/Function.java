@@ -110,6 +110,7 @@ public class Function {
             throw new NullPointerException("cannot add a null function (Java) implementation");
         }
 
+        // Validate method arguments (currently, only Strings allowed):
         Class<?>[] parameterTypes = method.getParameterTypes();
         for (Class<?> parametersType : parameterTypes) {
             if (parametersType != String.class) {
@@ -122,7 +123,7 @@ public class Function {
             .put(parameterTypes.length, method); // replaces previously added implementation having the same arity!
 
         // Update arity, if necessary:
-        if (parameterTypes.length < minArity) {
+        if (parameterTypes.length < minArity || implementations.size() == 1) {
             minArity = parameterTypes.length;
         }
         if (parameterTypes.length > maxArity) {

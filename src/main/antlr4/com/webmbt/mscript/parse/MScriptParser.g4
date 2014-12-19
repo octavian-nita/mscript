@@ -84,7 +84,7 @@ if (library == null) {
     throw new MScriptRecognitionException("$" + ($plugin != null ? $plugin + "." : "") + $function +
                                           ": no function function specified for the parser", this, $SIGIL);
 }
-
+/*
 switch (library.check($plugin, $function, $argc)) {
 case NO_SUCH_PLUGIN:
     throw new MScriptRecognitionException("$" + ($plugin != null ? $plugin + "." : "") + $function +
@@ -99,7 +99,7 @@ case TOO_MANY_ARGUMENTS:
     throw new MScriptRecognitionException("$" + ($plugin != null ? $plugin + "." : "") + $function +
                                           ": too many arguments (" + $argc + ") provided", this, $SIGIL);
 }
-
+*/
     } ;
 
 ifStat
