@@ -35,13 +35,13 @@ import static java.util.logging.Level.WARNING;
 public class FunctionLibrary {
 
     /**
-     * Key for the <em>{@link Function#isSystemFunction() system}</em> functions symbol (sub)table.
+     * Key to group the <em>{@link Function#isSystemFunction() system}</em> functions symbol (sub)table.
      */
     protected static final String SYSTEM_FUNCTIONS = "__SYS__";
 
     protected final ConcurrentMap<String, ConcurrentMap<String, Function>> library = new ConcurrentHashMap<>();
 
-    public void load(String libraryFilename) throws IOException {
+    public FunctionLibrary load(String libraryFilename) throws IOException {
         Class<?> klass = getClass();
 
         Properties signatures = new Properties();
@@ -67,10 +67,10 @@ public class FunctionLibrary {
             }
         }
 
-        load(signatures);
+        return load(signatures);
     }
 
-    public void load(Properties signatures) {
+    public FunctionLibrary load(Properties signatures) {
         if (signatures == null) {
             throw new NullPointerException("cannot load function library from a null signatures specification");
         }
@@ -106,33 +106,37 @@ public class FunctionLibrary {
                         throwable);
             }
         }
+
+        return this;
     }
 
-    public void add(Function function) {
+    public FunctionLibrary add(Function function) {
         if (function == null) {
             throw new NullPointerException("cannot add a null function to a library");
         }
 
+        // Under which name to store the function?
         String pluginName = function.isSystemFunction() ? SYSTEM_FUNCTIONS : function.getPluginName();
 
         // Not exactly thread-safe but the assumption is that we build / add to the functions library once, at the
-        // beginning of the process. We could use ConcurrentMap.putIfAbsent() but then we would create (local but)
-        // unnecessary ConcurrentHashMap instances.
+        // start of the process or at least before starting to serve parse or execute requests. We could have used
+        // ConcurrentMap.putIfAbsent() but then we would create (local but) unnecessary ConcurrentHashMap instances.
         ConcurrentMap<String, Function> pluginFunctions = library.get(pluginName);
         if (pluginFunctions == null) {
             pluginFunctions = new ConcurrentHashMap<>();
             library.put(pluginName, pluginFunctions);
         }
-
         pluginFunctions.put(function.getName(), function);
+
+        return this;
     }
 
-    public void add(String pluginName, String functionName, Method method) {
+    public FunctionLibrary add(String pluginName, String functionName, Method method) {
         if (method == null) {
-            throw new NullPointerException("cannot add a function with a null (Java) implementation");
+            throw new NullPointerException("cannot add a function with a null (Java) implementation to a library");
         }
         if (functionName == null || (functionName = functionName.trim()).length() == 0) {
-            throw new IllegalArgumentException("cannot add a function with a null or empty name");
+            throw new IllegalArgumentException("cannot add a function with a null or empty name to a library");
         }
         if (pluginName == null || (pluginName = pluginName.trim()).length() == 0) {
             pluginName = SYSTEM_FUNCTIONS;
@@ -146,11 +150,14 @@ public class FunctionLibrary {
 
         Function function = pluginFunctions.get(functionName);
         if (function == null) {
-            function = new Function(functionName, pluginName == SYSTEM_FUNCTIONS ? null : pluginName);
-            pluginFunctions.put(functionName, function);
+            pluginFunctions.put(functionName,
+                                new Function(functionName, pluginName == SYSTEM_FUNCTIONS ? null : pluginName)
+                                    .addImplementation(method));
+        } else {
+            function.addImplementation(method);
         }
 
-        function.addImplementation(method);
+        return this;
     }
 
     public CheckResult check(String pluginName, String functionName, int argsNumber) {
@@ -158,53 +165,46 @@ public class FunctionLibrary {
     }
 
     /**
-     * An MScript parser normally matches separately the plugin name, the function name and every passed argument; the
+     * An MScript parser normally matches separately the plugin name, function name and every passed argument; the
      * signature of this methods is designed so that it would be easily callable upon a successful function call match.
      *
      * @param plugins if non-<code>null</code> and if a function without a plugin name is not found under system
      *                functions, the provided plugins are checked in the provided order
      */
     public CheckResult check(String pluginName, String functionName, int argsNumber, List<PluginAncestor> plugins) {
-        if (pluginName == null || (pluginName = pluginName.trim()).length() == 0) {
-            pluginName = SYSTEM_FUNCTIONS;
-
-        } else {
-
+        if (argsNumber < 0) {
+            throw new IllegalArgumentException("cannot check a function with a negative number of arguments");
+        }
+        if (functionName == null || (functionName = functionName.trim()).length() == 0) {
+            throw new IllegalArgumentException("cannot check a function with a null or empty name");
         }
 
-        ConcurrentMap<String, Function> functions = library.get(pluginName);
-        if (functions == null) {
+        if (pluginName == null || (pluginName = pluginName.trim()).length() == 0) {
+            ConcurrentMap<String, Function> pluginFunctions = library.get(SYSTEM_FUNCTIONS);
+
+
+            // TODO: check system functions then fall back on the provided plugins
+            return CheckResult.OK;
+        }
+
+        ConcurrentMap<String, Function> pluginFunctions = library.get(pluginName);
+        if (pluginFunctions == null) {
             return CheckResult.PLUGIN_NOT_FOUND;
         }
 
-        Function function = functions.get(functionName);
-        out:
-        if (function == null) {
-            if (plugins != null) {
-                for (PluginAncestor plugin : plugins) {
-                    if (plugin != null) {
-                        functions = library.get(plugin.getPluginID());
-                        if (functions != null) {
-                            function = functions.get(functionName);
-                            if (function != null) {
-                                break out;
-                            }
-                        }
-                    }
-                }
-            }
+        return checkFunction(pluginFunctions.get(functionName), argsNumber);
+    }
 
+    protected CheckResult checkFunction(Function function, int argsNumber) {
+        if(function == null) {
             return CheckResult.FUNCTION_NOT_FOUND;
         }
-
         if (argsNumber < function.getMinArity()) {
             return CheckResult.TOO_FEW_ARGUMENTS;
         }
-
         if (argsNumber > function.getMaxArity()) {
             return CheckResult.TOO_MANY_ARGUMENTS;
         }
-
         return CheckResult.OK;
     }
 
@@ -219,8 +219,12 @@ public class FunctionLibrary {
         TOO_MANY_ARGUMENTS,
         TOO_FEW_ARGUMENTS;
 
+        /**
+         * @return a {@link String} key that can be used to resolve / identify an associated error message / description
+         */
         @Override
         public String toString() {
+            // e.g. for an enum constant declared as PLUGIN_NOT_FOUND, we return plugin.not.found
             return super.toString().toLowerCase().replaceAll("_+", ".");
         }
     }
