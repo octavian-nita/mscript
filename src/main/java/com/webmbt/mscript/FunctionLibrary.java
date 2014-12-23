@@ -8,6 +8,8 @@ import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
@@ -20,13 +22,12 @@ import static java.util.logging.Level.WARNING;
 /**
  * <p>
  * A collection of predefined MScript {@link Function functions}, grouped by {@link Function#getPluginName() plugin
- * names}, having the <em>{@link Function#isSystemFunction() system}</em> functions under the {@link
- * #SYSTEM_FUNCTIONS} name.
+ * names} having the <em>{@link Function#isSystemFunction() system}</em> functions under the {@link  #SYSTEM_FUNCTIONS}
+ * name.
  * </p>
  * <p>
- * MScript function signatures can be inferred by scanning {@link com.webmbt.plugin.MScriptInterface.MSCRIPT_METHOD
- * MSCRIPT_METHOD}-annotated Java methods or loaded from {@link Properties} {@link #load(Properties) instances} or
- * {@link #load(String) files}.
+ * At least for testing purposes, function definitions without any implementation can be loaded from {@link Properties}
+ * {@link #load(java.util.Properties) instances} or {@link #load(String) files}.
  * </p>
  *
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
@@ -34,9 +35,7 @@ import static java.util.logging.Level.WARNING;
  */
 public class FunctionLibrary {
 
-    /**
-     * Key to group the <em>{@link Function#isSystemFunction() system}</em> functions symbol (sub)table.
-     */
+    /** Key to group the <em>{@link Function#isSystemFunction() system}</em> functions symbol (sub)table. */
     protected static final String SYSTEM_FUNCTIONS = "__SYS__";
 
     protected final ConcurrentMap<String, ConcurrentMap<String, Function>> library = new ConcurrentHashMap<>();
@@ -118,9 +117,8 @@ public class FunctionLibrary {
         // Under which name to store the function?
         String pluginName = function.isSystemFunction() ? SYSTEM_FUNCTIONS : function.getPluginName();
 
-        // Not exactly thread-safe but the assumption is that we build / add to the functions library once, at the
-        // start of the process or at least before starting to serve parse or execute requests. We could have used
-        // ConcurrentMap.putIfAbsent() but then we would create (local but) unnecessary ConcurrentHashMap instances.
+        // Not exactly thread-safe...
+        // see: http://stackoverflow.com/questions/10743622/concurrenthashmap-avoid-extra-object-creation-with-putifabsent
         ConcurrentMap<String, Function> pluginFunctions = library.get(pluginName);
         if (pluginFunctions == null) {
             pluginFunctions = new ConcurrentHashMap<>();
@@ -165,11 +163,12 @@ public class FunctionLibrary {
     }
 
     /**
-     * An MScript parser normally matches separately the plugin name, function name and every passed argument; the
-     * signature of this methods is designed so that it would be easily callable upon a successful function call match.
+     * An MScript parser normally matches separately the plugin name, function name and every passed argument; as such,
+     * the signature of this methods is designed so that it is easily callable upon a successful function call match.
      *
-     * @param plugins if non-<code>null</code> and if a function without a plugin name is not found under system
-     *                functions, the provided plugins are checked in the provided order
+     * @param plugins if not <code>null</code> or empty, the function will be looked up only under these plugins; also,
+     *                if the plugin name is <code>null</code> or empty and if the function is not found under the added
+     *                system functions, these plugins are checked as well, in the provided order
      */
     public CheckResult check(String pluginName, String functionName, int argsNumber, List<PluginAncestor> plugins) {
         if (argsNumber < 0) {
@@ -179,24 +178,41 @@ public class FunctionLibrary {
             throw new IllegalArgumentException("cannot check a function with a null or empty name");
         }
 
-        if (pluginName == null || (pluginName = pluginName.trim()).length() == 0) {
-            ConcurrentMap<String, Function> pluginFunctions = library.get(SYSTEM_FUNCTIONS);
-
-
-            // TODO: check system functions then fall back on the provided plugins
-            return CheckResult.OK;
+        Set<String> pluginNames = new TreeSet<>(); // for faster look-ups
+        if (plugins != null) {
+            for (PluginAncestor plugin : plugins) {
+                if (plugin != null) {
+                    pluginNames.add(plugin.getPluginID());
+                }
+            }
         }
 
-        ConcurrentMap<String, Function> pluginFunctions = library.get(pluginName);
-        if (pluginFunctions == null) {
-            return CheckResult.PLUGIN_NOT_FOUND;
+        if (pluginName != null && (pluginName = pluginName.trim()).length() > 0) {
+            if (!pluginNames.contains(pluginName)) {
+                return CheckResult.PLUGIN_NOT_ACCESSIBLE;
+            }
+
+            ConcurrentMap<String, Function> pluginFunctions = library.get(pluginName);
+            if (pluginFunctions == null) {
+                return CheckResult.PLUGIN_NOT_FOUND;
+            }
+
+            return checkFunction(pluginFunctions.get(functionName), argsNumber);
         }
 
-        return checkFunction(pluginFunctions.get(functionName), argsNumber);
+        // No plugin name has been provided: check the available system functions and fall back on the provided plugins:
+        ConcurrentMap<String, Function> systemFunctions = library.get(SYSTEM_FUNCTIONS);
+        if (systemFunctions == null) {
+            return CheckResult.FUNCTION_NOT_FOUND;
+        }
+
+        // TODO: check system functions then fall back on the provided plugins
+        return CheckResult.OK;
+
     }
 
     protected CheckResult checkFunction(Function function, int argsNumber) {
-        if(function == null) {
+        if (function == null) {
             return CheckResult.FUNCTION_NOT_FOUND;
         }
         if (argsNumber < function.getMinArity()) {
