@@ -11,8 +11,7 @@ import static com.webmbt.plugin.MScriptInterface.MSCRIPT_METHOD;
 import static java.lang.reflect.Modifier.isPublic;
 
 /**
- * MScript function signatures are inferred by scanning {@link com.webmbt.plugin.MScriptInterface.MSCRIPT_METHOD
- * MSCRIPT_METHOD}-annotated Java methods.
+ * .
  *
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
  * @version 1.0, Dec 01, 2014

@@ -5,8 +5,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * In MScript, a function reference is prefixed by a sigil ($) and the name can optionally be prefixed by a
- * plugin name. MScript functions are <a href="http://en.wikipedia.org/wiki/Variadic_function">variadic</a>.
+ * MScript functions are <a href="http://en.wikipedia.org/wiki/Variadic_function">variadic</a> and can be built-in
+ * (i.e. <em>{@link #isSystemFunction() system}</em> functions) or part of a {@link #getPluginName() named plugin}.
  *
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
  * @version 1.1, Dec 04, 2014
@@ -21,6 +21,7 @@ public class Function {
 
     private int maxArity;
 
+    // Manipulating function implementations can be done in a concurrent environment (web app, etc.)!
     private final ConcurrentMap<Integer, Method> implementations = new ConcurrentHashMap<>();
 
     public Function(String name) {
@@ -66,7 +67,7 @@ public class Function {
 
     /**
      * <em>System</em> (or <em>built-in</em>) functions do not belong to any plugin (the {@link #getPluginName()
-     * plugin name} is either <code>null</code> or empty) and are called without any prefix.
+     * plugin name} is either <code>null</code> or empty) and are invoked without any prefix.
      *
      * @return <code>true</code> if <code>this</code> is a system function and <code>false</code> otherwise
      */
@@ -74,15 +75,15 @@ public class Function {
         return pluginName == null || pluginName.trim().length() == 0;
     }
 
-    public String getName() {
-        return name;
-    }
-
     /**
      * @return <code>null</code> or empty (whitespace-only) for <em>{@link #isSystemFunction() system}</em> functions
      */
     public String getPluginName() {
         return pluginName;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public int getMinArity() {
@@ -96,7 +97,7 @@ public class Function {
     /**
      * <p>
      * An MScript function can have multiple implementations in the form of (eventually overloaded) Java {@link Method
-     * methods}. Currently, the requirement is these methods to only accept {@link java.lang.String} parameters (no
+     * methods}. Currently, the requirement is these methods to only accept {@link java.lang.String} parameters (and no
      * varargs). Selecting which actual Java method gets called is done based on the number of arguments provided in the
      * MScript call as well as on the method arity.
      * </p>
@@ -119,10 +120,10 @@ public class Function {
             }
         }
 
-        implementations
-            .put(parameterTypes.length, method); // replaces previously added implementation having the same arity!
+        implementations  // eventually replace previously added implementation with the same arity!
+            .put(parameterTypes.length, method);
 
-        // Update arity, if necessary:
+        // Update arity, if necessary or if this is the first added implementation:
         if (parameterTypes.length < minArity || implementations.size() == 1) {
             minArity = parameterTypes.length;
         }

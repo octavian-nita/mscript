@@ -21,13 +21,14 @@ import static java.util.logging.Level.WARNING;
 
 /**
  * <p>
- * A collection of predefined MScript {@link Function functions}, grouped by {@link Function#getPluginName() plugin
- * names} having the <em>{@link Function#isSystemFunction() system}</em> functions under the {@link  #SYSTEM_FUNCTIONS}
- * name.
+ * A symbol table for MScript {@link Function function definitions}. At least for testing purposes definitions
+ * without implementations can be loaded from {@link Properties} {@link #load(java.util.Properties) instances}
+ * or {@link #load(String) files}.
  * </p>
  * <p>
- * At least for testing purposes, function definitions without any implementation can be loaded from {@link Properties}
- * {@link #load(java.util.Properties) instances} or {@link #load(String) files}.
+ * When looking up a function, a filtering list of plugins can be provided in order to restrict the lookup. If looking
+ * up in the internal cache fails, the provided <em>system functions</em> instance and plugins are scanned for {@link
+ * MScriptInterface.MSCRIPT_METHOD}-annotated and public methods and if found, the definition is cached and retrieved.
  * </p>
  *
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
@@ -35,33 +36,37 @@ import static java.util.logging.Level.WARNING;
  */
 public class FunctionLibrary {
 
-    /** Key to group the <em>{@link Function#isSystemFunction() system}</em> functions symbol (sub)table. */
+    /**
+     * Key to group the <em>{@link Function#isSystemFunction() system}</em> functions symbol (sub)table.
+     */
     protected static final String SYSTEM_FUNCTIONS = "__SYS__";
 
     protected final ConcurrentMap<String, ConcurrentMap<String, Function>> library = new ConcurrentHashMap<>();
 
     public FunctionLibrary load(String libraryFilename) throws IOException {
         Class<?> klass = getClass();
+        Logger log = Logger.getLogger(klass.getName());
 
         Properties signatures = new Properties();
         try (FileReader reader = new FileReader(libraryFilename)) {
             signatures.load(reader);
+            log.info("Loaded function signatures from file " + libraryFilename);
         } catch (IOException ioe) {     // try to load the file from the classpath, as initially specified
             InputStream resource = klass.getResourceAsStream(libraryFilename);
             if (resource == null) {     // try to load the file from the classpath, as absolute path
-                resource = klass.getResourceAsStream("/" + libraryFilename);
+                resource = klass.getResourceAsStream(libraryFilename = "/" + libraryFilename);
                 if (resource == null) { // no such file in the classpath, just throw the initial exception
                     throw ioe;
                 }
             }
             try {
                 signatures.load(resource);
+                log.info("Loaded function signatures from classpath resource " + libraryFilename);
             } finally {
                 try {
                     resource.close();
                 } catch (IOException ioe2) {
-                    Logger.getLogger(klass.getName())
-                          .log(WARNING, "cannot close function library definition resource stream; ignoring...", ioe2);
+                    log.log(WARNING, "Cannot close function library definition resource stream; ignoring...", ioe2);
                 }
             }
         }
@@ -81,14 +86,15 @@ public class FunctionLibrary {
         for (ConcurrentMap.Entry<Object, Object> signature : signatures.entrySet()) {
             try {
                 Matcher namesMatcher = namesPattern.matcher((String) signature.getKey());
-                if (!namesMatcher.matches()) { // for now just skip the incorrectly defined functions...
-                    log.warning("cannot parse function plugin and/or name for " + signature.getKey() + "; skipping...");
+                if (!namesMatcher.matches()) { // skip the incorrectly defined functions...
+                    log.log(WARNING, "Cannot parse function plugin and/or name for {0}; skipping...",
+                            signature.getKey());
                     continue;
                 }
 
                 Matcher arityMatcher = arityPattern.matcher((String) signature.getValue());
-                if (!arityMatcher.matches()) { // for now just skip the incorrectly defined functions...
-                    log.warning("cannot parse function arity for " + signature.getKey() + "; skipping...");
+                if (!arityMatcher.matches()) { // skip the incorrectly defined functions...
+                    log.log(WARNING, "Cannot parse function arity for {0}; skipping...", signature.getKey());
                     continue;
                 }
 
@@ -101,7 +107,7 @@ public class FunctionLibrary {
 
                 add(function);
             } catch (Throwable throwable) {
-                log.log(WARNING, "cannot parse function signature for " + signature.getKey() + "; skipping...",
+                log.log(WARNING, "Cannot parse function signature for " + signature.getKey() + "; skipping...",
                         throwable);
             }
         }
@@ -114,15 +120,16 @@ public class FunctionLibrary {
             throw new NullPointerException("cannot add a null function to a library");
         }
 
-        // Under which name to store the function?
+        // Under which plugin to store the function?
         String pluginName = function.isSystemFunction() ? SYSTEM_FUNCTIONS : function.getPluginName();
 
-        // Not exactly thread-safe...
-        // see: http://stackoverflow.com/questions/10743622/concurrenthashmap-avoid-extra-object-creation-with-putifabsent
+        // See
+        // http://stackoverflow.com/questions/10743622/concurrenthashmap-avoid-extra-object-creation-with-putifabsent
+        // for an explanation as to why the following is acceptable from a thread-safety point of view:
         ConcurrentMap<String, Function> pluginFunctions = library.get(pluginName);
         if (pluginFunctions == null) {
-            pluginFunctions = new ConcurrentHashMap<>();
-            library.put(pluginName, pluginFunctions);
+            library.putIfAbsent(pluginName, new ConcurrentHashMap<String, Function>());
+            pluginFunctions = library.get(pluginName);
         }
         pluginFunctions.put(function.getName(), function);
 
@@ -149,7 +156,7 @@ public class FunctionLibrary {
         Function function = pluginFunctions.get(functionName);
         if (function == null) {
             pluginFunctions.put(functionName,
-                                new Function(functionName, pluginName == SYSTEM_FUNCTIONS ? null : pluginName)
+                                new Function(functionName, SYSTEM_FUNCTIONS.equals(pluginName) ? null : pluginName)
                                     .addImplementation(method));
         } else {
             function.addImplementation(method);
@@ -158,8 +165,8 @@ public class FunctionLibrary {
         return this;
     }
 
-    public CheckResult check(String pluginName, String functionName, int argsNumber) {
-        return check(pluginName, functionName, argsNumber, null);
+    public LookupResult lookup(String pluginName, String functionName, int argsNumber) {
+        return lookup(pluginName, functionName, argsNumber, null);
     }
 
     /**
@@ -170,12 +177,12 @@ public class FunctionLibrary {
      *                if the plugin name is <code>null</code> or empty and if the function is not found under the added
      *                system functions, these plugins are checked as well, in the provided order
      */
-    public CheckResult check(String pluginName, String functionName, int argsNumber, List<PluginAncestor> plugins) {
+    public LookupResult lookup(String pluginName, String functionName, int argsNumber, List<PluginAncestor> plugins) {
         if (argsNumber < 0) {
-            throw new IllegalArgumentException("cannot check a function with a negative number of arguments");
+            throw new IllegalArgumentException("cannot look up a function with a negative number of arguments");
         }
         if (functionName == null || (functionName = functionName.trim()).length() == 0) {
-            throw new IllegalArgumentException("cannot check a function with a null or empty name");
+            throw new IllegalArgumentException("cannot look up a function with a null or empty name");
         }
 
         Set<String> pluginNames = new TreeSet<>(); // for faster look-ups
@@ -189,12 +196,12 @@ public class FunctionLibrary {
 
         if (pluginName != null && (pluginName = pluginName.trim()).length() > 0) {
             if (!pluginNames.contains(pluginName)) {
-                return CheckResult.PLUGIN_NOT_ACCESSIBLE;
+                return LookupResult.PLUGIN_NOT_ACCESSIBLE;
             }
 
             ConcurrentMap<String, Function> pluginFunctions = library.get(pluginName);
             if (pluginFunctions == null) {
-                return CheckResult.PLUGIN_NOT_FOUND;
+                return LookupResult.PLUGIN_NOT_FOUND;
             }
 
             return checkFunction(pluginFunctions.get(functionName), argsNumber);
@@ -203,28 +210,28 @@ public class FunctionLibrary {
         // No plugin name has been provided: check the available system functions and fall back on the provided plugins:
         ConcurrentMap<String, Function> systemFunctions = library.get(SYSTEM_FUNCTIONS);
         if (systemFunctions == null) {
-            return CheckResult.FUNCTION_NOT_FOUND;
+            return LookupResult.FUNCTION_NOT_FOUND;
         }
 
         // TODO: check system functions then fall back on the provided plugins
-        return CheckResult.OK;
+        return LookupResult.OK;
 
     }
 
-    protected CheckResult checkFunction(Function function, int argsNumber) {
+    protected LookupResult checkFunction(Function function, int argsNumber) {
         if (function == null) {
-            return CheckResult.FUNCTION_NOT_FOUND;
+            return LookupResult.FUNCTION_NOT_FOUND;
         }
         if (argsNumber < function.getMinArity()) {
-            return CheckResult.TOO_FEW_ARGUMENTS;
+            return LookupResult.TOO_FEW_ARGUMENTS;
         }
         if (argsNumber > function.getMaxArity()) {
-            return CheckResult.TOO_MANY_ARGUMENTS;
+            return LookupResult.TOO_MANY_ARGUMENTS;
         }
-        return CheckResult.OK;
+        return LookupResult.OK;
     }
 
-    public static enum CheckResult {
+    public static enum LookupResult {
 
         OK,
 
@@ -236,7 +243,7 @@ public class FunctionLibrary {
         TOO_FEW_ARGUMENTS;
 
         /**
-         * @return a {@link String} key that can be used to resolve / identify an associated error message / description
+         * @return a {@link String} key that can be used to resolve / identify an associated error message
          */
         @Override
         public String toString() {

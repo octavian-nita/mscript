@@ -10,7 +10,7 @@ options { tokenVocab=MScriptLexer; }
 
 @header {
 import com.webmbt.mscript.FunctionLibrary;
-import com.webmbt.mscript.FunctionLibrary.CheckResult;
+import com.webmbt.mscript.FunctionLibrary.LookupResult;
 import com.webmbt.mscript.parse.MScriptRecognitionException;
 }
 
