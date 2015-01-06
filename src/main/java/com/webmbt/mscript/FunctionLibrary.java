@@ -36,12 +36,67 @@ import static java.util.logging.Level.WARNING;
  */
 public class FunctionLibrary {
 
-    /**
-     * Key to group the <em>{@link Function#isSystemFunction() system}</em> functions symbol (sub)table.
-     */
-    protected static final String SYSTEM_FUNCTIONS = "__SYS__";
+    // Key to group the <em>{@link Function#isSystemFunction() system}</em> functions symbol (sub)table.
+    //
+    // !DO NOT HACK AND USE THIS AS THE PLUGIN NAME WHEN CREATING Function INSTANCES!
+    //
+    private static final String SYSTEM_FUNCTIONS = "__SYS__";
 
-    protected final ConcurrentMap<String, ConcurrentMap<String, Function>> library = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, ConcurrentMap<String, Function>> library = new ConcurrentHashMap<>();
+
+    /**
+     * Thread-safe method to eventually create (if non-existent) and retrieve a <em>plugin</em>.
+     *
+     * @param pluginName if <code>null</code> or empty (whitespace-only), the <em>{@link Function#isSystemFunction()
+     *                   system}</em> functions are returned
+     */
+    protected final ConcurrentMap<String, Function> getOrCreatePlugin(String pluginName) {
+        if (pluginName == null || (pluginName = pluginName.trim()).length() == 0) {
+            pluginName = SYSTEM_FUNCTIONS;
+        }
+
+        // See
+        // http://stackoverflow.com/questions/10743622/concurrenthashmap-avoid-extra-object-creation-with-putifabsent
+        // for an explanation as to why the following is acceptable from a thread-safety point of view:
+        ConcurrentMap<String, Function> plugin = library.get(pluginName);
+        if (plugin == null) {
+            library.putIfAbsent(pluginName, new ConcurrentHashMap<String, Function>());
+            plugin = library.get(pluginName);
+        }
+
+        return plugin;
+    }
+
+    /**
+     * Thread-safe method to eventually create (if non-existent) and retrieve a {@link Function function}.
+     *
+     * @param pluginName if <code>null</code> or empty (whitespace-only), the function is considered to be a
+     *                   <em>{@link Function#isSystemFunction() system}</em> function
+     */
+    protected final Function getOrCreateFunction(String pluginName, String functionName, int minArity, int maxArity) {
+        if (functionName == null || (functionName = functionName.trim()).length() == 0) {
+            throw new IllegalArgumentException("the name of a function cannot be null or empty");
+        }
+        if (minArity < 0) {
+            throw new IllegalArgumentException("the minimum arity of a function cannot be less than 0");
+        }
+        if (maxArity < minArity) {
+            throw new IllegalArgumentException("the maximum arity of a function cannot be less than its minimum arity");
+        }
+
+        ConcurrentMap<String, Function> plugin = getOrCreatePlugin(pluginName);
+
+        // See
+        // http://stackoverflow.com/questions/10743622/concurrenthashmap-avoid-extra-object-creation-with-putifabsent
+        // for an explanation as to why the following is acceptable from a thread-safety point of view:
+        Function function = plugin.get(functionName);
+        if (function == null) {
+            plugin.putIfAbsent(functionName, new Function(functionName, pluginName, minArity, maxArity));
+            function = plugin.get(functionName);
+        }
+
+        return function;
+    }
 
     public FunctionLibrary load(String libraryFilename) throws IOException {
         Class<?> klass = getClass();
@@ -98,40 +153,16 @@ public class FunctionLibrary {
                     continue;
                 }
 
-                String name = namesMatcher.group(2);
-                String plugin = namesMatcher.group(1);
                 String minArity = arityMatcher.group(1);
-                Function function = minArity == null ? new Function(name, plugin, parseInt(arityMatcher.group(2)))
-                                                     : new Function(name, plugin, parseInt(minArity),
-                                                                    parseInt(arityMatcher.group(2)));
+                int maxArity = parseInt(arityMatcher.group(2));
 
-                add(function);
+                getOrCreateFunction(namesMatcher.group(1), namesMatcher.group(2),
+                                    minArity == null ? maxArity : parseInt(minArity), maxArity);
             } catch (Throwable throwable) {
                 log.log(WARNING, "Cannot parse function signature for " + signature.getKey() + "; skipping...",
                         throwable);
             }
         }
-
-        return this;
-    }
-
-    public FunctionLibrary add(Function function) {
-        if (function == null) {
-            throw new NullPointerException("cannot add a null function to a library");
-        }
-
-        // Under which plugin to store the function?
-        String pluginName = function.isSystemFunction() ? SYSTEM_FUNCTIONS : function.getPluginName();
-
-        // See
-        // http://stackoverflow.com/questions/10743622/concurrenthashmap-avoid-extra-object-creation-with-putifabsent
-        // for an explanation as to why the following is acceptable from a thread-safety point of view:
-        ConcurrentMap<String, Function> pluginFunctions = library.get(pluginName);
-        if (pluginFunctions == null) {
-            library.putIfAbsent(pluginName, new ConcurrentHashMap<String, Function>());
-            pluginFunctions = library.get(pluginName);
-        }
-        pluginFunctions.put(function.getName(), function);
 
         return this;
     }
@@ -143,24 +174,8 @@ public class FunctionLibrary {
         if (functionName == null || (functionName = functionName.trim()).length() == 0) {
             throw new IllegalArgumentException("cannot add a function with a null or empty name to a library");
         }
-        if (pluginName == null || (pluginName = pluginName.trim()).length() == 0) {
-            pluginName = SYSTEM_FUNCTIONS;
-        }
 
-        ConcurrentMap<String, Function> pluginFunctions = library.get(pluginName);
-        if (pluginFunctions == null) {
-            pluginFunctions = new ConcurrentHashMap<>();
-            library.put(pluginName, pluginFunctions);
-        }
-
-        Function function = pluginFunctions.get(functionName);
-        if (function == null) {
-            pluginFunctions.put(functionName,
-                                new Function(functionName, SYSTEM_FUNCTIONS.equals(pluginName) ? null : pluginName)
-                                    .addImplementation(method));
-        } else {
-            function.addImplementation(method);
-        }
+        getOrCreateFunction(pluginName, functionName, 0, 0).addImplementation(method);
 
         return this;
     }
