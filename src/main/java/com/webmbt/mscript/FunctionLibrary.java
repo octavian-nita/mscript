@@ -68,20 +68,15 @@ public class FunctionLibrary {
     }
 
     /**
-     * Thread-safe method to eventually create (if non-existent) and retrieve a {@link Function function}.
+     * Thread-safe method to eventually create (if non-existent) and retrieve a {@link Function function}. If the
+     * function is created, no arity is explicitly provided.
      *
      * @param pluginName if <code>null</code> or empty (whitespace-only), the function is considered to be a
      *                   <em>{@link Function#isSystemFunction() system}</em> function
      */
-    protected final Function getOrCreateFunction(String pluginName, String functionName, int minArity, int maxArity) {
+    protected final Function getOrCreateFunction(String pluginName, String functionName) {
         if (functionName == null || (functionName = functionName.trim()).length() == 0) {
             throw new IllegalArgumentException("the name of a function cannot be null or empty");
-        }
-        if (minArity < 0) {
-            throw new IllegalArgumentException("the minimum arity of a function cannot be less than 0");
-        }
-        if (maxArity < minArity) {
-            throw new IllegalArgumentException("the maximum arity of a function cannot be less than its minimum arity");
         }
 
         ConcurrentMap<String, Function> plugin = getOrCreatePlugin(pluginName);
@@ -91,7 +86,7 @@ public class FunctionLibrary {
         // for an explanation as to why the following is acceptable from a thread-safety point of view:
         Function function = plugin.get(functionName);
         if (function == null) {
-            plugin.putIfAbsent(functionName, new Function(functionName, pluginName, minArity, maxArity));
+            plugin.putIfAbsent(functionName, new Function(functionName, pluginName));
             function = plugin.get(functionName);
         }
 
@@ -153,11 +148,13 @@ public class FunctionLibrary {
                     continue;
                 }
 
-                String minArity = arityMatcher.group(1);
-                int maxArity = parseInt(arityMatcher.group(2));
+                Function function = getOrCreateFunction(namesMatcher.group(1), namesMatcher.group(2))
+                    .setMaxArity(parseInt(arityMatcher.group(2)));
 
-                getOrCreateFunction(namesMatcher.group(1), namesMatcher.group(2),
-                                    minArity == null ? maxArity : parseInt(minArity), maxArity);
+                String minArity = arityMatcher.group(1);
+                if (minArity != null) {
+                    function.setMinArity(parseInt(minArity));
+                }
             } catch (Throwable throwable) {
                 log.log(WARNING, "Cannot parse function signature for " + signature.getKey() + "; skipping...",
                         throwable);
@@ -175,7 +172,7 @@ public class FunctionLibrary {
             throw new IllegalArgumentException("cannot add a function with a null or empty name to a library");
         }
 
-        getOrCreateFunction(pluginName, functionName, 0, 0).addImplementation(method);
+        getOrCreateFunction(pluginName, functionName).addImplementation(method);
 
         return this;
     }

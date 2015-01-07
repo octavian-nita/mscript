@@ -5,17 +5,23 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
+ * <p>
  * MScript functions are <a href="http://en.wikipedia.org/wiki/Variadic_function">variadic</a> and can be built-in
  * (i.e. <em>{@link #isSystemFunction() system}</em> functions) or part of a {@link #getPluginName() named plugin}.
+ * </p>
+ * <p>
+ * Unless explicitly provided, by default, a new <em>Function</em> has 0 arity (minimum as well as maximum). The first
+ * time an implementation is {@link #addImplementation(Method) added}, both arities are updated accordingly.
+ * </p>
  *
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
  * @version 1.1, Dec 04, 2014
  */
 public class Function {
 
-    private String pluginName;
+    private final String pluginName;
 
-    private String name;
+    private final String name;
 
     private int minArity;
 
@@ -48,21 +54,12 @@ public class Function {
         if (name == null || (name = name.trim()).length() == 0) {
             throw new IllegalArgumentException("the name of a function cannot be null or empty");
         }
+
         this.name = name;
+        this.pluginName = pluginName == null || (pluginName = pluginName.trim()).length() == 0 ? null : pluginName;
 
-        if (pluginName != null) {
-            this.pluginName = pluginName.trim();
-        }
-
-        if (minArity < 0) {
-            throw new IllegalArgumentException("the minimum arity of a function cannot be less than 0");
-        }
-        this.minArity = minArity;
-
-        if (maxArity < minArity) {
-            throw new IllegalArgumentException("the maximum arity of a function cannot be less than its minimum arity");
-        }
-        this.maxArity = maxArity;
+        setMinArity(minArity);
+        setMaxArity(maxArity);
     }
 
     /**
@@ -90,8 +87,24 @@ public class Function {
         return minArity;
     }
 
+    public Function setMinArity(int minArity) {
+        if (minArity < 0) {
+            throw new IllegalArgumentException("the minimum arity of a function cannot be less than 0");
+        }
+        this.minArity = minArity;
+        return this;
+    }
+
     public int getMaxArity() {
         return maxArity;
+    }
+
+    public Function setMaxArity(int maxArity) {
+        if (maxArity < getMinArity()) {
+            throw new IllegalArgumentException("the maximum arity of a function cannot be less than its minimum arity");
+        }
+        this.maxArity = maxArity;
+        return this;
     }
 
     /**
