@@ -23,9 +23,9 @@ public class Function {
 
     private final String name;
 
-    private int minArity;
+    private volatile int minArity;
 
-    private int maxArity;
+    private volatile int maxArity;
 
     // Manipulating function implementations can be done in a concurrent environment (web app, etc.)!
     private final ConcurrentMap<Integer, Method> implementations = new ConcurrentHashMap<>();
