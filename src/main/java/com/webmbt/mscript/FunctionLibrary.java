@@ -2,29 +2,15 @@ package com.webmbt.mscript;
 
 import com.webmbt.plugin.PluginAncestor;
 
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static java.lang.Integer.parseInt;
-import static java.util.logging.Level.WARNING;
 
 /**
- * <p>
- * A symbol table for MScript {@link Function function definitions}. At least for testing purposes definitions
- * without implementations can be loaded from {@link Properties} {@link #load(java.util.Properties) instances}
- * or {@link #load(String) files}.
- * </p>
+ * <p>A symbol table for MScript {@link Function function definitions}.</p>
  * <p>
  * When looking up a function, a filtering list of plugins can be provided in order to restrict the lookup. If looking
  * up in the internal cache fails, the provided <em>system functions</em> instance and plugins are scanned for {@link
@@ -91,77 +77,6 @@ public class FunctionLibrary {
         }
 
         return function;
-    }
-
-    public FunctionLibrary load(String libraryFilename) throws IOException {
-        Class<?> klass = getClass();
-        Logger log = Logger.getLogger(klass.getName());
-
-        Properties signatures = new Properties();
-        try (FileReader reader = new FileReader(libraryFilename)) {
-            signatures.load(reader);
-            log.info("Loaded function signatures from file " + libraryFilename);
-        } catch (IOException ioe) {     // try to load the file from the classpath, as initially specified
-            InputStream resource = klass.getResourceAsStream(libraryFilename);
-            if (resource == null) {     // try to load the file from the classpath, as absolute path
-                resource = klass.getResourceAsStream(libraryFilename = "/" + libraryFilename);
-                if (resource == null) { // no such file in the classpath, just throw the initial exception
-                    throw ioe;
-                }
-            }
-            try {
-                signatures.load(resource);
-                log.info("Loaded function signatures from classpath resource " + libraryFilename);
-            } finally {
-                try {
-                    resource.close();
-                } catch (IOException ioe2) {
-                    log.log(WARNING, "Cannot close function library definition resource stream; ignoring...", ioe2);
-                }
-            }
-        }
-
-        return load(signatures);
-    }
-
-    public FunctionLibrary load(Properties signatures) {
-        if (signatures == null) {
-            throw new NullPointerException("cannot load function library from a null signatures specification");
-        }
-
-        Logger log = Logger.getLogger(getClass().getName());
-        Pattern namesPattern = Pattern.compile("\\s*\\$?(?:([a-zA-Z_][a-zA-Z_0-9]*)\\.)?([a-zA-Z_][a-zA-Z_0-9]*)\\s*");
-        Pattern arityPattern = Pattern.compile("(?:\\s*(\\d+)\\s*,)?\\s*(\\d+)\\s*");
-
-        for (ConcurrentMap.Entry<Object, Object> signature : signatures.entrySet()) {
-            try {
-                Matcher namesMatcher = namesPattern.matcher((String) signature.getKey());
-                if (!namesMatcher.matches()) { // skip the incorrectly defined functions...
-                    log.log(WARNING, "Cannot parse function plugin and/or name for {0}; skipping...",
-                            signature.getKey());
-                    continue;
-                }
-
-                Matcher arityMatcher = arityPattern.matcher((String) signature.getValue());
-                if (!arityMatcher.matches()) { // skip the incorrectly defined functions...
-                    log.log(WARNING, "Cannot parse function arity for {0}; skipping...", signature.getKey());
-                    continue;
-                }
-
-                Function function = getOrCreateFunction(namesMatcher.group(1), namesMatcher.group(2))
-                    .setMaxArity(parseInt(arityMatcher.group(2)));
-
-                String minArity = arityMatcher.group(1);
-                if (minArity != null) {
-                    function.setMinArity(parseInt(minArity));
-                }
-            } catch (Throwable throwable) {
-                log.log(WARNING, "Cannot parse function signature for " + signature.getKey() + "; skipping...",
-                        throwable);
-            }
-        }
-
-        return this;
     }
 
     public FunctionLibrary add(String pluginName, String functionName, Method method) {

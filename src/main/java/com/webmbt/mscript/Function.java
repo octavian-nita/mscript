@@ -10,12 +10,12 @@ import java.util.concurrent.ConcurrentMap;
  * (i.e. <em>{@link #isSystemFunction() system}</em> functions) or part of a {@link #getPluginName() named plugin}.
  * </p>
  * <p>
- * Unless explicitly provided, by default, a new <em>Function</em> has 0 arity (minimum as well as maximum). The first
- * time an implementation is {@link #addImplementation(Method) added}, both arities are updated accordingly.
+ * By default, a new <em>Function</em> has 0 arity (minimum as well as maximum). The first time an implementation is
+ * {@link #addImplementation(Method) added}, both arities are updated accordingly.
  * </p>
  *
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
- * @version 1.1, Dec 04, 2014
+ * @version 1.2, Jan 12, 2015
  */
 public class Function {
 
@@ -23,43 +23,24 @@ public class Function {
 
     private final String name;
 
-    private volatile int minArity;
+    private int minArity;
 
-    private volatile int maxArity;
+    private int maxArity;
 
     // Manipulating function implementations can be done in a concurrent environment (web app, etc.)!
     private final ConcurrentMap<Integer, Method> implementations = new ConcurrentHashMap<>();
 
     public Function(String name) {
-        this(name, null, 0, 0);
+        this(name, null);
     }
 
     public Function(String name, String pluginName) {
-        this(name, pluginName, 0, 0);
-    }
-
-    public Function(String name, int arity) {
-        this(name, null, arity, arity);
-    }
-
-    public Function(String name, int minArity, int maxArity) {
-        this(name, null, minArity, maxArity);
-    }
-
-    public Function(String name, String pluginName, int arity) {
-        this(name, pluginName, arity, arity);
-    }
-
-    public Function(String name, String pluginName, int minArity, int maxArity) {
         if (name == null || (name = name.trim()).length() == 0) {
             throw new IllegalArgumentException("the name of a function cannot be null or empty");
         }
 
         this.name = name;
         this.pluginName = pluginName == null || (pluginName = pluginName.trim()).length() == 0 ? null : pluginName;
-
-        setMinArity(minArity);
-        setMaxArity(maxArity);
     }
 
     /**
@@ -87,24 +68,8 @@ public class Function {
         return minArity;
     }
 
-    public Function setMinArity(int minArity) {
-        if (minArity < 0) {
-            throw new IllegalArgumentException("the minimum arity of a function cannot be less than 0");
-        }
-        this.minArity = minArity;
-        return this;
-    }
-
     public int getMaxArity() {
         return maxArity;
-    }
-
-    public Function setMaxArity(int maxArity) {
-        if (maxArity < getMinArity()) {
-            throw new IllegalArgumentException("the maximum arity of a function cannot be less than its minimum arity");
-        }
-        this.maxArity = maxArity;
-        return this;
     }
 
     /**
@@ -137,11 +102,13 @@ public class Function {
             .put(parameterTypes.length, method);
 
         // Update arity, if necessary or if this is the first added implementation:
-        if (parameterTypes.length < minArity || implementations.size() == 1) {
-            minArity = parameterTypes.length;
-        }
-        if (parameterTypes.length > maxArity || implementations.size() == 1) {
-            maxArity = parameterTypes.length;
+        synchronized (this) {
+            if (parameterTypes.length < minArity || implementations.size() == 1) {
+                minArity = parameterTypes.length;
+            }
+            if (parameterTypes.length > maxArity || implementations.size() == 1) {
+                maxArity = parameterTypes.length;
+            }
         }
 
         return this;

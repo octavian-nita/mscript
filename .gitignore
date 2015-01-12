@@ -1,13 +1,13 @@
-*.iml
 /.idea
+/*.iml
 
-/.project
+/.settings
 /.buildpath
 /.classpath
-/.settings
+/.project
 
 /nbproject
-/nb-configuration.xml
 /nbactions.xml
+/nb-configuration.xml
 
 /target
