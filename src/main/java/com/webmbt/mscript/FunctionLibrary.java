@@ -1,5 +1,7 @@
 package com.webmbt.mscript;
 
+import com.webmbt.plugin.MScriptInterface;
+import com.webmbt.plugin.MbtScriptExecutor;
 import com.webmbt.plugin.PluginAncestor;
 
 import java.lang.reflect.Method;
@@ -9,12 +11,15 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static java.lang.reflect.Modifier.isPublic;
+
 /**
- * <p>A symbol table for MScript {@link Function function definitions}.</p>
+ * <p>A lookup service for MScript {@link Function function definitions}.</p>
  * <p>
- * When looking up a function, a filtering list of plugins can be provided in order to restrict the lookup. If looking
- * up in the internal cache fails, the provided <em>system functions</em> instance and plugins are scanned for {@link
- * MScriptInterface.MSCRIPT_METHOD}-annotated and public methods and if found, the definition is cached and retrieved.
+ * {@link #lookup(String, String, int, List) Lookup calls} first check an internal function definitions cache. If no
+ * suitable definition is found, the provided system functions object and plugins are scanned for {@link
+ * MScriptInterface.MSCRIPT_METHOD}-annotated and public methods (also cached when found) and if an
+ * appropriate definition is found, it is retrieved.
  * </p>
  *
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
@@ -22,13 +27,14 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class FunctionLibrary {
 
+    //
     // Key to group the <em>{@link Function#isSystemFunction() system}</em> functions symbol (sub)table.
     //
     // !DO NOT HACK AND USE THIS AS THE PLUGIN NAME WHEN CREATING Function INSTANCES!
     //
     private static final String SYSTEM_FUNCTIONS = "__SYS__";
 
-    private final ConcurrentMap<String, ConcurrentMap<String, Function>> library = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, ConcurrentMap<String, Function>> cache = new ConcurrentHashMap<>();
 
     /**
      * Thread-safe method to eventually create (if non-existent) and retrieve a <em>plugin</em>.
@@ -44,10 +50,10 @@ public class FunctionLibrary {
         // See
         // http://stackoverflow.com/questions/10743622/concurrenthashmap-avoid-extra-object-creation-with-putifabsent
         // for an explanation as to why the following is acceptable from a thread-safety point of view:
-        ConcurrentMap<String, Function> plugin = library.get(pluginName);
+        ConcurrentMap<String, Function> plugin = cache.get(pluginName);
         if (plugin == null) {
-            library.putIfAbsent(pluginName, new ConcurrentHashMap<String, Function>());
-            plugin = library.get(pluginName);
+            cache.putIfAbsent(pluginName, new ConcurrentHashMap<String, Function>());
+            plugin = cache.get(pluginName);
         }
 
         return plugin;
@@ -79,21 +85,34 @@ public class FunctionLibrary {
         return function;
     }
 
-    public FunctionLibrary add(String pluginName, String functionName, Method method) {
-        if (method == null) {
-            throw new NullPointerException("cannot add a function with a null (Java) implementation to a library");
+    protected <T> void cache(String pluginName, Class<T> klass) {
+        if (klass != null) {
+            for (Method method : klass.getMethods()) {
+                if (method.isAnnotationPresent(MScriptInterface.MSCRIPT_METHOD.class)) {
+                    getOrCreateFunction(pluginName, method.getName()).addImplementation(method);
+                } else if (isPublic(method.getModifiers())) {
+                    getOrCreateFunction(pluginName, "_" + method.getName()).addImplementation(method);
+                }
+            }
         }
-        if (functionName == null || (functionName = functionName.trim()).length() == 0) {
-            throw new IllegalArgumentException("cannot add a function with a null or empty name to a library");
-        }
-
-        getOrCreateFunction(pluginName, functionName).addImplementation(method);
-
-        return this;
     }
 
-    public LookupResult lookup(String pluginName, String functionName, int argsNumber) {
-        return lookup(pluginName, functionName, argsNumber, null);
+    protected void cache(MbtScriptExecutor systemFunctions, List<PluginAncestor> plugins) {
+        if (systemFunctions != null) {
+            cache(null, systemFunctions.getClass());
+        }
+
+        if (plugins != null) {
+            for (PluginAncestor plugin : plugins) {
+                if (plugin != null) {
+                    cache(plugin.getPluginID(), plugin.getClass());
+                }
+            }
+        }
+    }
+
+    protected LookupResult lookupInCache(String pluginName, String functionName, int argsNumber) {
+
     }
 
     /**
@@ -112,21 +131,12 @@ public class FunctionLibrary {
             throw new IllegalArgumentException("cannot look up a function with a null or empty name");
         }
 
-        Set<String> pluginNames = new TreeSet<>(); // for faster look-ups
-        if (plugins != null) {
-            for (PluginAncestor plugin : plugins) {
-                if (plugin != null) {
-                    pluginNames.add(plugin.getPluginID());
-                }
-            }
-        }
-
         if (pluginName != null && (pluginName = pluginName.trim()).length() > 0) {
             if (!pluginNames.contains(pluginName)) {
                 return LookupResult.PLUGIN_NOT_ACCESSIBLE;
             }
 
-            ConcurrentMap<String, Function> pluginFunctions = library.get(pluginName);
+            ConcurrentMap<String, Function> pluginFunctions = cache.get(pluginName);
             if (pluginFunctions == null) {
                 return LookupResult.PLUGIN_NOT_FOUND;
             }
@@ -135,7 +145,7 @@ public class FunctionLibrary {
         }
 
         // No plugin name has been provided: check the available system functions and fall back on the provided plugins:
-        ConcurrentMap<String, Function> systemFunctions = library.get(SYSTEM_FUNCTIONS);
+        ConcurrentMap<String, Function> systemFunctions = cache.get(SYSTEM_FUNCTIONS);
         if (systemFunctions == null) {
             return LookupResult.FUNCTION_NOT_FOUND;
         }

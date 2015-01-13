@@ -1,8 +1,8 @@
 package com.webmbt.mscript;
 
 import java.lang.reflect.Method;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * <p>
@@ -10,8 +10,8 @@ import java.util.concurrent.ConcurrentMap;
  * (i.e. <em>{@link #isSystemFunction() system}</em> functions) or part of a {@link #getPluginName() named plugin}.
  * </p>
  * <p>
- * By default, a new <em>Function</em> has 0 arity (minimum as well as maximum). The first time an implementation is
- * {@link #addImplementation(Method) added}, both arities are updated accordingly.
+ * By default, a newly created <em>Function</em> has 0 arity (minimum, as well as maximum). Whenever an implementation
+ * is {@link #addImplementation(Method) added}, both arities are updated accordingly and atomically.
  * </p>
  *
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
@@ -27,8 +27,7 @@ public class Function {
 
     private int maxArity;
 
-    // Manipulating function implementations can be done in a concurrent environment (web app, etc.)!
-    private final ConcurrentMap<Integer, Method> implementations = new ConcurrentHashMap<>();
+    private final Map<Integer, Method> implementations = new HashMap<>();
 
     public Function(String name) {
         this(name, null);
@@ -44,10 +43,10 @@ public class Function {
     }
 
     /**
-     * <em>System</em> (or <em>built-in</em>) functions do not belong to any plugin (the {@link #getPluginName()
+     * <em>System</em> (<em>built-in</em>) functions do not belong to any plugin (the {@link #getPluginName()
      * plugin name} is either <code>null</code> or empty) and are invoked in MScript code without any prefix.
      *
-     * @return <code>true</code> if <code>this</code> is a system function and <code>false</code> otherwise
+     * @return <code>true</code> if <code>this</code> is a <em>system</em> function and <code>false</code> otherwise
      */
     public boolean isSystemFunction() {
         return pluginName == null || pluginName.trim().length() == 0;
@@ -94,15 +93,14 @@ public class Function {
         for (Class<?> parametersType : parameterTypes) {
             if (parametersType != String.class) {
                 throw new IllegalArgumentException(
-                    "function (Java) implementations should only take parameters of type java.lang.String");
+                    "function (Java) implementations can only take parameters of type java.lang.String");
             }
         }
 
-        implementations  // eventually replace previously added implementation with the same arity!
-            .put(parameterTypes.length, method);
+        synchronized (implementations) {
+            implementations.put(parameterTypes.length, method); // eventually replaces previously added implementation!
 
-        // Update arity, if necessary or if this is the first added implementation:
-        synchronized (this) {
+            // Update arity, if necessary or if this is the first added implementation:
             if (parameterTypes.length < minArity || implementations.size() == 1) {
                 minArity = parameterTypes.length;
             }

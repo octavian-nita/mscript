@@ -35,10 +35,10 @@ public class FunctionTest {
     @Test
     public void defaultNullOrEmptyPluginNameImpliesSystemFunction() {
         assertTrue(new Function("foo").isSystemFunction());
-        assertTrue(new Function("foo", null, 1).isSystemFunction());
-        assertTrue(new Function("foo", "", 2, 3).isSystemFunction());
-        assertTrue(new Function("foo", " ", 4, 4).isSystemFunction());
-        assertFalse(new Function("foo", "bar", 10).isSystemFunction());
+        assertTrue(new Function("foo", null).isSystemFunction());
+        assertTrue(new Function("foo", "").isSystemFunction());
+        assertTrue(new Function("foo", " ").isSystemFunction());
+        assertFalse(new Function("foo", "b").isSystemFunction());
     }
 
     @Test
