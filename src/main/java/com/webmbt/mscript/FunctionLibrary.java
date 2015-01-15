@@ -1,16 +1,16 @@
 package com.webmbt.mscript;
 
-import com.webmbt.plugin.MScriptInterface;
 import com.webmbt.plugin.MbtScriptExecutor;
 import com.webmbt.plugin.PluginAncestor;
 
 import java.lang.reflect.Method;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Logger;
 
+import static com.webmbt.mscript.FunctionLibrary.Lookup.State.*;
+import static com.webmbt.plugin.MScriptInterface.MSCRIPT_METHOD;
 import static java.lang.reflect.Modifier.isPublic;
 
 /**
@@ -18,7 +18,7 @@ import static java.lang.reflect.Modifier.isPublic;
  * <p>
  * {@link #lookup(String, String, int, List) Lookup calls} first check an internal function definitions cache. If no
  * suitable definition is found, the provided system functions object and plugins are scanned for {@link
- * MScriptInterface.MSCRIPT_METHOD}-annotated and public methods (also cached when found) and if an
+ * MSCRIPT_METHOD}-annotated and public methods (also cached when found) and if an
  * appropriate definition is found, it is retrieved.
  * </p>
  *
@@ -26,6 +26,8 @@ import static java.lang.reflect.Modifier.isPublic;
  * @version 1.0, Dec 04, 2014
  */
 public class FunctionLibrary {
+
+    private static final Logger log = Logger.getLogger(FunctionLibrary.class.getName());
 
     //
     // Key to group the <em>{@link Function#isSystemFunction() system}</em> functions symbol (sub)table.
@@ -85,27 +87,36 @@ public class FunctionLibrary {
         return function;
     }
 
-    protected <T> void cache(String pluginName, Class<T> klass) {
-        if (klass != null) {
-            for (Method method : klass.getMethods()) {
-                if (method.isAnnotationPresent(MScriptInterface.MSCRIPT_METHOD.class)) {
-                    getOrCreateFunction(pluginName, method.getName()).addImplementation(method);
-                } else if (isPublic(method.getModifiers())) {
-                    getOrCreateFunction(pluginName, "_" + method.getName()).addImplementation(method);
-                }
+    protected void cache(String pluginName, Object target) {
+        if (target == null) {
+            log.warning("cannot cache function implementations on a null target object; skipping cache request...");
+            return;
+        }
+
+        for (Method method : target.getClass().getMethods()) {
+            if (method.isAnnotationPresent(MSCRIPT_METHOD.class)) {
+
+                // MSCRIPT_METHOD-annotated methods become implementations of MScript functions with the same name:
+                getOrCreateFunction(pluginName, method.getName()).addImplementation(method, target);
+
+            } else if (isPublic(method.getModifiers())) {
+
+                // Other public methods become implementations of MScript functions with the name prefixed by '_':
+                getOrCreateFunction(pluginName, "_" + method.getName()).addImplementation(method);
+
             }
         }
     }
 
     protected void cache(MbtScriptExecutor systemFunctions, List<PluginAncestor> plugins) {
         if (systemFunctions != null) {
-            cache(null, systemFunctions.getClass());
+            cache(null, systemFunctions);
         }
 
         if (plugins != null) {
             for (PluginAncestor plugin : plugins) {
                 if (plugin != null) {
-                    cache(plugin.getPluginID(), plugin.getClass());
+                    cache(plugin.getPluginID(), plugin);
                 }
             }
         }
@@ -155,9 +166,9 @@ public class FunctionLibrary {
 
     }
 
-    protected LookupResult checkFunction(Function function, int argsNumber) {
+    protected Lookup checkFunction(Function function, int argsNumber) {
         if (function == null) {
-            return LookupResult.FUNCTION_NOT_FOUND;
+            return new Lookup(FUNCTION_NOT_FOUND);
         }
         if (argsNumber < function.getMinArity()) {
             return LookupResult.TOO_FEW_ARGUMENTS;
@@ -168,24 +179,43 @@ public class FunctionLibrary {
         return LookupResult.OK;
     }
 
-    public static enum LookupResult {
+    public static class Lookup {
 
-        OK,
+        public final Function function;
 
-        PLUGIN_NOT_FOUND,
-        PLUGIN_NOT_ACCESSIBLE,
+        public final State state;
 
-        FUNCTION_NOT_FOUND,
-        TOO_MANY_ARGUMENTS,
-        TOO_FEW_ARGUMENTS;
+        public Lookup(State state) {
+            this(state, null);
+        }
 
-        /**
-         * @return a {@link String} key that can be used to resolve / identify an associated error message
-         */
-        @Override
-        public String toString() {
-            // e.g. for an enum constant declared as PLUGIN_NOT_FOUND, we return plugin.not.found
-            return super.toString().toLowerCase().replaceAll("_+", ".");
+        public Lookup(State state, Function function) {
+            if (state == null) {
+                throw new NullPointerException("lookup result state cannot be null");
+            }
+            this.function = function;
+            this.state = state;
+        }
+
+        public static enum State {
+
+            OK,
+
+            PLUGIN_NOT_FOUND,
+            PLUGIN_NOT_ACCESSIBLE,
+
+            FUNCTION_NOT_FOUND,
+            TOO_MANY_ARGUMENTS,
+            TOO_FEW_ARGUMENTS;
+
+            /**
+             * @return a {@link String} key that can be used to resolve / identify an associated error message
+             */
+            @Override
+            public String toString() {
+                // e.g. for an enum constant declared as PLUGIN_NOT_FOUND, return plugin.not.found
+                return super.toString().toLowerCase().replaceAll("_+", ".");
+            }
         }
     }
 }

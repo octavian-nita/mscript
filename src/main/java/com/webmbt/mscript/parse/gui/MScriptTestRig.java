@@ -53,7 +53,7 @@ import org.antlr.v4.runtime.tree.gui.TreeViewer.DefaultTreeTextProvider;
  */
 public class MScriptTestRig extends javax.swing.JFrame {
 
-    private static final Logger logger = Logger.getLogger(MScriptTestRig.class.getName());
+    private static final Logger log = Logger.getLogger(MScriptTestRig.class.getName());
 
     public static void main(String args[]) {
 
@@ -62,13 +62,13 @@ public class MScriptTestRig extends javax.swing.JFrame {
         try {
             library.load("functions.properties");
         } catch (Throwable ex) {
-            logger.log(SEVERE, "Cannot load functions library", ex);
+            log.log(SEVERE, "Cannot load functions library", ex);
         }
 
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Throwable ex) {
-            logger.log(WARNING, "", ex);
+            log.log(WARNING, "", ex);
         }
 
         Icon empty = new Icon() {
@@ -310,7 +310,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
                     r.x += 2;
                     component.scrollRectToVisible(r);
                 } catch (Exception exception) {
-                    logger.log(WARNING, "", exception);
+                    log.log(WARNING, "", exception);
                 }
             }
         });
@@ -333,7 +333,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
             srcPane.setCaretPosition(error.charPositionInLine + caretPos);
             srcPane.requestFocusInWindow();
         } catch (Throwable throwable) {
-            logger.log(SEVERE, "Cannot go to the syntax error location in code", throwable);
+            log.log(SEVERE, "Cannot go to the syntax error location in code", throwable);
         }
     }
 
@@ -411,7 +411,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
                 JOptionPane.showMessageDialog(MScriptTestRig.this,
                                               "Cannot parse the MScript source: " + throwable.getMessage() + "!",
                                               "An error has occurred", JOptionPane.ERROR_MESSAGE);
-                logger.log(SEVERE, "", throwable);
+                log.log(SEVERE, "", throwable);
             }
             MScriptTestRig.this.getRootPane().setCursor(Cursor.getDefaultCursor());
         }

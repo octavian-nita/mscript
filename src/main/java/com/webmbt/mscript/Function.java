@@ -1,7 +1,6 @@
 package com.webmbt.mscript;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,7 +11,7 @@ import java.util.Map;
  * </p>
  * <p>
  * By default, a newly created <em>Function</em> has 0 arity (minimum, as well as maximum). Whenever an implementation
- * is {@link #addImplementation(Object, Method) added}, both arities are updated accordingly and atomically.
+ * is {@link #addImplementation(Object, Method) added}, both arities are <em>atomically</em> updated accordingly.
  * </p>
  *
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
@@ -87,22 +86,18 @@ public class Function {
      * provided in the MScript call as well as on the method arity.
      * </p>
      * <p>
-     * The name of the added <code>method</code> does not really matter in identifying the function; this provides
-     * for increased flexibility (i.e. allows different naming / calling conventions in MScript, etc.).
+     * The name of the added <code>method</code> does not really matter at this point in naming the function; this
+     * provides for increased flexibility (i.e. allows different naming / calling conventions in MScript, etc.).
      * </p>
      *
-     * @param target can be <code>null</code> if <code>method</code> is static
+     * @param target instance on which to eventually invoke the <code>method</code>; can be <code>null</code> (if, for
+     *               example, <code>method</code> is static or a proper target object is not required or available at
+     *               the time of calling this method)
      * @param method the actual Java method that can be invoked upon an MScript function call
      */
-    public Function addImplementation(Object target, Method method) {
+    public Function addImplementation(Method method, Object target) {
         if (method == null) {
-            throw new NullPointerException("cannot add a null function (Java) implementation");
-        }
-        if (target == null) {
-            if (!Modifier.isStatic(method.getModifiers())) {
-                throw new IllegalArgumentException(
-                    "cannot add a function (Java) non-static implementation without a target object");
-            }
+            throw new NullPointerException("a function (Java) implementation cannot be null");
         }
 
         // Validate method arguments (currently, only Strings allowed):
@@ -110,15 +105,17 @@ public class Function {
         for (Class<?> parametersType : parameterTypes) {
             if (parametersType != String.class) {
                 throw new IllegalArgumentException(
-                    "function (Java) implementations can only take parameters of type java.lang.String");
+                    "function (Java) implementations can currently only take parameters of type java.lang.String");
             }
         }
 
+        // Limit synchronization to the minimum in order to improve lock performance:
+        // (see http://plumbr.eu/blog/improving-lock-performance-in-java for details)
         synchronized (implementations) {
             // Eventually replace previously added implementation:
-            implementations.put(parameterTypes.length, new Implementation(target, method));
+            implementations.put(parameterTypes.length, new Implementation(method, target));
 
-            // Update arity, if necessary or if this is the first added implementation:
+            // Update arity if necessary or if this is the first added implementation:
             if (parameterTypes.length < minArity || implementations.size() == 1) {
                 minArity = parameterTypes.length;
             }
@@ -137,12 +134,29 @@ public class Function {
 
     public static class Implementation {
 
-        public final Object target;
-        public final Method method;
+        private final Method method;
 
-        public Implementation(Object target, Method method) {
+        private Object target;
+
+        public Implementation(Method method) {
+            this.method = method;
+        }
+
+        public Implementation(Method method, Object target) {
             this.target = target;
             this.method = method;
+        }
+
+        public Method getMethod() {
+            return method;
+        }
+
+        public Object getTarget() {
+            return target;
+        }
+
+        public void setTarget(Object target) {
+            this.target = target;
         }
     }
 }
