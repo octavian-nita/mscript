@@ -11,7 +11,7 @@ import java.util.Map;
  * </p>
  * <p>
  * By default, a newly created <em>Function</em> has 0 arity (minimum, as well as maximum). Whenever an implementation
- * is {@link #addImplementation(Object, Method) added}, both arities are <em>atomically</em> updated accordingly.
+ * is {@link #addImplementation(Method, Object) added}, both arities are <em>atomically</em> updated accordingly.
  * </p>
  *
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
@@ -72,7 +72,7 @@ public class Function {
     }
 
     /**
-     * Equivalent to {@link #addImplementation(Object, Method) addImplementation(null, method)}.
+     * Equivalent to {@link #addImplementation(Method, Object) addImplementation(method, null)}.
      */
     public Function addImplementation(Method method) {
         return addImplementation(null, method);

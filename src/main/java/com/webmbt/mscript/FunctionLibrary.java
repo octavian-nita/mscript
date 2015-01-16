@@ -4,22 +4,30 @@ import com.webmbt.plugin.MbtScriptExecutor;
 import com.webmbt.plugin.PluginAncestor;
 
 import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 
-import static com.webmbt.mscript.FunctionLibrary.Lookup.State.*;
+import static com.webmbt.mscript.FunctionLibrary.Lookup.State.FUNCTION_NOT_FOUND;
+import static com.webmbt.mscript.FunctionLibrary.Lookup.State.OK;
+import static com.webmbt.mscript.FunctionLibrary.Lookup.State.PLUGIN_NOT_ACCESSIBLE;
+import static com.webmbt.mscript.FunctionLibrary.Lookup.State.PLUGIN_NOT_FOUND;
+import static com.webmbt.mscript.FunctionLibrary.Lookup.State.TOO_FEW_ARGUMENTS;
+import static com.webmbt.mscript.FunctionLibrary.Lookup.State.TOO_MANY_ARGUMENTS;
 import static com.webmbt.plugin.MScriptInterface.MSCRIPT_METHOD;
 import static java.lang.reflect.Modifier.isPublic;
 
 /**
  * <p>A lookup service for MScript {@link Function function definitions}.</p>
  * <p>
- * {@link #lookup(String, String, int, List) Lookup calls} first check an internal function definitions cache. If no
- * suitable definition is found, the provided system functions object and plugins are scanned for {@link
- * MSCRIPT_METHOD}-annotated and public methods (also cached when found) and if an
- * appropriate definition is found, it is retrieved.
+ * {@link #lookup(String, String, int, MbtScriptExecutor, List) Lookup calls} first check an internal function
+ * definitions cache. If no suitable definition is found the provided system functions object and plugins are scanned
+ * for {@link MSCRIPT_METHOD}-annotated and public methods (cached upon scanning) and if an appropriate definition is
+ * found, it is retrieved.
  * </p>
  *
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
@@ -37,6 +45,28 @@ public class FunctionLibrary {
     private static final String SYSTEM_FUNCTIONS = "__SYS__";
 
     private final ConcurrentMap<String, ConcurrentMap<String, Function>> cache = new ConcurrentHashMap<>();
+
+    private Lookup lookupInCache(String pluginName, String functionName, int argsNumber) {
+        ConcurrentMap<String, Function> functions = cache.get(pluginName);
+        if (functions == null) {
+            return new Lookup(PLUGIN_NOT_FOUND);
+        }
+
+        Function function = functions.get(functionName);
+        if (function == null) {
+            return new Lookup(FUNCTION_NOT_FOUND);
+        }
+
+        if (argsNumber < function.getMinArity()) {
+            return new Lookup(TOO_FEW_ARGUMENTS);
+        }
+
+        if (argsNumber > function.getMaxArity()) {
+            return new Lookup(TOO_MANY_ARGUMENTS);
+        }
+
+        return new Lookup(OK, function);
+    }
 
     /**
      * Thread-safe method to eventually create (if non-existent) and retrieve a <em>plugin</em>.
@@ -122,19 +152,8 @@ public class FunctionLibrary {
         }
     }
 
-    protected LookupResult lookupInCache(String pluginName, String functionName, int argsNumber) {
-
-    }
-
-    /**
-     * An MScript parser normally matches separately the plugin name, function name and every passed argument; as such,
-     * the signature of this methods is designed so that it is easily callable upon a successful function call match.
-     *
-     * @param plugins if not <code>null</code> or empty, the function will be looked up only under these plugins; also,
-     *                if the plugin name is <code>null</code> or empty and if the function is not found under the added
-     *                system functions, these plugins are checked as well, in the provided order
-     */
-    public LookupResult lookup(String pluginName, String functionName, int argsNumber, List<PluginAncestor> plugins) {
+    protected Lookup lookup(String pluginName, String functionName, int argsNumber,
+                            Collection<String> accessiblePluginNames) {
         if (argsNumber < 0) {
             throw new IllegalArgumentException("cannot look up a function with a negative number of arguments");
         }
@@ -142,41 +161,49 @@ public class FunctionLibrary {
             throw new IllegalArgumentException("cannot look up a function with a null or empty name");
         }
 
-        if (pluginName != null && (pluginName = pluginName.trim()).length() > 0) {
-            if (!pluginNames.contains(pluginName)) {
-                return LookupResult.PLUGIN_NOT_ACCESSIBLE;
-            }
-
-            ConcurrentMap<String, Function> pluginFunctions = cache.get(pluginName);
-            if (pluginFunctions == null) {
-                return LookupResult.PLUGIN_NOT_FOUND;
-            }
-
-            return checkFunction(pluginFunctions.get(functionName), argsNumber);
+        if (pluginName == null || (pluginName = pluginName.trim()).length() == 0) {
+            return lookupInCache(SYSTEM_FUNCTIONS, functionName, argsNumber);
         }
 
-        // No plugin name has been provided: check the available system functions and fall back on the provided plugins:
-        ConcurrentMap<String, Function> systemFunctions = cache.get(SYSTEM_FUNCTIONS);
-        if (systemFunctions == null) {
-            return LookupResult.FUNCTION_NOT_FOUND;
+        if (accessiblePluginNames == null || accessiblePluginNames.size() == 0) {
+            log.fine("no plugin names to look up in cache provided; looking up in the entire cache...");
+        } else if (!accessiblePluginNames.contains(pluginName)) {
+            return new Lookup(PLUGIN_NOT_ACCESSIBLE);
         }
 
-        // TODO: check system functions then fall back on the provided plugins
-        return LookupResult.OK;
-
+        return lookupInCache(pluginName, functionName, argsNumber);
     }
 
-    protected Lookup checkFunction(Function function, int argsNumber) {
-        if (function == null) {
-            return new Lookup(FUNCTION_NOT_FOUND);
+    /**
+     * An MScript parser normally matches separately the plugin name, function name and every passed argument; as such,
+     * the signature of this methods is designed so that it is easily callable upon a successful function call match.
+     *
+     * @param accessiblePlugins if not <code>null</code> or empty, the function will be looked up only under these
+     *                          plugins; also if the plugin name is <code>null</code> or empty and if the function
+     *                          is not found under the added system functions, these plugins are checked as well,
+     *                          in the provided order
+     */
+    public Lookup lookup(String pluginName, String functionName, int argsNumber, MbtScriptExecutor systemFunctions,
+                         List<PluginAncestor> accessiblePlugins) {
+
+        Set<String> accessiblePluginNames = new LinkedHashSet<>(); // for faster look-ups in given order
+        if (accessiblePluginNames != null) {
+            for (PluginAncestor accessiblePlugin : accessiblePlugins) {
+                if (accessiblePlugin != null) {
+                    accessiblePluginNames.add(accessiblePlugin.getPluginID());
+                }
+            }
         }
-        if (argsNumber < function.getMinArity()) {
-            return LookupResult.TOO_FEW_ARGUMENTS;
+
+        Lookup lookup = lookup(pluginName, functionName, argsNumber, accessiblePluginNames);
+        switch (lookup.state) {
+        case PLUGIN_NOT_FOUND:
+        case FUNCTION_NOT_FOUND:
+            cache(systemFunctions, accessiblePlugins);
+            return lookup(pluginName, functionName, argsNumber, accessiblePluginNames);
+        default:
+            return lookup;
         }
-        if (argsNumber > function.getMaxArity()) {
-            return LookupResult.TOO_MANY_ARGUMENTS;
-        }
-        return LookupResult.OK;
     }
 
     public static class Lookup {
@@ -184,6 +211,10 @@ public class FunctionLibrary {
         public final Function function;
 
         public final State state;
+
+        public Lookup(Function function) {
+            this(OK, function);
+        }
 
         public Lookup(State state) {
             this(state, null);
@@ -201,8 +232,8 @@ public class FunctionLibrary {
 
             OK,
 
-            PLUGIN_NOT_FOUND,
             PLUGIN_NOT_ACCESSIBLE,
+            PLUGIN_NOT_FOUND,
 
             FUNCTION_NOT_FOUND,
             TOO_MANY_ARGUMENTS,
