@@ -40,33 +40,9 @@ public class FunctionLibrary {
     //
     // Key to group the <em>{@link Function#isSystemFunction() system}</em> functions symbol (sub)table.
     //
-    // !DO NOT HACK AND USE THIS AS THE PLUGIN NAME WHEN CREATING Function INSTANCES!
-    //
     private static final String SYSTEM_FUNCTIONS = "__SYS__";
 
     private final ConcurrentMap<String, ConcurrentMap<String, Function>> cache = new ConcurrentHashMap<>();
-
-    private Lookup lookupInCache(String pluginName, String functionName, int argsNumber) {
-        ConcurrentMap<String, Function> functions = cache.get(pluginName);
-        if (functions == null) {
-            return new Lookup(PLUGIN_NOT_FOUND);
-        }
-
-        Function function = functions.get(functionName);
-        if (function == null) {
-            return new Lookup(FUNCTION_NOT_FOUND);
-        }
-
-        if (argsNumber < function.getMinArity()) {
-            return new Lookup(TOO_FEW_ARGUMENTS);
-        }
-
-        if (argsNumber > function.getMaxArity()) {
-            return new Lookup(TOO_MANY_ARGUMENTS);
-        }
-
-        return new Lookup(OK, function);
-    }
 
     /**
      * Thread-safe method to eventually create (if non-existent) and retrieve a <em>plugin</em>.
@@ -162,7 +138,7 @@ public class FunctionLibrary {
         }
 
         if (pluginName == null || (pluginName = pluginName.trim()).length() == 0) {
-            return lookupInCache(SYSTEM_FUNCTIONS, functionName, argsNumber);
+            return lookupInCache(null, functionName, argsNumber);
         }
 
         if (accessiblePluginNames == null || accessiblePluginNames.size() == 0) {
@@ -172,6 +148,32 @@ public class FunctionLibrary {
         }
 
         return lookupInCache(pluginName, functionName, argsNumber);
+    }
+
+    private Lookup lookupInCache(String pluginName, String functionName, int argsNumber) {
+        if (pluginName == null || (pluginName = pluginName.trim()).length() == 0) {
+            pluginName = SYSTEM_FUNCTIONS;
+        }
+
+        ConcurrentMap<String, Function> functions = cache.get(pluginName);
+        if (functions == null) {
+            return SYSTEM_FUNCTIONS.equals(pluginName) ? new Lookup(FUNCTION_NOT_FOUND) : new Lookup(PLUGIN_NOT_FOUND);
+        }
+
+        Function function = functions.get(functionName);
+        if (function == null) {
+            return new Lookup(FUNCTION_NOT_FOUND);
+        }
+
+        if (argsNumber < function.getMinArity()) {
+            return new Lookup(TOO_FEW_ARGUMENTS);
+        }
+
+        if (argsNumber > function.getMaxArity()) {
+            return new Lookup(TOO_MANY_ARGUMENTS);
+        }
+
+        return new Lookup(function);
     }
 
     /**
@@ -186,24 +188,34 @@ public class FunctionLibrary {
     public Lookup lookup(String pluginName, String functionName, int argsNumber, MbtScriptExecutor systemFunctions,
                          List<PluginAncestor> accessiblePlugins) {
 
-        Set<String> accessiblePluginNames = new LinkedHashSet<>(); // for faster look-ups in given order
-        if (accessiblePluginNames != null) {
-            for (PluginAncestor accessiblePlugin : accessiblePlugins) {
-                if (accessiblePlugin != null) {
-                    accessiblePluginNames.add(accessiblePlugin.getPluginID());
-                }
-            }
-        }
-
-        Lookup lookup = lookup(pluginName, functionName, argsNumber, accessiblePluginNames);
-        switch (lookup.state) {
-        case PLUGIN_NOT_FOUND:
-        case FUNCTION_NOT_FOUND:
-            cache(systemFunctions, accessiblePlugins);
-            return lookup(pluginName, functionName, argsNumber, accessiblePluginNames);
-        default:
+        Lookup lookup = lookupInCache(pluginName, functionName, argsNumber);
+        if (lookup.state == OK) {
             return lookup;
         }
+
+        if (pluginName == null || (pluginName = pluginName.trim()).length() == 0 ||
+            SYSTEM_FUNCTIONS.equals(pluginName)) {
+            // No plugin name provided, look up in system functions and then the provided plugins, one by one:
+        }
+
+        // A plugin name was provided, look up in matching plugin:
+
+//        Lookup lookup = lookup(pluginName, functionName, argsNumber, accessiblePluginNames);
+//        switch (lookup.state) {
+//
+//        case PLUGIN_NOT_FOUND:
+//        case FUNCTION_NOT_FOUND:
+//            cache(systemFunctions, accessiblePlugins);
+//            lookup = lookup(pluginName, functionName, argsNumber, accessiblePluginNames);
+//
+//            if ((pluginName == null || (pluginName = pluginName.trim()).length() == 0) &&
+//                (lookup.state == PLUGIN_NOT_FOUND || FUNCTION_NOT_FOUND)) {
+//
+//            }
+//
+//        default:
+//            return lookup;
+//        }
     }
 
     public static class Lookup {
