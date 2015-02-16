@@ -5,9 +5,7 @@ import com.webmbt.plugin.PluginAncestor;
 
 import java.lang.reflect.Method;
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
@@ -150,7 +148,7 @@ public class FunctionLibrary {
         return lookupInCache(pluginName, functionName, argsNumber);
     }
 
-    private Lookup lookupInCache(String pluginName, String functionName, int argsNumber) {
+    private Lookup lookupInCache(String pluginName, String functionName, int argsNumber, List<PluginAncestor> accessiblePlugins) {
         if (pluginName == null || (pluginName = pluginName.trim()).length() == 0) {
             pluginName = SYSTEM_FUNCTIONS;
         }
@@ -200,22 +198,22 @@ public class FunctionLibrary {
 
         // A plugin name was provided, look up in matching plugin:
 
-//        Lookup lookup = lookup(pluginName, functionName, argsNumber, accessiblePluginNames);
-//        switch (lookup.state) {
-//
-//        case PLUGIN_NOT_FOUND:
-//        case FUNCTION_NOT_FOUND:
-//            cache(systemFunctions, accessiblePlugins);
-//            lookup = lookup(pluginName, functionName, argsNumber, accessiblePluginNames);
-//
-//            if ((pluginName == null || (pluginName = pluginName.trim()).length() == 0) &&
-//                (lookup.state == PLUGIN_NOT_FOUND || FUNCTION_NOT_FOUND)) {
-//
-//            }
-//
-//        default:
-//            return lookup;
-//        }
+        //        Lookup lookup = lookup(pluginName, functionName, argsNumber, accessiblePluginNames);
+        //        switch (lookup.state) {
+        //
+        //        case PLUGIN_NOT_FOUND:
+        //        case FUNCTION_NOT_FOUND:
+        //            cache(systemFunctions, accessiblePlugins);
+        //            lookup = lookup(pluginName, functionName, argsNumber, accessiblePluginNames);
+        //
+        //            if ((pluginName == null || (pluginName = pluginName.trim()).length() == 0) &&
+        //                (lookup.state == PLUGIN_NOT_FOUND || FUNCTION_NOT_FOUND)) {
+        //
+        //            }
+        //
+        //        default:
+        //            return lookup;
+        //        }
     }
 
     public static class Lookup {

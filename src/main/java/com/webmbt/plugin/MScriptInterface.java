@@ -13,9 +13,9 @@ public interface MScriptInterface {
 
     /**
      * Methods annotated with {@link com.webmbt.plugin.MScriptInterface.MSCRIPT_METHOD} represent MScript function
-     * implementations and should only have {@link java.lang.String} parameters.
+     * implementations and can (currently) accept only {@link java.lang.String} arguments (and no varargs).
      */
-    @Retention(value = RUNTIME)
-    @Target(value = METHOD)
-    public static @interface MSCRIPT_METHOD {}
+    @Target(METHOD)
+    @Retention(RUNTIME)
+    @interface MSCRIPT_METHOD {}
 }
