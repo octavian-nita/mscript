@@ -1,17 +1,19 @@
 package com.webmbt.mscript;
 
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Arrays;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * <p>
- * MScript functions are <a href="http://en.wikipedia.org/wiki/Variadic_function">variadic</a> and can be built-in
- * (i.e. <em>{@link #isSystemFunction() system}</em> functions) or part of a {@link #getPluginName() named plugin}.
+ * MScript functions can be either built-in (i.e. <em>{@link #isSystemFunction() system}</em> functions) or part of a
+ * {@link #getPluginName() named plugin}.
  * </p>
  * <p>
- * By default, a newly created <em>Function</em> has 0 arity (minimum, as well as maximum). Whenever an implementation
- * is {@link #addImplementation(Method, Object) added}, both arities are <em>atomically</em> updated accordingly.
+ * MScript functions can also be <a href="http://en.wikipedia.org/wiki/Function_overloading">overloaded</a> and their
+ * Java {@link #addImplementation(Method, Object) implementations} can currently accept only {@link String} parameters
+ * (and no varargs). The selection of one implementation over another is thus based on call arity alone.
  * </p>
  *
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
@@ -19,15 +21,11 @@ import java.util.Map;
  */
 public class Function {
 
-    private final String pluginName;
-
     private final String name;
 
-    private int minArity;
+    private final String pluginName;
 
-    private int maxArity;
-
-    private final Map<Integer, Implementation> implementations = new HashMap<>();
+    private final ConcurrentMap<Integer, Implementation> implementations = new ConcurrentHashMap<>();
 
     public Function(String name) {
         this(name, null);
@@ -52,6 +50,10 @@ public class Function {
         return pluginName == null || pluginName.trim().length() == 0;
     }
 
+    public String getName() {
+        return name;
+    }
+
     /**
      * @return <code>null</code> or empty (whitespace-only) for <em>{@link #isSystemFunction() system}</em> functions
      */
@@ -59,23 +61,19 @@ public class Function {
         return pluginName;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public int getMinArity() {
-        return minArity;
-    }
-
-    public int getMaxArity() {
-        return maxArity;
+    /**
+     * @return <code>true</code> if <code>this</code> function has an implementation for the specified
+     * <code>arity</code> and <code>false</code> otherwise
+     */
+    public boolean hasImplementation(int arity) {
+        return implementations.containsKey(arity);
     }
 
     /**
      * Equivalent to {@link #addImplementation(Method, Object) addImplementation(method, null)}.
      */
     public Function addImplementation(Method method) {
-        return addImplementation(null, method);
+        return addImplementation(method, null);
     }
 
     /**
@@ -83,11 +81,11 @@ public class Function {
      * An MScript function can have multiple implementations in the form of (eventually overloaded) Java {@link Method
      * methods}. Currently, the requirement is these methods to only accept {@link String} parameters (and no varargs).
      * Selecting which actual method gets called and on which target object is done based on the number of arguments
-     * provided in the MScript call as well as on the method arity.
+     * provided in the MScript call as well as the method's arity (i.e. they should be the same).
      * </p>
      * <p>
-     * The name of the added <code>method</code> does not really matter at this point in naming the function; this
-     * provides for increased flexibility (i.e. allows different naming / calling conventions in MScript, etc.).
+     * The (Java) name of the added <code>method</code> does not really matter at this point in naming the function;
+     * this provides for increased flexibility (i.e. allows different naming / calling conventions in MScript, etc.).
      * </p>
      *
      * @param target instance on which to eventually invoke the <code>method</code>; can be <code>null</code> (if, for
@@ -109,27 +107,16 @@ public class Function {
             }
         }
 
-        // Limit synchronization to the minimum in order to improve lock performance:
-        // (see http://plumbr.eu/blog/improving-lock-performance-in-java for details)
-        synchronized (implementations) {
-            // Eventually replace previously added implementation:
-            implementations.put(parameterTypes.length, new Implementation(method, target));
-
-            // Update arity if necessary or if this is the first added implementation:
-            if (parameterTypes.length < minArity || implementations.size() == 1) {
-                minArity = parameterTypes.length;
-            }
-            if (parameterTypes.length > maxArity || implementations.size() == 1) {
-                maxArity = parameterTypes.length;
-            }
-        }
+        // Eventually replace previously added implementation!
+        implementations.put(parameterTypes.length, new Implementation(method, target));
 
         return this;
     }
 
     @Override
     public String toString() {
-        return (pluginName == null ? "$" : "$" + pluginName + ".") + name + "(" + minArity + ".." + maxArity + ")";
+        return (pluginName == null ? "$" : "$" + pluginName + ".") + name +
+               Arrays.toString(implementations.keySet().toArray());
     }
 
     public static class Implementation {
@@ -143,8 +130,8 @@ public class Function {
         }
 
         public Implementation(Method method, Object target) {
+            this(method);
             this.target = target;
-            this.method = method;
         }
 
         public Method getMethod() {
