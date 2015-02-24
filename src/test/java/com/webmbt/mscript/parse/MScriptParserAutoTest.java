@@ -1,7 +1,7 @@
 package com.webmbt.mscript.parse;
 
 import com.webmbt.mscript.Function;
-import com.webmbt.mscript.FunctionLibrary;
+import com.webmbt.mscript.Functions;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,11 +29,11 @@ public class MScriptParserAutoTest extends MScriptParserBaseTest {
         }
     };
 
-    protected FunctionLibrary library;
+    protected Functions library;
 
     @Before
     public void setUp() {
-        library = new FunctionLibrary();
+        library = new Functions();
     }
 
     @Test
@@ -53,7 +53,7 @@ public class MScriptParserAutoTest extends MScriptParserBaseTest {
             log.info("Parsing " + absolutePath + " ...");
             try {
                 parse(script, library);
-                log.info("[OK]" + NL);
+                log.info("[FOUND]" + NL);
             } catch (Throwable throwable) {
                 log.info("[ERROR]" + NL);
                 failures.put(absolutePath, throwable);

@@ -1,6 +1,6 @@
 package com.webmbt.mscript.parse;
 
-import com.webmbt.mscript.FunctionLibrary;
+import com.webmbt.mscript.Functions;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -42,27 +42,27 @@ public class MScriptParserBaseTest {
     /**
      * Equivalent to <code>parse(new ANTLRInputStream(text))</code>.
      *
-     * @see #parse(ANTLRInputStream, FunctionLibrary)
+     * @see #parse(ANTLRInputStream, com.webmbt.mscript.Functions)
      */
-    protected ParseTree parseText(String text, FunctionLibrary library) {
+    protected ParseTree parseText(String text, Functions library) {
         return parse(new ANTLRInputStream(text), library);
     }
 
     /**
      * Equivalent to <code>parse(new File(filename))</code>.
      *
-     * @see #parse(File, FunctionLibrary)
+     * @see #parse(File, com.webmbt.mscript.Functions)
      */
-    protected ParseTree parse(String filename, FunctionLibrary library) throws IOException {
+    protected ParseTree parse(String filename, Functions library) throws IOException {
         return parse(new File(filename), library);
     }
 
     /**
      * Equivalent to <code>parse(new ANTLRInputStream(new FileReader(file)))</code>.
      *
-     * @see #parse(ANTLRInputStream, FunctionLibrary)
+     * @see #parse(ANTLRInputStream, com.webmbt.mscript.Functions)
      */
-    protected ParseTree parse(File file, FunctionLibrary library) throws IOException {
+    protected ParseTree parse(File file, Functions library) throws IOException {
         try (FileReader reader = new FileReader(file)) {
             return parse(new ANTLRInputStream(reader), library);
         }
@@ -77,10 +77,10 @@ public class MScriptParserBaseTest {
      *
      * @param chars   <a href="http://xunitpatterns.com/test%20fixture%20-%20xUnit.html">fixture</a> {@link
      *                ANTLRInputStream input stream} to be parsed
-     * @param library {@link FunctionLibrary function library} used by the parser to validate function calls
+     * @param library {@link com.webmbt.mscript.Functions function library} used by the parser to validate function calls
      * @return the {@link ParseTree parse tree} resulting after the parsing process
      */
-    protected ParseTree parse(ANTLRInputStream chars, FunctionLibrary library) {
+    protected ParseTree parse(ANTLRInputStream chars, Functions library) {
         MScriptLexer mScriptLexer = new MScriptLexer(chars);
 
         CommonTokenStream tokens = new CommonTokenStream(mScriptLexer);

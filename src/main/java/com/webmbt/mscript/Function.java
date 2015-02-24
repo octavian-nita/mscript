@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * <p>
  * MScript functions can be either built-in (i.e. <em>{@link #isSystemFunction() system}</em> functions) or part of a
- * {@link #getPluginName() named plugin}.
+ * {@link #getPluginName() named <em>plugin</em>}.
  * </p>
  * <p>
  * MScript functions can also be <a href="http://en.wikipedia.org/wiki/Function_overloading">overloaded</a> and their
@@ -40,16 +40,6 @@ public class Function {
         this.pluginName = pluginName == null || (pluginName = pluginName.trim()).length() == 0 ? null : pluginName;
     }
 
-    /**
-     * <em>System</em> (<em>built-in</em>) functions do not belong to any plugin (the {@link #getPluginName()
-     * plugin name} is either <code>null</code> or empty) and are invoked in MScript code without any prefix.
-     *
-     * @return <code>true</code> if <code>this</code> is a <em>system</em> function and <code>false</code> otherwise
-     */
-    public boolean isSystemFunction() {
-        return pluginName == null || pluginName.trim().length() == 0;
-    }
-
     public String getName() {
         return name;
     }
@@ -59,6 +49,16 @@ public class Function {
      */
     public String getPluginName() {
         return pluginName;
+    }
+
+    /**
+     * <em>System</em> (<em>built-in</em>) functions do not belong to any plugin (the {@link #getPluginName()
+     * plugin name} is either <code>null</code> or empty) and are invoked in MScript code without any prefix.
+     *
+     * @return <code>true</code> if <code>this</code> is a <em>system</em> function and <code>false</code> otherwise
+     */
+    public boolean isSystemFunction() {
+        return pluginName == null || pluginName.trim().length() == 0;
     }
 
     /**

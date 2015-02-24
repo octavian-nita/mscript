@@ -18,7 +18,7 @@ import static java.lang.reflect.Modifier.isPublic;
  */
 public class MScriptEngine {
 
-    private FunctionLibrary library = new FunctionLibrary();
+    private Functions library = new Functions();
 
     public MScriptEngine(Object systemFunctions, List<PluginAncestor> plugins) {
         this(systemFunctions == null ? null : systemFunctions.getClass(), plugins);

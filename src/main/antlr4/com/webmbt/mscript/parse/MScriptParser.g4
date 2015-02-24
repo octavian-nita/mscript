@@ -9,8 +9,8 @@ parser grammar MScriptParser;
 options { tokenVocab=MScriptLexer; }
 
 @header {
-import com.webmbt.mscript.FunctionLibrary;
-import com.webmbt.mscript.FunctionLibrary.LookupResult;
+import com.webmbt.mscript.Functions;
+import com.webmbt.mscript.Functions.LookupResult;
 import com.webmbt.mscript.parse.MScriptRecognitionException;
 }
 
