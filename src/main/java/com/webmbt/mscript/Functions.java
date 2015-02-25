@@ -4,6 +4,7 @@ import com.webmbt.plugin.MbtScriptExecutor;
 import com.webmbt.plugin.PluginAncestor;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -11,11 +12,13 @@ import java.util.logging.Logger;
 
 import static com.webmbt.mscript.Functions.Lookup.Result.FOUND;
 import static com.webmbt.mscript.Functions.Lookup.Result.FUNCTION_NOT_FOUND;
+import static com.webmbt.mscript.Functions.Lookup.Result.PLUGIN_NOT_FOUND;
+import static com.webmbt.mscript.Functions.Lookup.Result.WRONG_NUMBER_OF_ARGUMENTS;
 import static com.webmbt.plugin.MScriptInterface.MSCRIPT_METHOD;
 import static java.lang.reflect.Modifier.isPublic;
 
 /**
- * <p>A lookup service for MScript {@link Function functions}.</p>
+ * <p>A (caching) lookup service for MScript {@link Function functions}.</p>
  * <p>
  * {@link #lookup(String, String, int, MbtScriptExecutor, List) Lookup calls} first check an internal function
  * definitions cache. If no suitable definition is found the provided system functions object and plugins are scanned
@@ -31,7 +34,7 @@ public class Functions {
     private static final Logger log = Logger.getLogger(Functions.class.getName());
 
     //
-    // Key to group the <em>{@link Function#isSystemFunction() system}</em> functions symbol (sub)table.
+    // Key to identify the <em>{@link Function#isSystemFunction() system}</em> functions cache.
     //
     private static final String SYSTEM_FUNCTIONS = "__SYS__";
 
@@ -118,6 +121,36 @@ public class Functions {
      */
     public Lookup lookup(String pluginName, String functionName, int argsNumber, MbtScriptExecutor systemFunctions,
                          List<PluginAncestor> accessiblePlugins) {
+
+        if (pluginName != null && (pluginName = pluginName.trim()).length() > 0) {
+            // Probably a faster lookup...
+
+            // First, make sure we have access to the specified plugin:
+            // (lookup speed could be improved if we passed a map associating a plugin id to the plugin implementation)
+            PluginAncestor plugin = null;
+            for (PluginAncestor accessiblePlugin : accessiblePlugins) {
+                if (pluginName.equals(accessiblePlugin.getPluginID())) {
+                    plugin = accessiblePlugin;
+                    break;
+                }
+            }
+            if (plugin == null) {
+                return new Lookup(PLUGIN_NOT_FOUND);
+            }
+
+            // Look up in the cache first since using reflection is rather slow:
+            ConcurrentMap<String, Function> pluginFunctions = getOrCreatePlugin(pluginName);
+            Function function = pluginFunctions.get(functionName);
+            if (function != null && function.hasImplementation(argsNumber)) {
+                return new Lookup(FOUND, function);
+            }
+
+            // Use reflection to look up the method:
+            Class<String> []argsTypes = new Class[argsNumber];
+            Arrays.fill(argsTypes, String.class);
+
+        }
+
         return new Lookup(FUNCTION_NOT_FOUND);
     }
 
@@ -137,7 +170,7 @@ public class Functions {
 
         public Lookup(Result result, Function function) {
             if (result == null) {
-                throw new NullPointerException("lookup result result cannot be null");
+                throw new NullPointerException("lookup result cannot be null");
             }
             this.function = function;
             this.result = result;
@@ -147,7 +180,6 @@ public class Functions {
 
             FOUND,
 
-            PLUGIN_NOT_ACCESSIBLE,
             PLUGIN_NOT_FOUND,
 
             FUNCTION_NOT_FOUND,
