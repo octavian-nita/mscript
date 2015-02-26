@@ -180,7 +180,7 @@ public class Functions {
 
             FOUND,
 
-            PLUGIN_NOT_FOUND,
+            PLUGIN_NOT_FOUND, // plugin not found or not accessible
 
             FUNCTION_NOT_FOUND,
             WRONG_NUMBER_OF_ARGUMENTS;
