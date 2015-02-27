@@ -4,7 +4,6 @@ import com.webmbt.plugin.MbtScriptExecutor;
 import com.webmbt.plugin.PluginAncestor;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -13,9 +12,7 @@ import java.util.logging.Logger;
 import static com.webmbt.mscript.Functions.Lookup.Result.FOUND;
 import static com.webmbt.mscript.Functions.Lookup.Result.FUNCTION_NOT_FOUND;
 import static com.webmbt.mscript.Functions.Lookup.Result.PLUGIN_NOT_FOUND;
-import static com.webmbt.mscript.Functions.Lookup.Result.WRONG_NUMBER_OF_ARGUMENTS;
 import static com.webmbt.plugin.MScriptInterface.MSCRIPT_METHOD;
-import static java.lang.reflect.Modifier.isPublic;
 
 /**
  * <p>A (caching) lookup service for MScript {@link Function functions}.</p>
@@ -101,9 +98,10 @@ public class Functions {
                 // MSCRIPT_METHOD-annotated methods become implementations of MScript functions with the same name:
                 getOrCreateFunction(pluginName, method.getName()).addImplementation(method, target);
 
-            } else if (isPublic(method.getModifiers())) {
+            } else if (method.getDeclaringClass() != Object.class) { // Class#getMethods() only returns public methods!
 
-                // Other public methods become implementations of MScript functions with the name prefixed by '_':
+                // Other public methods that are not inherited from Object become implementations of MScript functions
+                // with their name prefixed by '_':
                 getOrCreateFunction(pluginName, "_" + method.getName()).addImplementation(method);
 
             }
@@ -114,40 +112,47 @@ public class Functions {
      * An MScript parser normally matches separately the plugin name, function name and every passed argument; as such,
      * the signature of this methods is designed so that it is easily callable upon a successful function call match.
      *
-     * @param accessiblePlugins if not <code>null</code> or empty, the function will be looked up only under these
-     *                          plugins; also if the plugin name is <code>null</code> or empty and if the function
-     *                          is not found under the added system functions, these plugins are checked as well,
-     *                          in the provided order
+     * @param availablePlugins the function will be looked up only under these plugins; also, if the plugin name is
+     *                         <code>null</code> or empty and if the function is not found under the system functions,
+     *                         these plugins are checked as well in the provided order
      */
     public Lookup lookup(String pluginName, String functionName, int argsNumber, MbtScriptExecutor systemFunctions,
-                         List<PluginAncestor> accessiblePlugins) {
+                         List<PluginAncestor> availablePlugins) {
 
         if (pluginName != null && (pluginName = pluginName.trim()).length() > 0) {
             // Probably a faster lookup...
 
-            // First, make sure we have access to the specified plugin:
-            // (lookup speed could be improved if we passed a map associating a plugin id to the plugin implementation)
+            // First, make sure we have access to the requested plugin (i.e. we find it in the provided plugin list) and
+            // since we are scanning the plugins anyway, try to identify the one we might lookup into, at the same time:
+            // NOTE: searching for the plugin could be faster if we modified the method signature to pass a map
+            // associating a plugin id to its implementation!
             PluginAncestor plugin = null;
-            for (PluginAncestor accessiblePlugin : accessiblePlugins) {
-                if (pluginName.equals(accessiblePlugin.getPluginID())) {
-                    plugin = accessiblePlugin;
-                    break;
+            if (availablePlugins != null) {
+                for (PluginAncestor availablePlugin : availablePlugins) {
+                    if (pluginName.equals(availablePlugin.getPluginID())) {
+                        plugin = availablePlugin;
+                        break;
+                    }
                 }
             }
-            if (plugin == null) {
+            if (plugin == null) { // the plugin might not be available
                 return new Lookup(PLUGIN_NOT_FOUND);
             }
 
-            // Look up in the cache first since using reflection is rather slow:
-            ConcurrentMap<String, Function> pluginFunctions = getOrCreatePlugin(pluginName);
-            Function function = pluginFunctions.get(functionName);
-            if (function != null && function.hasImplementation(argsNumber)) {
-                return new Lookup(FOUND, function);
+            // Look up in the cache first since reflection-based lookup is slower:
+            ConcurrentMap<String, Function> pluginFunctions = cache.get(pluginName);
+            if (pluginFunctions != null) { // then assume the plugin has already been fully cached
+                Function function = pluginFunctions.get(functionName);
+                if (function != null) {
+
+                }
+
             }
 
-            // Use reflection to look up the method:
-            Class<String> []argsTypes = new Class[argsNumber];
-            Arrays.fill(argsTypes, String.class);
+            // An alternative strategy is possible here: even if the plugin has already been cached but we can't find
+            // the requested function either at all or with a corresponding implementation for the provided arity, we
+            // can try to re-cache the plugin implementation, maybe the plugin list or object reference has dynamically
+            // changed over the course of the program...
 
         }
 
