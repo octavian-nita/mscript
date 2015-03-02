@@ -30,11 +30,6 @@ public class Functions {
 
     private static final Logger log = Logger.getLogger(Functions.class.getName());
 
-    //
-    // Key to identify the <em>{@link Function#isSystemFunction() system}</em> functions cache.
-    //
-    private static final String SYSTEM_FUNCTIONS = "__SYS__";
-
     private final ConcurrentMap<String, ConcurrentMap<String, Function>> cache = new ConcurrentHashMap<>();
 
     /**
@@ -45,7 +40,7 @@ public class Functions {
      */
     protected final ConcurrentMap<String, Function> getOrCreatePlugin(String pluginName) {
         if (pluginName == null || (pluginName = pluginName.trim()).length() == 0) {
-            pluginName = SYSTEM_FUNCTIONS;
+            pluginName = "__SYS__"; // assume the functions (sub)cache
         }
 
         // See
@@ -86,10 +81,9 @@ public class Functions {
         return function;
     }
 
-    protected void cache(String pluginName, Object target) {
+    protected Lookup lookupAndCache(String pluginName, String functionName, int argsNumber, Object targetOrClass) {
         if (target == null) {
-            log.warning("cannot cache function implementations on a null target object; skipping cache request...");
-            return;
+            throw new IllegalArgumentException("cannot cache function implementations on a null target object");
         }
 
         for (Method method : target.getClass().getMethods()) {
@@ -123,37 +117,34 @@ public class Functions {
             // Probably a faster lookup...
 
             // First, make sure we have access to the requested plugin (i.e. we find it in the provided plugin list) and
-            // since we are scanning the plugins anyway, try to identify the one we might lookup into, at the same time:
+            // since we're scanning the plugins anyway, try to identify the one we will lookup into if we don't find the
+            // function in the cache.
+            //
             // NOTE: searching for the plugin could be faster if we modified the method signature to pass a map
             // associating a plugin id to its implementation!
             PluginAncestor plugin = null;
             if (availablePlugins != null) {
                 for (PluginAncestor availablePlugin : availablePlugins) {
-                    if (pluginName.equals(availablePlugin.getPluginID())) {
+                    if (availablePlugin != null && pluginName.equals(availablePlugin.getPluginID())) {
                         plugin = availablePlugin;
                         break;
                     }
                 }
             }
-            if (plugin == null) { // the plugin might not be available
+            if (plugin == null) { // the plugin might exist but it is not available, at least for this lookup
                 return new Lookup(PLUGIN_NOT_FOUND);
             }
 
-            // Look up in the cache first since reflection-based lookup is slower:
-            ConcurrentMap<String, Function> pluginFunctions = cache.get(pluginName);
-            if (pluginFunctions != null) { // then assume the plugin has already been fully cached
-                Function function = pluginFunctions.get(functionName);
-                if (function != null) {
-
-                }
-
+            // Look up in the cache first since reflection-based lookup is generally slower.
+            Function function = getOrCreateFunction(pluginName, functionName);
+            if (function.hasImplementation(argsNumber)) {
+                return new Lookup(function);
             }
 
-            // An alternative strategy is possible here: even if the plugin has already been cached but we can't find
-            // the requested function either at all or with a corresponding implementation for the provided arity, we
-            // can try to re-cache the plugin implementation, maybe the plugin list or object reference has dynamically
-            // changed over the course of the program...
-
+            // NOTE: even if the plugin has already been cached, if we can't find the requested function (either at
+            // all or having a corresponding implementation for the provided arity, we re-cache the whole plugin in
+            // case the plugin list or object reference has dynamically changed over the course of the program.
+            return lookupAndCache(pluginName, functionName, argsNumber, plugin);
         }
 
         return new Lookup(FUNCTION_NOT_FOUND);
@@ -175,7 +166,7 @@ public class Functions {
 
         public Lookup(Result result, Function function) {
             if (result == null) {
-                throw new NullPointerException("lookup result cannot be null");
+                throw new IllegalArgumentException("lookup result cannot be null");
             }
             this.function = function;
             this.result = result;

@@ -70,6 +70,13 @@ public class Function {
     }
 
     /**
+     * @return <code>true</code> if <code>this</code> function has any implementation and <code>false</code> otherwise
+     */
+    public boolean hasImplementations() {
+        return implementations.size() > 0;
+    }
+
+    /**
      * Equivalent to {@link #addImplementation(Method, Object) addImplementation(method, null)}.
      */
     public Function addImplementation(Method method) {
