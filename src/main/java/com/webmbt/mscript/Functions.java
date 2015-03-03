@@ -9,9 +9,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 
+import static com.webmbt.mscript.Functions.Lookup.Result;
 import static com.webmbt.mscript.Functions.Lookup.Result.FOUND;
 import static com.webmbt.mscript.Functions.Lookup.Result.FUNCTION_NOT_FOUND;
 import static com.webmbt.mscript.Functions.Lookup.Result.PLUGIN_NOT_FOUND;
+import static com.webmbt.mscript.Functions.Lookup.Result.WRONG_NUMBER_OF_ARGUMENTS;
 import static com.webmbt.plugin.MScriptInterface.MSCRIPT_METHOD;
 
 /**
@@ -28,50 +30,35 @@ import static com.webmbt.plugin.MScriptInterface.MSCRIPT_METHOD;
  */
 public class Functions {
 
-    private static final Logger log = Logger.getLogger(Functions.class.getName());
+    protected static final Logger log = Logger.getLogger(Functions.class.getName());
 
     private final ConcurrentMap<String, ConcurrentMap<String, Function>> cache = new ConcurrentHashMap<>();
 
     /**
-     * Thread-safe method to eventually create (if non-existent) and retrieve a <em>plugin</em>.
+     * Thread-safe method to eventually create (if non-existent) and retrieve a {@link Function function}.
      *
-     * @param pluginName if <code>null</code> or empty (whitespace-only), the <em>{@link Function#isSystemFunction()
-     *                   system}</em> functions are returned
+     * @param pluginName if <code>null</code> or empty (whitespace-only), the function is considered to be a
+     *                   <em>{@link Function#isSystemFunction() system}</em> function
      */
-    protected final ConcurrentMap<String, Function> getOrCreatePlugin(String pluginName) {
+    protected final Function getOrCreateFunction(String pluginName, String functionName) {
         if (pluginName == null || (pluginName = pluginName.trim()).length() == 0) {
-            pluginName = "__SYS__"; // assume the functions (sub)cache
+            pluginName = "__SYS__";
         }
 
-        // See
+        if (functionName == null || (functionName = functionName.trim()).length() == 0) {
+            throw new IllegalArgumentException("the name of a function cannot be null or empty");
+        }
+
+        // See @Bohemian's (accepted) answer to the question at
         // http://stackoverflow.com/questions/10743622/concurrenthashmap-avoid-extra-object-creation-with-putifabsent
         // for an explanation as to why the following is acceptable from a thread-safety point of view:
+
         ConcurrentMap<String, Function> plugin = cache.get(pluginName);
         if (plugin == null) {
             cache.putIfAbsent(pluginName, new ConcurrentHashMap<String, Function>());
             plugin = cache.get(pluginName);
         }
 
-        return plugin;
-    }
-
-    /**
-     * Thread-safe method to eventually create (if non-existent) and retrieve a {@link Function function}. If the
-     * function is created, no arity is explicitly provided.
-     *
-     * @param pluginName if <code>null</code> or empty (whitespace-only), the function is considered to be a
-     *                   <em>{@link Function#isSystemFunction() system}</em> function
-     */
-    protected final Function getOrCreateFunction(String pluginName, String functionName) {
-        if (functionName == null || (functionName = functionName.trim()).length() == 0) {
-            throw new IllegalArgumentException("the name of a function cannot be null or empty");
-        }
-
-        ConcurrentMap<String, Function> plugin = getOrCreatePlugin(pluginName);
-
-        // See
-        // http://stackoverflow.com/questions/10743622/concurrenthashmap-avoid-extra-object-creation-with-putifabsent
-        // for an explanation as to why the following is acceptable from a thread-safety point of view:
         Function function = plugin.get(functionName);
         if (function == null) {
             plugin.putIfAbsent(functionName, new Function(functionName, pluginName));
@@ -81,25 +68,50 @@ public class Functions {
         return function;
     }
 
-    protected Lookup lookupAndCache(String pluginName, String functionName, int argsNumber, Object targetOrClass) {
-        if (target == null) {
-            throw new IllegalArgumentException("cannot cache function implementations on a null target object");
+    protected final Function getFunction(String pluginName, String functionName) {
+        if (pluginName == null || (pluginName = pluginName.trim()).length() == 0) {
+            pluginName = "__SYS__";
         }
 
-        for (Method method : target.getClass().getMethods()) {
+        if (functionName == null || (functionName = functionName.trim()).length() == 0) {
+            throw new IllegalArgumentException("the name of a function cannot be null or empty");
+        }
+
+        ConcurrentMap<String, Function> plugin = cache.get(pluginName);
+        return plugin == null ? null : plugin.get(functionName);
+    }
+
+    protected Lookup lookupAndCache(String pluginName, String functionName, int argsNumber, Object targetOrClass) {
+        if (targetOrClass == null) {
+            throw new IllegalArgumentException("cannot cache function implementations on a null target");
+        }
+        Class<?> klass = targetOrClass instanceof Class ? (Class<?>) targetOrClass : targetOrClass.getClass();
+
+        Function function = null;
+        Result result = FUNCTION_NOT_FOUND;
+        for (Method method : klass.getClass().getMethods()) {
+            Function fn = null;
+
             if (method.isAnnotationPresent(MSCRIPT_METHOD.class)) {
 
                 // MSCRIPT_METHOD-annotated methods become implementations of MScript functions with the same name:
-                getOrCreateFunction(pluginName, method.getName()).addImplementation(method, target);
+                fn = getOrCreateFunction(pluginName, method.getName()).addImplementation(method, targetOrClass);
 
-            } else if (method.getDeclaringClass() != Object.class) { // Class#getMethods() only returns public methods!
+            } else if (method.getDeclaringClass() != Object.class) { // Class#getMethods() returns only public methods!
 
-                // Other public methods that are not inherited from Object become implementations of MScript functions
-                // with their name prefixed by '_':
-                getOrCreateFunction(pluginName, "_" + method.getName()).addImplementation(method);
+                // Other public methods not inherited from Object become implementations with their name prefixed by _:
+                fn = getOrCreateFunction(pluginName, "_" + method.getName()).addImplementation(method);
 
             }
+
+            if (fn != null && fn.getName().equals(functionName) && result != FOUND) {
+                // We've just found a function named like the one we were looking for and we don't have a best match yet
+                function = fn;
+                result = fn.hasImplementation(argsNumber) ? FOUND : WRONG_NUMBER_OF_ARGUMENTS;
+            }
         }
+
+        return new Lookup(result, function);
     }
 
     /**
@@ -136,8 +148,8 @@ public class Functions {
             }
 
             // Look up in the cache first since reflection-based lookup is generally slower.
-            Function function = getOrCreateFunction(pluginName, functionName);
-            if (function.hasImplementation(argsNumber)) {
+            Function function = getFunction(pluginName, functionName);
+            if (function != null && function.hasImplementation(argsNumber)) {
                 return new Lookup(function);
             }
 
@@ -146,6 +158,8 @@ public class Functions {
             // case the plugin list or object reference has dynamically changed over the course of the program.
             return lookupAndCache(pluginName, functionName, argsNumber, plugin);
         }
+
+        // No plugin name: look up system functions
 
         return new Lookup(FUNCTION_NOT_FOUND);
     }

@@ -6,15 +6,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * <p>
- * MScript functions can be either built-in (i.e. <em>{@link #isSystemFunction() system}</em> functions) or part of a
- * {@link #getPluginName() named <em>plugin</em>}.
- * </p>
- * <p>
- * MScript functions can also be <a href="http://en.wikipedia.org/wiki/Function_overloading">overloaded</a> and their
- * Java {@link #addImplementation(Method, Object) implementations} can currently accept only {@link String} parameters
- * (and no varargs). The selection of one implementation over another is thus based on call arity alone.
- * </p>
+ * MScript functions can:
+ * <ul>
+ * <li>be either built-in (i.e. <em>{@link #isSystemFunction() system}</em> functions) or part of a {@link
+ * #getPluginName() named <em>plugin</em>}</li>
+ * <li>be <a href="http://en.wikipedia.org/wiki/Function_overloading">overloaded</a></li>
+ * </ul>
+ * Immediately after creation, an MScript function {@link #hasImplementations() has no implementation}. Java-based
+ * {@link #addImplementation(Method, Object) implementations} of MScript functions can currently only accept {@link
+ * String} parameters and no varargs. The selection of one implementation over another is thus based on call arity
+ * alone.
  *
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
  * @version 1.2, Jan 12, 2015
@@ -88,7 +89,7 @@ public class Function {
      * An MScript function can have multiple implementations in the form of (eventually overloaded) Java {@link Method
      * methods}. Currently, the requirement is these methods to only accept {@link String} parameters (and no varargs).
      * Selecting which actual method gets called and on which target object is done based on the number of arguments
-     * provided in the MScript call as well as the method's arity (i.e. they should be the same).
+     * provided in the MScript call as well as the Java method's arity (i.e. they should be the same).
      * </p>
      * <p>
      * The (Java) name of the added <code>method</code> does not really matter at this point in naming the function;
