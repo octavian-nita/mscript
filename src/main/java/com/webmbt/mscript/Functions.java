@@ -30,15 +30,32 @@ import static com.webmbt.plugin.MScriptInterface.MSCRIPT_METHOD;
  */
 public class Functions {
 
-    protected static final Logger log = Logger.getLogger(Functions.class.getName());
+    protected final static Logger log = Logger.getLogger(Functions.class.getName());
 
     private final ConcurrentMap<String, ConcurrentMap<String, Function>> cache = new ConcurrentHashMap<>();
 
     /**
+     * Use <code>null</code> or empty string as <code>pluginName</code> in order to get a <em>{@link
+     * Function#isSystemFunction() system}</em> function.
+     */
+    protected final Function getFunction(String pluginName, String functionName) {
+        if (pluginName == null || (pluginName = pluginName.trim()).length() == 0) {
+            pluginName = "__SYS__";
+        }
+
+        if (functionName == null || (functionName = functionName.trim()).length() == 0) {
+            throw new IllegalArgumentException("the name of a function cannot be null or empty");
+        }
+
+        ConcurrentMap<String, Function> plugin = cache.get(pluginName);
+        return plugin == null ? null : plugin.get(functionName);
+    }
+
+    /**
      * Thread-safe method to eventually create (if non-existent) and retrieve a {@link Function function}.
      *
-     * @param pluginName if <code>null</code> or empty (whitespace-only), the function is considered to be a
-     *                   <em>{@link Function#isSystemFunction() system}</em> function
+     * @param pluginName if <code>null</code> or empty, the function is considered to be a <em>{@link
+     *                   Function#isSystemFunction() system}</em> function
      */
     protected final Function getOrCreateFunction(String pluginName, String functionName) {
         if (pluginName == null || (pluginName = pluginName.trim()).length() == 0) {
@@ -66,19 +83,6 @@ public class Functions {
         }
 
         return function;
-    }
-
-    protected final Function getFunction(String pluginName, String functionName) {
-        if (pluginName == null || (pluginName = pluginName.trim()).length() == 0) {
-            pluginName = "__SYS__";
-        }
-
-        if (functionName == null || (functionName = functionName.trim()).length() == 0) {
-            throw new IllegalArgumentException("the name of a function cannot be null or empty");
-        }
-
-        ConcurrentMap<String, Function> plugin = cache.get(pluginName);
-        return plugin == null ? null : plugin.get(functionName);
     }
 
     protected Lookup lookupAndCache(String pluginName, String functionName, int argsNumber, Object targetOrClass) {
@@ -114,6 +118,19 @@ public class Functions {
         return new Lookup(result, function);
     }
 
+    protected Lookup lookup(String pluginName, String functionName, int argsNumber, Object targetOrClass) {
+        // Look up in the cache first since reflection-based lookup is generally slower.
+        Function function = getFunction(pluginName, functionName);
+        if (function != null && function.hasImplementation(argsNumber)) {
+            return new Lookup(function);
+        }
+
+        // NOTE: even if the plugin has already been cached, if we can't find the requested function (either at
+        // all or having a corresponding implementation for the provided arity, we re-cache the whole plugin in
+        // case the plugin list or object reference has dynamically changed over the course of the program.
+        return lookupAndCache(pluginName, functionName, argsNumber, targetOrClass);
+    }
+
     /**
      * An MScript parser normally matches separately the plugin name, function name and every passed argument; as such,
      * the signature of this methods is designed so that it is easily callable upon a successful function call match.
@@ -131,9 +148,6 @@ public class Functions {
             // First, make sure we have access to the requested plugin (i.e. we find it in the provided plugin list) and
             // since we're scanning the plugins anyway, try to identify the one we will lookup into if we don't find the
             // function in the cache.
-            //
-            // NOTE: searching for the plugin could be faster if we modified the method signature to pass a map
-            // associating a plugin id to its implementation!
             PluginAncestor plugin = null;
             if (availablePlugins != null) {
                 for (PluginAncestor availablePlugin : availablePlugins) {
@@ -143,25 +157,37 @@ public class Functions {
                     }
                 }
             }
-            if (plugin == null) { // the plugin might exist but it is not available, at least for this lookup
-                return new Lookup(PLUGIN_NOT_FOUND);
-            }
 
-            // Look up in the cache first since reflection-based lookup is generally slower.
-            Function function = getFunction(pluginName, functionName);
-            if (function != null && function.hasImplementation(argsNumber)) {
-                return new Lookup(function);
-            }
-
-            // NOTE: even if the plugin has already been cached, if we can't find the requested function (either at
-            // all or having a corresponding implementation for the provided arity, we re-cache the whole plugin in
-            // case the plugin list or object reference has dynamically changed over the course of the program.
-            return lookupAndCache(pluginName, functionName, argsNumber, plugin);
+            // The plugin might exist but it is not available, at least for this lookup:
+            return plugin == null ? new Lookup(PLUGIN_NOT_FOUND) : lookup(pluginName, functionName, argsNumber, plugin);
         }
 
-        // No plugin name: look up system functions
+        // No plugin name - look up system functions and fall back on provided plugins (slower lookup):
 
-        return new Lookup(FUNCTION_NOT_FOUND);
+        Lookup prevLookup = lookup(null, functionName, argsNumber, systemFunctions);
+        if (prevLookup.result == FOUND) {
+            return prevLookup;
+        }
+
+        if (availablePlugins != null) {
+            for (PluginAncestor availablePlugin : availablePlugins) {
+                if (availablePlugin != null) {
+                    Lookup currLookup =
+                        lookup(availablePlugin.getPluginID(), functionName, argsNumber, availablePlugin);
+
+                    if (currLookup.result == FOUND) {
+                        return currLookup;
+                    }
+
+                    if (prevLookup.result == FUNCTION_NOT_FOUND && currLookup.result == WRONG_NUMBER_OF_ARGUMENTS) {
+                        // A better error message, we've found something similar at least...
+                        prevLookup = currLookup;
+                    }
+                }
+            }
+        }
+
+        return prevLookup;
     }
 
     public static class Lookup {
