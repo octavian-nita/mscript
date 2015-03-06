@@ -12,10 +12,10 @@ import java.util.concurrent.ConcurrentMap;
  * #getPluginName() named <em>plugin</em>}</li>
  * <li>be <a href="http://en.wikipedia.org/wiki/Function_overloading">overloaded</a></li>
  * </ul>
- * Immediately after creation, an MScript function {@link #hasImplementations() has no implementation}. Java-based
- * {@link #addImplementation(Method, Object) implementations} of MScript functions can currently only accept {@link
- * String} parameters and no varargs. The selection of one implementation over another is thus based on call arity
- * alone.
+ * Immediately after creation, an MScript function instance {@link #hasImplementations() has no implementation}.
+ * Java-based {@link #addImplementation(Method, Object) implementations} of MScript functions can currently only
+ * accept {@link String} parameters and no varargs. The selection of one implementation over another is based on
+ * call arity.
  *
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
  * @version 1.2, Jan 12, 2015
@@ -63,18 +63,18 @@ public class Function {
     }
 
     /**
+     * @return <code>true</code> if <code>this</code> function has any implementation and <code>false</code> otherwise
+     */
+    public boolean hasImplementations() {
+        return implementations.size() > 0;
+    }
+
+    /**
      * @return <code>true</code> if <code>this</code> function has an implementation for the specified
      * <code>arity</code> and <code>false</code> otherwise
      */
     public boolean hasImplementation(int arity) {
         return implementations.containsKey(arity);
-    }
-
-    /**
-     * @return <code>true</code> if <code>this</code> function has any implementation and <code>false</code> otherwise
-     */
-    public boolean hasImplementations() {
-        return implementations.size() > 0;
     }
 
     /**

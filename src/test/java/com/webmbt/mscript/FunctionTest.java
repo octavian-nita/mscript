@@ -15,9 +15,7 @@ public class FunctionTest {
     public static class FunctionTestPlugin extends PluginAncestor {
 
         @Override
-        public String getPluginID() {
-            return "ft";
-        }
+        public String getPluginID() { return "ft"; }
 
         public String f() { return "0"; }
 
@@ -32,12 +30,14 @@ public class FunctionTest {
         public void f2(String param0, String... params) {}
     }
 
+    private FunctionTestPlugin functionTestPlugin = new FunctionTestPlugin();
+
     @Test
-    public void defaultNullOrEmptyPluginNameImpliesSystemFunction() {
+    public void nullOrEmptyPluginNameImpliesSystemFunction() {
         assertTrue(new Function("foo").isSystemFunction());
-        assertTrue(new Function("foo", null).isSystemFunction());
         assertTrue(new Function("foo", "").isSystemFunction());
         assertTrue(new Function("foo", " ").isSystemFunction());
+        assertTrue(new Function("foo", null).isSystemFunction());
         assertFalse(new Function("foo", "b").isSystemFunction());
     }
 
@@ -45,30 +45,34 @@ public class FunctionTest {
     public void implementationAcceptsStringArguments() throws NoSuchMethodException {
         Function function = new Function("foo", "bar");
         function.addImplementation(FunctionTestPlugin.class.getMethod("f"));
-        function.addImplementation(FunctionTestPlugin.class.getMethod("f", String.class));
+        function.addImplementation(FunctionTestPlugin.class.getMethod("f", String.class), functionTestPlugin);
         function.addImplementation(FunctionTestPlugin.class.getMethod("f", String.class, String.class));
-        function.addImplementation(FunctionTestPlugin.class.getMethod("g", String.class, String.class, String.class));
+        function.addImplementation(FunctionTestPlugin.class.getMethod("g", String.class, String.class, String.class),
+                                   functionTestPlugin);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void implementationOnlyAcceptsStringArguments() throws NoSuchMethodException {
         Function function = new Function("foo", "bar");
-        function.addImplementation(FunctionTestPlugin.class.getMethod("f", String.class));
+        function.addImplementation(FunctionTestPlugin.class.getMethod("f", String.class), functionTestPlugin);
         function.addImplementation(FunctionTestPlugin.class.getMethod("f1", String[].class));
     }
 
     @Test
-    public void addingImplementationsChangesArity() throws NoSuchMethodException {
+    public void addingImplementationsOverloadsFunction() throws NoSuchMethodException {
         Function function = new Function("foo", "bar");
-        assertTrue(function.getMinArity() == 0);
-        assertTrue(function.getMaxArity() == 0);
+        assertFalse(function.hasImplementations());
+        assertFalse(function.hasImplementation(0));
+        assertFalse(function.hasImplementation(1));
 
         function.addImplementation(FunctionTestPlugin.class.getMethod("f"));
-        assertTrue(function.getMinArity() == 0);
-        assertTrue(function.getMaxArity() == 0);
+        assertTrue(function.hasImplementations());
+        assertTrue(function.hasImplementation(0));
+        assertFalse(function.hasImplementation(1));
 
         function.addImplementation(FunctionTestPlugin.class.getMethod("f", String.class, String.class));
-        assertTrue(function.getMinArity() == 0);
-        assertTrue(function.getMaxArity() == 2);
+        assertFalse(function.hasImplementations());
+        assertFalse(function.hasImplementation(0));
+        assertFalse(function.hasImplementation(2));
     }
 }
