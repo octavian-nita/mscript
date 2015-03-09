@@ -7,7 +7,6 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.logging.Logger;
 
 import static com.webmbt.mscript.Functions.Lookup.Result;
 import static com.webmbt.mscript.Functions.Lookup.Result.FOUND;
@@ -20,23 +19,24 @@ import static com.webmbt.plugin.MScriptInterface.MSCRIPT_METHOD;
  * <p>A (caching) lookup service for MScript {@link Function functions}.</p>
  * <p>
  * {@link #lookup(String, String, int, MbtScriptExecutor, List) Lookup calls} first check an internal function
- * definitions cache. If no suitable definition is found the provided system functions object and plugins are scanned
- * for {@link MSCRIPT_METHOD}-annotated and public methods (cached upon scanning) and if an appropriate definition is
- * found, it is retrieved.
+ * definitions cache. If no suitable definition is found, the provided system functions object and plugins are
+ * scanned for {@link MSCRIPT_METHOD}-annotated and public methods (that are cached upon scanning) and if an
+ * appropriate definition is found, it is retrieved.
  * </p>
  *
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
- * @version 1.0, Dec 04, 2014
+ * @version 1.0, Mar 09, 2015
  */
 public class Functions {
-
-    protected final static Logger log = Logger.getLogger(Functions.class.getName());
 
     private final ConcurrentMap<String, ConcurrentMap<String, Function>> cache = new ConcurrentHashMap<>();
 
     /**
-     * Use <code>null</code> or empty string as <code>pluginName</code> in order to get a <em>{@link
-     * Function#isSystemFunction() system}</em> function.
+     * @param pluginName   use <code>null</code> or an empty string as <code>pluginName</code> in order to get a
+     *                     <em>{@link Function#isSystemFunction() system}</em> function
+     * @param functionName cannot be <code>null</code> or empty
+     * @return the specified {@link Function function} entry from the internal cache or <code>null</code> if no function
+     * with the provided name under the provided plugin exists (the plugin and/or the function haven't been cached yet)
      */
     protected final Function getFunction(String pluginName, String functionName) {
         if (pluginName == null || (pluginName = pluginName.trim()).length() == 0) {
@@ -52,7 +52,8 @@ public class Functions {
     }
 
     /**
-     * Thread-safe method to eventually create (if non-existent) and retrieve a {@link Function function}.
+     * Thread-safe method to eventually create (if non-existent) and retrieve a {@link Function function} entry from the
+     * internal cache.
      *
      * @param pluginName if <code>null</code> or empty, the function is considered to be a <em>{@link
      *                   Function#isSystemFunction() system}</em> function
@@ -93,7 +94,7 @@ public class Functions {
 
         Function function = null;
         Result result = FUNCTION_NOT_FOUND;
-        for (Method method : klass.getClass().getMethods()) {
+        for (Method method : klass.getClass().getMethods()) { // Class#getMethods() returns only public methods!
             Function fn = null;
 
             if (method.isAnnotationPresent(MSCRIPT_METHOD.class)) {
@@ -101,7 +102,7 @@ public class Functions {
                 // MSCRIPT_METHOD-annotated methods become implementations of MScript functions with the same name:
                 fn = getOrCreateFunction(pluginName, method.getName()).addImplementation(method, targetOrClass);
 
-            } else if (method.getDeclaringClass() != Object.class) { // Class#getMethods() returns only public methods!
+            } else if (method.getDeclaringClass() != Object.class) {
 
                 // Other public methods not inherited from Object become implementations with their name prefixed by _:
                 fn = getOrCreateFunction(pluginName, "_" + method.getName()).addImplementation(method);
@@ -119,7 +120,7 @@ public class Functions {
     }
 
     protected Lookup lookup(String pluginName, String functionName, int argsNumber, Object targetOrClass) {
-        // Look up in the cache first since reflection-based lookup is generally slower.
+        // Look up in the internal cache first since reflection-based lookup is generally slower.
         Function function = getFunction(pluginName, functionName);
         if (function != null && function.hasImplementation(argsNumber)) {
             return new Lookup(function);
@@ -137,7 +138,7 @@ public class Functions {
      *
      * @param availablePlugins the function will be looked up only under these plugins; also, if the plugin name is
      *                         <code>null</code> or empty and if the function is not found under the system functions,
-     *                         these plugins are checked as well in the provided order
+     *                         the plugins are checked as well in the provided order
      */
     public Lookup lookup(String pluginName, String functionName, int argsNumber, MbtScriptExecutor systemFunctions,
                          List<PluginAncestor> availablePlugins) {
@@ -158,11 +159,11 @@ public class Functions {
                 }
             }
 
-            // The plugin might exist but it is not available, at least for this lookup:
+            // The plugin might exist in the internal cache but it is not available, at least for this lookup:
             return plugin == null ? new Lookup(PLUGIN_NOT_FOUND) : lookup(pluginName, functionName, argsNumber, plugin);
         }
 
-        // No plugin name - look up system functions and fall back on provided plugins (slower lookup):
+        // No plugin name - look up system functions and eventually fall back on provided plugins (slower lookup):
 
         Lookup prevLookup = lookup(null, functionName, argsNumber, systemFunctions);
         if (prevLookup.result == FOUND) {
@@ -180,7 +181,7 @@ public class Functions {
                     }
 
                     if (prevLookup.result == FUNCTION_NOT_FOUND && currLookup.result == WRONG_NUMBER_OF_ARGUMENTS) {
-                        // A better error message, we've found something similar at least...
+                        // A better error message, we've found something with the same name at least...
                         prevLookup = currLookup;
                     }
                 }

@@ -26,10 +26,6 @@ public class MScriptError {
 
     private String description;
 
-    public MScriptError(String mscript, int lineNumber, int charNumber, String contextText) {
-
-    }
-
     public MScriptError(String mscript, int lineNumber, int charNumber, String contextText, String code) {
         this.mscript = mscript;
         this.lineNumber = lineNumber;
