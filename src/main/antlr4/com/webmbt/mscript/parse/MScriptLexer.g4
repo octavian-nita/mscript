@@ -24,12 +24,14 @@ GE : '>=' ;
 GT : '>'  ;
 
 // Function call-related tokens
-SIGIL : '$' -> pushMode(IN_FNC) ;
+SIGIL : '$' -> pushMode(IN_FNC) ;        // upon encountering a sigil token, switch to "function call" (matching) mode
 DOT   : '.' ;
 COMMA : ',' ;
 
-LPAREN : '(' -> pushMode(DEFAULT_MODE) ;
-RPAREN : ')' -> popMode ;
+LPAREN : '(' -> pushMode(DEFAULT_MODE) ; // within parentheses (either from a function call or simple operation
+                                         // grouping), we switch in (or push a) default matching mode once more;
+RPAREN : ')' -> popMode ;                // we ended either a function call or simple operation grouping so we go back
+                                         // to previous matching mode
 
 QUOTE  : '\'' -> pushMode(IN_STR) ;
 RBRACK : ']'  -> popMode ;
@@ -40,6 +42,7 @@ RBRACE : '}' ;
 ASSIGN : '=' ;
 PIPE   : '|' ;
 
+// Keywords
 IF       : 'if'    ;
 ELSE     : 'else'  ;
 WHILE    : 'while' ;
@@ -47,7 +50,7 @@ BREAK    : 'break' ;
 CONTINUE : 'continue' ;
 
 // Literals, apart from string since this one is defined in the parser
-FLOAT   : INTEGER DOT INTEGER? | DOT INTEGER ;
+FLOAT   : INTEGER DOT INTEGER? | DOT INTEGER ; // no scientific notation for the moment
 INTEGER : '0' | [1-9] [0-9]* ; // could have been a fragment but we need it as a token for maxLoopNum
 BOOLEAN : 'true' | 'false' ;
 
@@ -65,7 +68,8 @@ NL : ( '\r'? '\n' ) | '\r' /* mac */ ;
 
 WS : [ \t\f]+ -> skip ; // in default mode, skip white spaces other than new lines
 
-// ---------- INside a quoted STRing ----------
+// ---------- INside a quoted STRing "mode" ----------
+
 mode IN_STR;
 
 IN_STR_QUOTE  : '\'' -> popMode ;
@@ -76,10 +80,11 @@ IN_STR_SIGIL  : '$'  -> type(SIGIL), pushMode(IN_FNC) ;
 
 IN_STR_CHARS  : ( ~( '\\' | '\'' | '$' | '[' | ']' ) | ESC_CHAR )+ ;
 
-// Allowed escape sequences are \\, \', \$, \[, \], \n, \r, \t
+// Allowed escape sequences: \\, \', \$, \[, \], \n, \r, \t
 fragment ESC_CHAR : '\\\\' | '\\\'' | '\\$' | '\\[' | '\\]' | '\\n' | '\\r' | '\\t' ;
 
-// ---------- INside a FuNction Call ----------
+// ---------- INside a FuNction Call "mode" ----------
+
 mode IN_FNC;
 
 IN_FNC_DOT    : '.' -> type(DOT) ;

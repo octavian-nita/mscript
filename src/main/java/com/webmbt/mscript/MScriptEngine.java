@@ -12,6 +12,8 @@ import java.util.List;
  */
 public class MScriptEngine {
 
+    private MScriptParser mScriptParser = new MScriptParser();
+
     private Functions functions = new Functions();
 
     public List<MScriptError> checkMScript(String mScript, MbtScriptExecutor systemFunctions,

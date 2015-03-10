@@ -9,23 +9,28 @@ parser grammar MScriptParser;
 options { tokenVocab=MScriptLexer; }
 
 @header {
+import com.webmbt.plugin.MbtScriptExecutor;
+import com.webmbt.plugin.PluginAncestor;
+
 import com.webmbt.mscript.Functions;
 import com.webmbt.mscript.Functions.LookupResult;
 import com.webmbt.mscript.parse.MScriptRecognitionException;
+
+import java.util.List;
 }
 
 @members {
 
-protected void check(boolean condition, String errorMessage) {
-    if (!condition) {
-        throw new MScriptRecognitionException(errorMessage, this);
-    }
-}
-
-protected static class WhileOptions {
+protected static final class WhileOptions {
     public boolean hasIndex;
     public boolean hasLabel;
     public boolean hasMaxLoopNum;
+}
+
+protected final void check(boolean condition, String errorMessage) {
+    if (!condition) {
+        throw new MScriptRecognitionException(errorMessage, this);
+    }
 }
 
 /**
@@ -34,15 +39,15 @@ protected static class WhileOptions {
  */
 protected int loopDepth;
 
-protected FunctionLibrary library;
+protected Functions functions;
 
-public MScriptParser(TokenStream input, FunctionLibrary library) {
+public MScriptParser(TokenStream input, Functions functions) {
 		this(input);
-		this.library = library;
+		this.functions = functions;
 }
 
-public MScriptParser setLibrary(FunctionLibrary library) {
-		this.library = library;
+public MScriptParser setFunctions(Functions functions) {
+		this.functions = functions;
 		return this;
 }
 
@@ -69,7 +74,7 @@ stat   : assign | fncall | ifStat | whileStat | breakStat | continueStat ;
 
 assign : ID pad* ASSIGN pad* expr ;
 
-fncall
+fncall [MbtScriptExecutor systemFunctions, List<PluginAncestor> availablePlugins]
 locals [String plugin, String function, int argc] // match and store plugin and function names
   : SIGIL // followed by...
 
@@ -80,7 +85,7 @@ locals [String plugin, String function, int argc] // match and store plugin and 
 
 // After matching the whole function call, validate function name and arguments:
 
-if (library == null) {
+if (functions == null) {
     throw new MScriptRecognitionException("$" + ($plugin != null ? $plugin + "." : "") + $function +
                                           ": no function function specified for the parser", this, $SIGIL);
 }
