@@ -1,5 +1,11 @@
 /**
+ * <p>
  * MScript parser definition.
+ * </p>
+ * <p>
+ * The current design of the parser requires creating a new instance for each parsing operation. Creating such instances
+ * is rather cheap, see <a href="http://groups.google.com/d/msg/antlr-discussion/B2TaUFm29jE/1UmKQKHhFEcJ">this</a>.
+ * </p>
  *
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
  * @version 1.0, Sep 27, 2014
@@ -13,7 +19,7 @@ import com.webmbt.plugin.MbtScriptExecutor;
 import com.webmbt.plugin.PluginAncestor;
 
 import com.webmbt.mscript.Functions;
-import com.webmbt.mscript.Functions.LookupResult;
+import com.webmbt.mscript.Functions.Lookup;
 import com.webmbt.mscript.parse.MScriptRecognitionException;
 
 import java.util.List;
@@ -41,14 +47,21 @@ protected int loopDepth;
 
 protected Functions functions;
 
-public MScriptParser(TokenStream input, Functions functions) {
-		this(input);
-		this.functions = functions;
+protected MbtScriptExecutor systemFunctions;
+
+protected List<PluginAncestor> availablePlugins;
+
+public MScriptParser(TokenStream input
+                     MbtScriptExecutor systemFunctions, List<PluginAncestor> availablePlugins) {
+    this(input, null, systemFunctions, availablePlugins);
 }
 
-public MScriptParser setFunctions(Functions functions) {
-		this.functions = functions;
-		return this;
+public MScriptParser(TokenStream input, Functions functions,
+                     MbtScriptExecutor systemFunctions, List<PluginAncestor> availablePlugins) {
+		this(input);
+		this.functions = functions == null ? Functions.DEFAULT_INSTANCE : functions;
+		this.systemFunctions = systemFunctions;
+		this.availablePlugins = availablePlugins;
 }
 
 }
@@ -74,7 +87,7 @@ stat   : assign | fncall | ifStat | whileStat | breakStat | continueStat ;
 
 assign : ID pad* ASSIGN pad* expr ;
 
-fncall [MbtScriptExecutor systemFunctions, List<PluginAncestor> availablePlugins]
+fncall
 locals [String plugin, String function, int argc] // match and store plugin and function names
   : SIGIL // followed by...
 
@@ -85,26 +98,19 @@ locals [String plugin, String function, int argc] // match and store plugin and 
 
 // After matching the whole function call, validate function name and arguments:
 
-if (functions == null) {
-    throw new MScriptRecognitionException("$" + ($plugin != null ? $plugin + "." : "") + $function +
-                                          ": no function function specified for the parser", this, $SIGIL);
-}
-/*
-switch (library.check($plugin, $function, $argc)) {
-case NO_SUCH_PLUGIN:
+Lookup lookup = functions.lookup($plugin, $function, $argc, systemFunctions, availablePlugins);
+
+switch (lookup.result) {
+case PLUGIN_NOT_FOUND:
     throw new MScriptRecognitionException("$" + ($plugin != null ? $plugin + "." : "") + $function +
                                           ": no such plugin defined", this, $SIGIL);
-case NO_SUCH_FUNCTION:
+case FUNCTION_NOT_FOUND:
     throw new MScriptRecognitionException("$" + ($plugin != null ? $plugin + "." : "") + $function +
                                           ": no such function defined", this, $SIGIL);
-case TOO_FEW_ARGUMENTS:
+case WRONG_NUMBER_OF_ARGUMENTS:
     throw new MScriptRecognitionException("$" + ($plugin != null ? $plugin + "." : "") + $function +
-                                          ": too few arguments (" + $argc + ") provided", this, $SIGIL);
-case TOO_MANY_ARGUMENTS:
-    throw new MScriptRecognitionException("$" + ($plugin != null ? $plugin + "." : "") + $function +
-                                          ": too many arguments (" + $argc + ") provided", this, $SIGIL);
+                                          ": wrong number of arguments (" + $argc + ") provided", this, $SIGIL);
 }
-*/
     } ;
 
 ifStat

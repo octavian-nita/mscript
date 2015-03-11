@@ -29,6 +29,8 @@ import static com.webmbt.plugin.MScriptInterface.MSCRIPT_METHOD;
  */
 public class Functions {
 
+    public static final Functions DEFAULT_INSTANCE = new Functions();
+
     private final ConcurrentMap<String, ConcurrentMap<String, Function>> cache = new ConcurrentHashMap<>();
 
     /**
@@ -165,9 +167,13 @@ public class Functions {
 
         // No plugin name - look up system functions and eventually fall back on provided plugins (slower lookup):
 
-        Lookup prevLookup = lookup(null, functionName, argsNumber, systemFunctions);
-        if (prevLookup.result == FOUND) {
-            return prevLookup;
+        Lookup prevLookup = null;
+
+        if (systemFunctions != null) {
+            prevLookup = lookup(null, functionName, argsNumber, systemFunctions);
+            if (prevLookup.result == FOUND) {
+                return prevLookup;
+            }
         }
 
         if (availablePlugins != null) {
@@ -180,7 +186,8 @@ public class Functions {
                         return currLookup;
                     }
 
-                    if (prevLookup.result == FUNCTION_NOT_FOUND && currLookup.result == WRONG_NUMBER_OF_ARGUMENTS) {
+                    if (prevLookup == null ||
+                        (prevLookup.result == FUNCTION_NOT_FOUND && currLookup.result == WRONG_NUMBER_OF_ARGUMENTS)) {
                         // A better error message, we've found something with the same name at least...
                         prevLookup = currLookup;
                     }
@@ -190,6 +197,8 @@ public class Functions {
 
         return prevLookup;
     }
+
+    public void clearCache() { cache.clear(); }
 
     public static class Lookup {
 
