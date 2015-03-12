@@ -2,6 +2,12 @@ package com.webmbt.mscript;
 
 import com.webmbt.plugin.MbtScriptExecutor;
 import com.webmbt.plugin.PluginAncestor;
+import org.antlr.v4.runtime.BaseErrorListener;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Recognizer;
+import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.misc.NotNull;
+import org.antlr.v4.runtime.misc.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,13 +18,42 @@ import java.util.List;
  */
 public class MScriptEngine {
 
-    private MScriptParser mScriptParser = new MScriptParser();
+    // private MScriptParser mScriptParser;
 
     private Functions functions = new Functions();
+
+    /**
+     * {@link org.antlr.v4.runtime.ANTLRErrorListener} that translates {@link org.antlr.v4.runtime
+     * .RecognitionException}s to {@link MScriptError}s.
+     */
+    public static class MScriptErrorListener extends BaseErrorListener {
+
+        private final String mScript;
+
+        private final List<MScriptError> mScriptErrors; // where to accumulate errors for later reporting
+
+        public MScriptErrorListener(String mScript, List<MScriptError> mScriptErrors) {
+            if (mScriptErrors == null) {
+                throw new IllegalArgumentException("cannot accumulate MScript errors in a null list");
+            }
+            this.mScript = mScript;
+            this.mScriptErrors = mScriptErrors;
+        }
+
+        @Override
+        public <T extends Token> void syntaxError(@NotNull Recognizer<T, ?> recognizer, @Nullable T offendingSymbol,
+                                                  int line, int charPositionInLine, @NotNull String message,
+                                                  @Nullable RecognitionException exception) {
+            new MScriptError(mScript, offendingSymbol.getText(), line, charPositionInLine);
+        }
+    }
 
     public List<MScriptError> checkMScript(String mScript, MbtScriptExecutor systemFunctions,
                                            List<PluginAncestor> plugins) {
         List<MScriptError> errors = new ArrayList<>();
+
+        MScriptErrorListener
+
         return errors;
     }
 

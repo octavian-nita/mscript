@@ -9,10 +9,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.webmbt.mscript.Functions.Lookup.Result;
+import static com.webmbt.mscript.Functions.Lookup.Result.E_FUNCTION_NOT_FOUND;
+import static com.webmbt.mscript.Functions.Lookup.Result.E_PLUGIN_NOT_FOUND;
+import static com.webmbt.mscript.Functions.Lookup.Result.E_WRONG_NUMBER_OF_ARGUMENTS;
 import static com.webmbt.mscript.Functions.Lookup.Result.FOUND;
-import static com.webmbt.mscript.Functions.Lookup.Result.FUNCTION_NOT_FOUND;
-import static com.webmbt.mscript.Functions.Lookup.Result.PLUGIN_NOT_FOUND;
-import static com.webmbt.mscript.Functions.Lookup.Result.WRONG_NUMBER_OF_ARGUMENTS;
 import static com.webmbt.plugin.MScriptInterface.MSCRIPT_METHOD;
 
 /**
@@ -29,8 +29,18 @@ import static com.webmbt.plugin.MScriptInterface.MSCRIPT_METHOD;
  */
 public class Functions {
 
+    /**
+     * A 'global' / default {@link Functions} instance for quick reuse. While function lookup and caching were designed
+     * to be thread-safe, one should thoroughly consider before reusing it in a highly concurrent environment (web app,
+     * etc.).
+     */
     public static final Functions DEFAULT_INSTANCE = new Functions();
 
+    /**
+     * In case this basic cache implementation becomes inefficient (memory leaks are detected, the number of available
+     * MScript functions grows, etc.) one could consider using {@link java.lang.ref.SoftReference}s or one of the many
+     * Java cache implementations around.
+     */
     private final ConcurrentMap<String, ConcurrentMap<String, Function>> cache = new ConcurrentHashMap<>();
 
     /**
@@ -95,7 +105,7 @@ public class Functions {
         Class<?> klass = targetOrClass instanceof Class ? (Class<?>) targetOrClass : targetOrClass.getClass();
 
         Function function = null;
-        Result result = FUNCTION_NOT_FOUND;
+        Result result = E_FUNCTION_NOT_FOUND;
         for (Method method : klass.getClass().getMethods()) { // Class#getMethods() returns only public methods!
             Function fn = null;
 
@@ -114,7 +124,7 @@ public class Functions {
             if (fn != null && fn.getName().equals(functionName) && result != FOUND) {
                 // We've just found a function named like the one we were looking for and we don't have a best match yet
                 function = fn;
-                result = fn.hasImplementation(argsNumber) ? FOUND : WRONG_NUMBER_OF_ARGUMENTS;
+                result = fn.hasImplementation(argsNumber) ? FOUND : E_WRONG_NUMBER_OF_ARGUMENTS;
             }
         }
 
@@ -162,7 +172,8 @@ public class Functions {
             }
 
             // The plugin might exist in the internal cache but it is not available, at least for this lookup:
-            return plugin == null ? new Lookup(PLUGIN_NOT_FOUND) : lookup(pluginName, functionName, argsNumber, plugin);
+            return plugin == null ? new Lookup(E_PLUGIN_NOT_FOUND)
+                                  : lookup(pluginName, functionName, argsNumber, plugin);
         }
 
         // No plugin name - look up system functions and eventually fall back on provided plugins (slower lookup):
@@ -186,8 +197,8 @@ public class Functions {
                         return currLookup;
                     }
 
-                    if (prevLookup == null ||
-                        (prevLookup.result == FUNCTION_NOT_FOUND && currLookup.result == WRONG_NUMBER_OF_ARGUMENTS)) {
+                    if (prevLookup == null || (prevLookup.result == E_FUNCTION_NOT_FOUND &&
+                                               currLookup.result == E_WRONG_NUMBER_OF_ARGUMENTS)) {
                         // A better error message, we've found something with the same name at least...
                         prevLookup = currLookup;
                     }
@@ -202,17 +213,13 @@ public class Functions {
 
     public static class Lookup {
 
-        public final Function function;
-
         public final Result result;
 
-        public Lookup(Function function) {
-            this(FOUND, function);
-        }
+        public final Function function;
 
-        public Lookup(Result result) {
-            this(result, null);
-        }
+        public Lookup(Result result) { this(result, null); }
+
+        public Lookup(Function function) { this(FOUND, function); }
 
         public Lookup(Result result, Function function) {
             if (result == null) {
@@ -223,22 +230,11 @@ public class Functions {
         }
 
         public static enum Result {
-
             FOUND,
 
-            PLUGIN_NOT_FOUND, // plugin not found or not accessible
-
-            FUNCTION_NOT_FOUND,
-            WRONG_NUMBER_OF_ARGUMENTS;
-
-            /**
-             * @return a {@link String} key that can be used to resolve / identify an associated error message
-             */
-            @Override
-            public String toString() {
-                // e.g. for an enum constant declared as PLUGIN_NOT_FOUND, return plugin.not.found
-                return super.toString().toLowerCase().replaceAll("_+", ".");
-            }
+            E_PLUGIN_NOT_FOUND, // plugin not found or not accessible
+            E_FUNCTION_NOT_FOUND,
+            E_WRONG_NUMBER_OF_ARGUMENTS
         }
     }
 }
