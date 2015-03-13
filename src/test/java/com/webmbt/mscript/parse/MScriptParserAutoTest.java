@@ -16,7 +16,7 @@ import static org.junit.Assert.fail;
 
 public class MScriptParserAutoTest extends MScriptParserBaseTest {
 
-    protected static final Logger log = Logger.getLogger(MScriptParserAutoTest.class.getName());
+    protected static final Logger LOG = Logger.getLogger(MScriptParserAutoTest.class.getName());
 
     protected static final String NL = System.getProperty("line.separator", "\n");
 
@@ -47,15 +47,15 @@ public class MScriptParserAutoTest extends MScriptParserBaseTest {
 
         Map<String, Throwable> failures = new HashMap<>();
 
-        log.info("Parsing MScript files in " + scriptBaseDir.getAbsolutePath() + "..." + NL);
+        LOG.info("Parsing MScript files in " + scriptBaseDir.getAbsolutePath() + "..." + NL);
         for (File script : scriptBaseDir.listFiles(MSCRIPT_FILE_FILTER)) {
             String absolutePath = script.getAbsolutePath();
-            log.info("Parsing " + absolutePath + " ...");
+            LOG.info("Parsing " + absolutePath + " ...");
             try {
                 parse(script, library);
-                log.info("[FOUND]" + NL);
+                LOG.info("[FOUND]" + NL);
             } catch (Throwable throwable) {
-                log.info("[ERROR]" + NL);
+                LOG.info("[ERROR]" + NL);
                 failures.put(absolutePath, throwable);
             }
         }

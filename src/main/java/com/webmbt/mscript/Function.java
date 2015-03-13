@@ -103,7 +103,7 @@ public class Function {
      */
     public Function addImplementation(Method method, Object target) {
         if (method == null) {
-            throw new NullPointerException("a function (Java) implementation cannot be null");
+            throw new IllegalArgumentException("a function (Java) implementation cannot be null");
         }
 
         // Validate method arguments (currently, only Strings allowed):

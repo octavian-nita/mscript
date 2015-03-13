@@ -1,40 +1,7 @@
 package com.webmbt.mscript.parse.gui;
 
-import static java.util.logging.Level.SEVERE;
-import static java.util.logging.Level.WARNING;
-
-import com.webmbt.mscript.Functions;
 import com.webmbt.mscript.parse.MScriptLexer;
 import com.webmbt.mscript.parse.MScriptParser;
-
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.logging.Logger;
-import javax.swing.AbstractAction;
-import javax.swing.DefaultListModel;
-import javax.swing.Icon;
-import javax.swing.JComponent;
-import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
-import javax.swing.KeyStroke;
-import javax.swing.SwingUtilities;
-import javax.swing.SwingWorker;
-import javax.swing.UIManager;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.filechooser.FileFilter;
-import javax.swing.text.JTextComponent;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeModel;
-
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -47,28 +14,46 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.gui.TreeTextProvider;
 import org.antlr.v4.runtime.tree.gui.TreeViewer.DefaultTreeTextProvider;
 
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.text.JTextComponent;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.logging.Logger;
+
+import static java.util.logging.Level.SEVERE;
+import static java.util.logging.Level.WARNING;
+
 /**
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
  * @version 1.0, Oct 27, 2014
  */
 public class MScriptTestRig extends javax.swing.JFrame {
 
-    private static final Logger log = Logger.getLogger(MScriptTestRig.class.getName());
+    private static final Logger LOG = Logger.getLogger(MScriptTestRig.class.getName());
 
     public static void main(String args[]) {
-
-        // Try to load a default functions library file:
-        Functions library = new Functions();
-        try {
-            library.load("functions.properties");
-        } catch (Throwable ex) {
-            log.log(SEVERE, "Cannot load functions library", ex);
-        }
 
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Throwable ex) {
-            log.log(WARNING, "", ex);
+            LOG.log(WARNING, "", ex);
         }
 
         Icon empty = new Icon() {
@@ -310,7 +295,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
                     r.x += 2;
                     component.scrollRectToVisible(r);
                 } catch (Exception exception) {
-                    log.log(WARNING, "", exception);
+                    LOG.log(WARNING, "", exception);
                 }
             }
         });
@@ -333,7 +318,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
             srcPane.setCaretPosition(error.charPositionInLine + caretPos);
             srcPane.requestFocusInWindow();
         } catch (Throwable throwable) {
-            log.log(SEVERE, "Cannot go to the syntax error location in code", throwable);
+            LOG.log(SEVERE, "Cannot go to the syntax error location in code", throwable);
         }
     }
 
@@ -404,14 +389,14 @@ public class MScriptTestRig extends javax.swing.JFrame {
                     // Update the parse tree:
                     DefaultTreeModel treeModel = (DefaultTreeModel) treeView.getModel();
                     treeModel.setRoot(createViewTree(get(), new DefaultTreeTextProvider(Arrays.asList(mScriptParser.
-                                                     getRuleNames()))));
+                                                                                                                       getRuleNames()))));
                     expandViewTree();
                 }
             } catch (Throwable throwable) {
                 JOptionPane.showMessageDialog(MScriptTestRig.this,
                                               "Cannot parse the MScript source: " + throwable.getMessage() + "!",
                                               "An error has occurred", JOptionPane.ERROR_MESSAGE);
-                log.log(SEVERE, "", throwable);
+                LOG.log(SEVERE, "", throwable);
             }
             MScriptTestRig.this.getRootPane().setCursor(Cursor.getDefaultCursor());
         }

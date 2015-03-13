@@ -1,5 +1,6 @@
 package com.webmbt.mscript;
 
+import com.webmbt.mscript.parse.MScriptRecognitionException;
 import com.webmbt.plugin.MbtScriptExecutor;
 import com.webmbt.plugin.PluginAncestor;
 import org.antlr.v4.runtime.BaseErrorListener;
@@ -23,8 +24,8 @@ public class MScriptEngine {
     private Functions functions = new Functions();
 
     /**
-     * {@link org.antlr.v4.runtime.ANTLRErrorListener} that translates {@link org.antlr.v4.runtime
-     * .RecognitionException}s to {@link MScriptError}s.
+     * {@link org.antlr.v4.runtime.ANTLRErrorListener} that translates
+     * {@link org.antlr.v4.runtime.RecognitionException}s to {@link MScriptError}s.
      */
     public static class MScriptErrorListener extends BaseErrorListener {
 
@@ -44,7 +45,15 @@ public class MScriptEngine {
         public <T extends Token> void syntaxError(@NotNull Recognizer<T, ?> recognizer, @Nullable T offendingSymbol,
                                                   int line, int charPositionInLine, @NotNull String message,
                                                   @Nullable RecognitionException exception) {
-            new MScriptError(mScript, offendingSymbol.getText(), line, charPositionInLine);
+            if (exception instanceof MScriptRecognitionException) {
+                MScriptRecognitionException mScriptEx = (MScriptRecognitionException) exception;
+                mScriptErrors.add(new MScriptError(mScript, offendingSymbol.getText(), line, charPositionInLine,
+                                                   mScriptEx.getErrorCode(), mScriptEx.getErrorArguments()));
+            } else {
+                mScriptErrors.add(
+                    new MScriptError(mScript, offendingSymbol.getText(), line, charPositionInLine, "E_PARSE",
+                                     exception.getMessage()));
+            }
         }
     }
 
@@ -52,13 +61,11 @@ public class MScriptEngine {
                                            List<PluginAncestor> plugins) {
         List<MScriptError> errors = new ArrayList<>();
 
-        MScriptErrorListener
+        MScriptErrorListener errorListener = new MScriptErrorListener(mScript, errors);
 
         return errors;
     }
 
     public String executeMScript(String mScriptExpressions, MbtScriptExecutor systemFunctions,
-                                 List<PluginAncestor> plugins) throws Exception {
-        return "";
-    }
+                                 List<PluginAncestor> plugins) throws Exception { return ""; }
 }

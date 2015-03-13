@@ -1,6 +1,9 @@
 package com.webmbt.mscript.parse;
 
 import com.webmbt.mscript.Functions;
+import com.webmbt.plugin.DataGenPlugin;
+import com.webmbt.plugin.MbtScriptExecutor;
+import com.webmbt.plugin.PluginAncestor;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -10,10 +13,14 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.misc.Nullable;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.junit.After;
+import org.junit.Before;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.fail;
 
@@ -24,6 +31,28 @@ import static org.junit.Assert.fail;
  * @version 1.0, Sep 27, 2014
  */
 public class MScriptParserBaseTest {
+
+    protected MbtScriptExecutor systemFunctions;
+
+    protected List<PluginAncestor> availablePlugins;
+
+    protected Class<? extends PluginAncestor>[] availablePluginClasses = {DataGenPlugin.class};
+
+    @Before
+    protected void setUp() throws IllegalAccessException, InstantiationException {
+        systemFunctions = new MbtScriptExecutor();
+        availablePlugins = new ArrayList<>(availablePluginClasses.length);
+        for (Class<? extends PluginAncestor> availablePluginClass : availablePluginClasses) {
+            availablePlugins.add(availablePluginClass.newInstance());
+        }
+    }
+
+    @After
+    protected void tearDown() {
+        systemFunctions = null;
+        availablePlugins.clear();
+        availablePlugins = null;
+    }
 
     /**
      * Simple {@link org.antlr.v4.runtime.ANTLRErrorListener} that handles a syntax error by {@link
@@ -77,7 +106,8 @@ public class MScriptParserBaseTest {
      *
      * @param chars   <a href="http://xunitpatterns.com/test%20fixture%20-%20xUnit.html">fixture</a> {@link
      *                ANTLRInputStream input stream} to be parsed
-     * @param library {@link com.webmbt.mscript.Functions function library} used by the parser to validate function calls
+     * @param library {@link com.webmbt.mscript.Functions function library} used by the parser to validate function
+     *                calls
      * @return the {@link ParseTree parse tree} resulting after the parsing process
      */
     protected ParseTree parse(ANTLRInputStream chars, Functions library) {

@@ -33,9 +33,9 @@ protected static final class WhileOptions {
     public boolean hasMaxLoopNum;
 }
 
-protected final void check(boolean condition, String errorMessage) {
+protected final void check(boolean condition, String errorCode, Object ...errorArguments) {
     if (!condition) {
-        throw new MScriptRecognitionException(errorMessage, this);
+        throw new MScriptRecognitionException(this, errorCode, errorArguments);
     }
 }
 
@@ -51,7 +51,7 @@ protected MbtScriptExecutor systemFunctions;
 
 protected List<PluginAncestor> availablePlugins;
 
-public MScriptParser(TokenStream input
+public MScriptParser(TokenStream input,
                      MbtScriptExecutor systemFunctions, List<PluginAncestor> availablePlugins) {
     this(input, null, systemFunctions, availablePlugins);
 }
@@ -97,20 +97,11 @@ locals [String plugin, String function, int argc] // match and store plugin and 
     LPAREN pad* ( expr {$argc++;} ( pad* COMMA pad* expr {$argc++;} )* )? pad* RPAREN {
 
 // After matching the whole function call, validate function name and arguments:
-
 Lookup lookup = functions.lookup($plugin, $function, $argc, systemFunctions, availablePlugins);
-
-switch (lookup.result) {
-case PLUGIN_NOT_FOUND:
-    throw new MScriptRecognitionException("$" + ($plugin != null ? $plugin + "." : "") + $function +
-                                          ": no such plugin defined", this, $SIGIL);
-case FUNCTION_NOT_FOUND:
-    throw new MScriptRecognitionException("$" + ($plugin != null ? $plugin + "." : "") + $function +
-                                          ": no such function defined", this, $SIGIL);
-case WRONG_NUMBER_OF_ARGUMENTS:
-    throw new MScriptRecognitionException("$" + ($plugin != null ? $plugin + "." : "") + $function +
-                                          ": wrong number of arguments (" + $argc + ") provided", this, $SIGIL);
+if (lookup.result != Lookup.Result.FOUND) {
+    throw new MScriptRecognitionException(this, $SIGIL, lookup.result.toString());
 }
+
     } ;
 
 ifStat
@@ -174,33 +165,32 @@ namedWhileOpt[WhileOptions options]
   : optionName=ID pad* ASSIGN pad* (optionVal=ID | optionIntVal=INTEGER) {
 
 if (options != null) {
-    String optionName = $optionName.getText();
-    switch (optionName) {
+    switch ($optionName.getText()) {
     case "index":
-        check(!options.hasIndex, "'index' already defined for the current loop");
-        check($optionVal != null, "'index' can only be assigned an identifier");
+        check(!options.hasIndex, "E_PARSE_LOOP_INDEX_SPECKED");
+        check($optionVal != null, "E_PARSE_LOOP_INDEX_INVALID");
         options.hasIndex = true;
         break;
     case "maxLoopNum":
-        check(!options.hasMaxLoopNum, "'maxLoopNum' already defined for the current loop");
-        check($optionIntVal != null, "'maxLoopNum' can only be assigned a positive integer");
+        check(!options.hasMaxLoopNum, "E_PARSE_LOOP_MAX_NUM_SPECKED");
+        check($optionIntVal != null, "E_PARSE_LOOP_MAX_NUM_INVALID");
         options.hasMaxLoopNum = true;
         break;
     case "label":
-        check(!options.hasLabel, "'label' already defined for the current loop");
-        check($optionVal != null, "'label' can only be assigned an identifier");
+        check(!options.hasLabel, "E_PARSE_LOOP_LABEL_SPECKED");
+        check($optionVal != null, "E_PARSE_LOOP_LABEL_INVALID");
         options.hasLabel = true;
         break;
     default:
-        throw new MScriptRecognitionException("unexpected loop option '" + optionName + "'", this);
+        throw new MScriptRecognitionException(this, "E_PARSE_LOOP_UNEXPECTED_OPTION");
     }
 }
 
 };
 
-breakStat : BREAK pad* ID? {check(loopDepth > 0, "break cannot be used outside of a loop");} ;
+breakStat : BREAK pad* ID? {check(loopDepth > 0, "E_PARSE_BREAK_NOT_ALLOWED");} ;
 
-continueStat : CONTINUE pad* ID? {check(loopDepth > 0, "continue cannot be used outside of a loop");} ;
+continueStat : CONTINUE pad* ID? {check(loopDepth > 0, "E_PARSE_CONTINUE_NOT_ALLOWED");} ;
 
 expr
   : expr pad* ( MUL | DIV | MOD ) pad* expr

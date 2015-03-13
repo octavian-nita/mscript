@@ -225,8 +225,8 @@ public class Functions {
             if (result == null) {
                 throw new IllegalArgumentException("lookup result cannot be null");
             }
-            this.function = function;
             this.result = result;
+            this.function = function;
         }
 
         public static enum Result {
