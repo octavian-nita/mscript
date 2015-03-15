@@ -106,7 +106,7 @@ public class Functions {
 
         Function function = null;
         Result result = E_FUNCTION_NOT_FOUND;
-        for (Method method : klass.getClass().getMethods()) { // Class#getMethods() returns only public methods!
+        for (Method method : klass.getMethods()) { // Class#getMethods() returns only public methods!
             Function fn = null;
 
             if (method.isAnnotationPresent(MSCRIPT_METHOD.class)) {
@@ -114,9 +114,9 @@ public class Functions {
                 // MSCRIPT_METHOD-annotated methods become implementations of MScript functions with the same name:
                 fn = getOrCreateFunction(pluginName, method.getName()).addImplementation(method, targetOrClass);
 
-            } else if (method.getDeclaringClass() != Object.class) {
+            } else if (method.getDeclaringClass() == klass) {
 
-                // Other public methods not inherited from Object become implementations with their name prefixed by _:
+                // Other public, not inherited methods become implementations with their name prefixed by _:
                 fn = getOrCreateFunction(pluginName, "_" + method.getName()).addImplementation(method);
 
             }

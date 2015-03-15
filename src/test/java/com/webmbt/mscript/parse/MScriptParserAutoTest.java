@@ -1,8 +1,6 @@
 package com.webmbt.mscript.parse;
 
-import com.webmbt.mscript.Function;
-import com.webmbt.mscript.Functions;
-import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -29,17 +27,9 @@ public class MScriptParserAutoTest extends MScriptParserBaseTest {
         }
     };
 
-    protected Functions library;
-
-    @Before
-    public void setUp() {
-        library = new Functions();
-    }
-
+    @Ignore
     @Test
     public void testScriptParsing() throws IOException {
-        library.load("functions.properties");
-
         File scriptBaseDir = new File("mscript"); // automatically parse all MScript files in this directory
         if (!scriptBaseDir.isDirectory()) {
             fail(scriptBaseDir.getAbsolutePath() + " is not a directory or does not exist");
@@ -52,7 +42,7 @@ public class MScriptParserAutoTest extends MScriptParserBaseTest {
             String absolutePath = script.getAbsolutePath();
             LOG.info("Parsing " + absolutePath + " ...");
             try {
-                parse(script, library);
+                parse(script);
                 LOG.info("[FOUND]" + NL);
             } catch (Throwable throwable) {
                 LOG.info("[ERROR]" + NL);
@@ -71,8 +61,6 @@ public class MScriptParserAutoTest extends MScriptParserBaseTest {
 
     @Test
     public void testStringInterpolatedFunctionCall() throws IOException {
-        library.add(new Function("foo", 0, 4));
-        library.add(new Function("foo", "bar", 1, 2));
-        parseText("$foo(1, 2, 3, 4); $foo('$bar.foo(1, 2 + 1)')", library);
+        parse("$g(1, 2, 3, 4); $g('$dataGen.randFromList('1,2,3', ',')')");
     }
 }

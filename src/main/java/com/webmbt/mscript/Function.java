@@ -108,10 +108,11 @@ public class Function {
 
         // Validate method arguments (currently, only Strings allowed):
         Class<?>[] parameterTypes = method.getParameterTypes();
-        for (Class<?> parametersType : parameterTypes) {
-            if (parametersType != String.class) {
+        for (Class<?> parameterType : parameterTypes) {
+            if (parameterType != String.class) {
                 throw new IllegalArgumentException(
-                    "function (Java) implementations can currently only take parameters of type java.lang.String");
+                    "function (Java) implementations can currently only accept arguments of type java.lang.String; " +
+                    "provided argument for method '" + method.getName() + "' is of type " + parameterType);
             }
         }
 

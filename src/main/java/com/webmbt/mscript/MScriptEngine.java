@@ -19,8 +19,6 @@ import java.util.List;
  */
 public class MScriptEngine {
 
-    // private MScriptParser mScriptParser;
-
     private Functions functions = new Functions();
 
     /**

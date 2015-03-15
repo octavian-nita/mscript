@@ -71,8 +71,8 @@ public class FunctionTest {
         assertFalse(function.hasImplementation(1));
 
         function.addImplementation(FunctionTestPlugin.class.getMethod("f", String.class, String.class));
-        assertFalse(function.hasImplementations());
-        assertFalse(function.hasImplementation(0));
-        assertFalse(function.hasImplementation(2));
+        assertTrue(function.hasImplementations());
+        assertTrue(function.hasImplementation(0));
+        assertTrue(function.hasImplementation(2));
     }
 }

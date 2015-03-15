@@ -13,14 +13,9 @@ import static java.util.logging.Level.WARNING;
  */
 public class MScriptError {
 
-    protected static final Logger LOG = Logger.getLogger(MScriptError.class.getName());
-
-    protected static final ResourceBundle ERROR_MESSAGES =
-        ResourceBundle.getBundle("com.webmbt.mscript.MScriptErrorMessages", Locale.getDefault());
-
     public final String mScript;     // MScript source
 
-    public final String context;     // erroneous token
+    public final String context;     // erroneous token, for parsing errors
 
     public final int lineNumber;
 
@@ -29,8 +24,6 @@ public class MScriptError {
     public final String code;        // the error code (e.g. E_PLUGIN_NOT_FOUND)
 
     public final String description; // obtained from the resource bundle, the code is used as resource key
-
-    private final String toString;   // cached toString() message
 
     /**
      * The error description is retrieved from a {@link ResourceBundle resource bundle} based on the error
@@ -52,20 +45,27 @@ public class MScriptError {
                 description = format(description, arguments);
             }
         } catch (Throwable throwable) {
-            LOG.log(WARNING, "Cannot format full error description", throwable);
+            LOG.log(WARNING, "Cannot format a full error description", throwable);
             description = "";
         }
         this.description = description;
 
-        // Cache the toString message:
+        // Cache the toString() message:
         StringBuilder builder =
             new StringBuilder(this.context != null ? this.context + " @" : "@").append(this.lineNumber).append(':')
                                                                                .append(this.charNumber).append(' ')
                                                                                .append(this.code);
-        toString = "".equals(this.description.trim()) ? builder.toString()
-                                                      : builder.append(": ").append(this.description).toString();
+        stringified = "".equals(this.description.trim()) ? builder.toString()
+                                                         : builder.append(": ").append(this.description).toString();
     }
 
     @Override
-    public String toString() { return toString; }
+    public String toString() { return stringified; }
+
+    private final String stringified; // cached toString() message
+
+    protected static final Logger LOG = Logger.getLogger(MScriptError.class.getName());
+
+    protected static final ResourceBundle ERROR_MESSAGES =
+        ResourceBundle.getBundle("com.webmbt.mscript.MScriptErrorMessages", Locale.getDefault());
 }
