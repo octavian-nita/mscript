@@ -3,7 +3,7 @@ package com.webmbt.mscript;
 import com.webmbt.plugin.PluginAncestor;
 import org.junit.Test;
 
-import static junit.framework.TestCase.assertFalse;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -12,7 +12,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class FunctionTest {
 
-    public static class FunctionTestPlugin extends PluginAncestor {
+    private static class FunctionTestPlugin extends PluginAncestor {
 
         @Override
         public String getPluginID() { return "ft"; }

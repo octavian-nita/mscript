@@ -1,11 +1,7 @@
 package com.webmbt.mscript.parse;
 
 import com.webmbt.mscript.Functions;
-import com.webmbt.plugin.DataGenPlugin;
-import com.webmbt.plugin.MbtScriptExecutor;
-import com.webmbt.plugin.PluginAncestor;
-import com.webmbt.plugin.ServicePlugin;
-import com.webmbt.plugin.WebPlugin;
+import com.webmbt.mscript.FunctionsFixture;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -21,10 +17,7 @@ import org.junit.Before;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
-import static java.util.Arrays.asList;
 import static org.junit.Assert.fail;
 
 /**
@@ -37,32 +30,18 @@ public class MScriptParserBaseTest {
 
     protected Functions functions;
 
-    protected MbtScriptExecutor systemFunctions;
-
-    protected List<PluginAncestor> availablePlugins;
-
-    protected List<Class<? extends PluginAncestor>> availablePluginClasses =
-        asList(DataGenPlugin.class, ServicePlugin.class, WebPlugin.class);
+    protected FunctionsFixture functionsFixture;
 
     @Before
     public void setUp() throws IllegalAccessException, InstantiationException {
         functions = new Functions();
-
-        systemFunctions = new MbtScriptExecutor();
-
-        availablePlugins = new ArrayList<>(availablePluginClasses.size());
-        for (Class<? extends PluginAncestor> availablePluginClass : availablePluginClasses) {
-            availablePlugins.add(availablePluginClass.newInstance());
-        }
+        functionsFixture = new FunctionsFixture().setUp();
     }
 
     @After
     public void tearDown() {
-        availablePlugins.clear();
-        availablePlugins = null;
-
-        systemFunctions = null;
-
+        functionsFixture.tearDown();
+        functionsFixture = null;
         functions.clearCache();
         functions = null;
     }
@@ -126,7 +105,8 @@ public class MScriptParserBaseTest {
 
         CommonTokenStream tokens = new CommonTokenStream(mScriptLexer);
         com.webmbt.mscript.parse.MScriptParser mScriptParser =
-            new com.webmbt.mscript.parse.MScriptParser(tokens, systemFunctions, availablePlugins);
+            new com.webmbt.mscript.parse.MScriptParser(tokens, functionsFixture.getSystemFunctions(),
+                                                       functionsFixture.getAvailablePlugins());
 
         // Set up a custom error listener that forces a test to fail upon the first parsing error:
         mScriptParser.addErrorListener(new MScriptParserTestErrorListener());

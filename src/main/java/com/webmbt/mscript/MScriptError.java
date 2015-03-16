@@ -13,9 +13,9 @@ import static java.util.logging.Level.WARNING;
  */
 public class MScriptError {
 
-    public final String mScript;     // MScript source
+    public final String mScript;     // MScript source code
 
-    public final String context;     // erroneous token, for parsing errors
+    public final String context;     // erroneous token, for parsing errors at least
 
     public final int lineNumber;
 
@@ -23,7 +23,7 @@ public class MScriptError {
 
     public final String code;        // the error code (e.g. E_PLUGIN_NOT_FOUND)
 
-    public final String description; // obtained from the resource bundle, the code is used as resource key
+    public final String description; // obtained from the resource bundle, the code being used as resource key
 
     /**
      * The error description is retrieved from a {@link ResourceBundle resource bundle} based on the error

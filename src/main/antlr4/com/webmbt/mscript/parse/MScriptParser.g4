@@ -4,23 +4,22 @@
  * </p>
  * <p>
  * The current design of the parser requires creating a new instance for each parsing operation. Creating such instances
- * is rather cheap, see <a href="http://groups.google.com/d/msg/antlr-discussion/B2TaUFm29jE/1UmKQKHhFEcJ">this</a>.
+ * is rather cheap, see <a href="http://groups.google.com/d/msg/antlr-discussion/B2TaUFm29jE/1UmKQKHhFEcJ">here</a>.
  * </p>
  *
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
- * @version 1.0, Sep 27, 2014
+ * @version 1.1, Mar 13, 2015
  */
 parser grammar MScriptParser;
 
 options { tokenVocab=MScriptLexer; }
 
 @header {
-import com.webmbt.plugin.MbtScriptExecutor;
-import com.webmbt.plugin.PluginAncestor;
-
 import com.webmbt.mscript.Functions;
 import com.webmbt.mscript.Functions.Lookup;
-import com.webmbt.mscript.parse.MScriptRecognitionException;
+
+import com.webmbt.plugin.MbtScriptExecutor;
+import com.webmbt.plugin.PluginAncestor;
 
 import java.util.List;
 }
@@ -40,22 +39,33 @@ protected final void check(boolean condition, String errorCode, Object ...errorA
 }
 
 /**
- * The current level of loop nesting (0 for top level statements). Used, for example, to determine at parse time whether
- * a matched break or continue statement can indeed be accepted.
+ * The current level of loop nesting (0 for top level statements). Used to determine (at
+ * parse time) whether a matched break or continue statement can indeed be accepted.
  */
 protected int loopDepth;
 
+/**
+ * The (caching) lookup service for MScript {@link Function functions}. If not explicitly provided at
+ * parser instance creation time, a {@link Functions#DEFAULT_INSTANCE default instance} will be used.
+ */
 protected Functions functions;
 
 protected MbtScriptExecutor systemFunctions;
 
 protected List<PluginAncestor> availablePlugins;
 
+/**
+ * Equivalent to <code>this(input, null, systemFunctions, availablePlugins)</code>.
+ */
 public MScriptParser(TokenStream input,
                      MbtScriptExecutor systemFunctions, List<PluginAncestor> availablePlugins) {
     this(input, null, systemFunctions, availablePlugins);
 }
 
+/**
+ * The current design of the parser requires creating a new instance for each parsing operation. Creating such instances
+ * is rather cheap, see <a href="http://groups.google.com/d/msg/antlr-discussion/B2TaUFm29jE/1UmKQKHhFEcJ">here</a>.
+ */
 public MScriptParser(TokenStream input, Functions functions,
                      MbtScriptExecutor systemFunctions, List<PluginAncestor> availablePlugins) {
 		this(input);
@@ -71,7 +81,7 @@ public MScriptParser(TokenStream input, Functions functions,
 //
 // Currently, the requirement is to keep comments in the abstract syntax tree (AST). Therefore, they cannot be skipped
 // in the lexer but kept as tokens and repeatedly specified in all parser rules where comments may appear, between any
-// two consecutive tokens. We also allow newlines between many consecutive tokens.
+// two other consecutive tokens. We also allow newlines between many consecutive tokens.
 // (see http://stackoverflow.com/questions/12485132/catching-and-keeping-all-comments-with-antlr).
 //
 // Other points to remember: ANTLR v4+ automatically builds an AST, does not include tokens on channels other that the
@@ -88,7 +98,7 @@ stat   : assign | fncall | ifStat | whileStat | breakStat | continueStat ;
 assign : ID pad* ASSIGN pad* expr ;
 
 fncall
-locals [String plugin, String function, int argc] // match and store plugin and function names
+locals [String plugin, String function, int argc] // match and store plugin and function names and argument count
   : SIGIL // followed by...
 
     ( ID {$plugin = $ID.text;} DOT )? ID {$function = $ID.text;} pad*
@@ -96,11 +106,11 @@ locals [String plugin, String function, int argc] // match and store plugin and 
     // match and count arguments to validate the call
     LPAREN pad* ( expr {$argc++;} ( pad* COMMA pad* expr {$argc++;} )* )? pad* RPAREN {
 
-// After matching the whole function call, validate function name and arguments:
-Lookup lookup = functions.lookup($plugin, $function, $argc, systemFunctions, availablePlugins);
-if (lookup.result != Lookup.Result.FOUND) {
-    throw new MScriptRecognitionException(this, $SIGIL, lookup.result.toString());
-}
+        // After matching the whole function call, validate function name and arguments:
+        Lookup lookup = functions.lookup($plugin, $function, $argc, systemFunctions, availablePlugins);
+        if (lookup.result != Lookup.Result.FOUND) {
+            throw new MScriptRecognitionException(this, $SIGIL, lookup.result.toString());
+        }
 
     } ;
 
@@ -164,27 +174,27 @@ namedWhileOpts[WhileOptions options]
 namedWhileOpt[WhileOptions options]
   : optionName=ID pad* ASSIGN pad* (optionVal=ID | optionIntVal=INTEGER) {
 
-if (options != null) {
-    switch ($optionName.getText()) {
-    case "index":
-        check(!options.hasIndex, "E_PARSE_LOOP_INDEX_SPECKED");
-        check($optionVal != null, "E_PARSE_LOOP_INDEX_INVALID");
-        options.hasIndex = true;
-        break;
-    case "maxLoopNum":
-        check(!options.hasMaxLoopNum, "E_PARSE_LOOP_MAX_NUM_SPECKED");
-        check($optionIntVal != null, "E_PARSE_LOOP_MAX_NUM_INVALID");
-        options.hasMaxLoopNum = true;
-        break;
-    case "label":
-        check(!options.hasLabel, "E_PARSE_LOOP_LABEL_SPECKED");
-        check($optionVal != null, "E_PARSE_LOOP_LABEL_INVALID");
-        options.hasLabel = true;
-        break;
-    default:
-        throw new MScriptRecognitionException(this, "E_PARSE_LOOP_UNEXPECTED_OPTION");
-    }
-}
+      if (options != null) {
+          switch ($optionName.getText()) {
+          case "index":
+              check(!options.hasIndex, "E_PARSE_LOOP_INDEX_SPECKED");
+              check($optionVal != null, "E_PARSE_LOOP_INDEX_INVALID");
+              options.hasIndex = true;
+              break;
+          case "maxLoopNum":
+              check(!options.hasMaxLoopNum, "E_PARSE_LOOP_MAX_NUM_SPECKED");
+              check($optionIntVal != null, "E_PARSE_LOOP_MAX_NUM_INVALID");
+              options.hasMaxLoopNum = true;
+              break;
+          case "label":
+              check(!options.hasLabel, "E_PARSE_LOOP_LABEL_SPECKED");
+              check($optionVal != null, "E_PARSE_LOOP_LABEL_INVALID");
+              options.hasLabel = true;
+              break;
+          default:
+              throw new MScriptRecognitionException(this, "E_PARSE_LOOP_UNEXPECTED_OPTION");
+          }
+      }
 
 };
 
