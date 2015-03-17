@@ -4,6 +4,10 @@ import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.valueOf;
 
+//!
+//! TODO: THIS IS A STUB. PLEASE REPLACE WITH REAL CLASS WHEN INTEGRATING IN THE LARGER PROJECT!
+//!
+
 /**
  * Implements the MScript system (built-in) functions.
  *

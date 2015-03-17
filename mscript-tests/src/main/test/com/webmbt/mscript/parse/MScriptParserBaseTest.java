@@ -1,7 +1,7 @@
 package com.webmbt.mscript.parse;
 
 import com.webmbt.mscript.Functions;
-import com.webmbt.mscript.FunctionsFixture;
+import com.webmbt.mscript.test.fixture.FunctionsFixture;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CommonTokenStream;

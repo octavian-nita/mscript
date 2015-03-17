@@ -1,4 +1,4 @@
-package com.webmbt.mscript.parse.gui;
+package com.webmbt.mscript.test.gui;
 
 import com.webmbt.mscript.parse.MScriptLexer;
 import com.webmbt.mscript.parse.MScriptParser;

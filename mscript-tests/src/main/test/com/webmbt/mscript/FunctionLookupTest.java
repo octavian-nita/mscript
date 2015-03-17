@@ -1,5 +1,6 @@
 package com.webmbt.mscript;
 
+import com.webmbt.mscript.test.fixture.FunctionsFixture;
 import com.webmbt.plugin.PluginAncestor;
 import org.junit.After;
 import org.junit.Before;

@@ -1,4 +1,6 @@
-package com.webmbt.plugin;
+package com.webmbt.mscript.test.fixture;
+
+import com.webmbt.plugin.PluginAncestor;
 
 import java.util.Random;
 

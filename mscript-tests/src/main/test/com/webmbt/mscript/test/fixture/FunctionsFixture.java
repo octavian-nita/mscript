@@ -1,10 +1,7 @@
-package com.webmbt.mscript;
+package com.webmbt.mscript.test.fixture;
 
-import com.webmbt.plugin.DataGenPlugin;
 import com.webmbt.plugin.MbtScriptExecutor;
 import com.webmbt.plugin.PluginAncestor;
-import com.webmbt.plugin.ServicePlugin;
-import com.webmbt.plugin.WebPlugin;
 
 import java.util.ArrayList;
 import java.util.List;

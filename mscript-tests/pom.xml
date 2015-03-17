@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.webmbt</groupId>
+    <artifactId>mscript-parent</artifactId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>mscript-tests</artifactId>
+  <packaging>jar</packaging>
+
+  <name>mscript-tests</name>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>2.6</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>com.webmbt.mscript.parse.test.MScriptTestRig</mainClass>
+              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+            </manifest>
+          </archive>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.webmbt</groupId>
+      <artifactId>mscript</artifactId>
+      <version>1.0-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>1.10.19</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>
