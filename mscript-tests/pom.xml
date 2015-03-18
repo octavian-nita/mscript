@@ -6,13 +6,11 @@
 
   <parent>
     <groupId>com.webmbt</groupId>
-    <artifactId>mscript-parent</artifactId>
+    <artifactId>mscript-all</artifactId>
     <version>1.0-SNAPSHOT</version>
   </parent>
   <artifactId>mscript-tests</artifactId>
   <packaging>jar</packaging>
-
-  <name>mscript-tests</name>
 
   <build>
     <plugins>
@@ -24,14 +22,13 @@
           <archive>
             <manifest>
               <mainClass>com.webmbt.mscript.parse.test.MScriptTestRig</mainClass>
-              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
             </manifest>
           </archive>
         </configuration>
         <executions>
           <execution>
             <goals>
-              <goal>jar</goal>
+              <goal>test-jar</goal>
             </goals>
           </execution>
         </executions>

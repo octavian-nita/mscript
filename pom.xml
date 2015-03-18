@@ -5,22 +5,22 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.webmbt</groupId>
-  <artifactId>mscript-parent</artifactId>
+  <artifactId>mscript-all</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>MScript Parent Project</name>
   <url>http://github.com/octavian-nita/mscript</url>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
-  </properties>
-
   <modules>
     <module>mscript</module>
     <module>mscript-tests</module>
   </modules>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
+  </properties>
 
   <build>
     <plugins>

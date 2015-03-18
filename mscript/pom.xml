@@ -6,13 +6,11 @@
 
   <parent>
     <groupId>com.webmbt</groupId>
-    <artifactId>mscript-parent</artifactId>
+    <artifactId>mscript-all</artifactId>
     <version>1.0-SNAPSHOT</version>
   </parent>
   <artifactId>mscript</artifactId>
   <packaging>jar</packaging>
-
-  <name>mscript</name>
 
   <build>
     <plugins>
