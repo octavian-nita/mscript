@@ -18,9 +18,6 @@
         <groupId>com.tunnelvisionlabs</groupId>
         <artifactId>antlr4-maven-plugin</artifactId>
         <version>4.4</version>
-        <configuration>
-          <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
-        </configuration>
         <executions>
           <execution>
             <goals>

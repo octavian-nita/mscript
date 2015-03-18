@@ -50,7 +50,7 @@ public class MScriptEngine {
             } else {
                 mScriptErrors.add(
                     new MScriptError(mScript, offendingSymbol.getText(), line, charPositionInLine, "E_PARSE",
-                                     exception.getMessage()));
+                                     message == null ? exception.getMessage() : message));
             }
         }
     }

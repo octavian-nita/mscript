@@ -54,9 +54,10 @@ public class MScriptError {
         StringBuilder builder =
             new StringBuilder(this.context != null ? this.context + " @" : "@").append(this.lineNumber).append(':')
                                                                                .append(this.charNumber).append(' ')
-                                                                               .append(this.code);
+                                                                               .append('[').append(this.code)
+                                                                               .append(']');
         stringified = "".equals(this.description.trim()) ? builder.toString()
-                                                         : builder.append(": ").append(this.description).toString();
+                                                         : builder.append(" ").append(this.description).toString();
     }
 
     @Override

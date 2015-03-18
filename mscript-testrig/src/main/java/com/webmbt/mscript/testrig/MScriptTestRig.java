@@ -1,16 +1,12 @@
 package com.webmbt.mscript.testrig;
 
+import com.webmbt.mscript.MScriptEngine;
+import com.webmbt.mscript.MScriptError;
 import com.webmbt.mscript.parse.MScriptLexer;
 import com.webmbt.mscript.parse.MScriptParser;
 import com.webmbt.mscript.testrig.fixture.FunctionsFixture;
 import org.antlr.v4.runtime.ANTLRInputStream;
-import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.RecognitionException;
-import org.antlr.v4.runtime.Recognizer;
-import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.misc.NotNull;
-import org.antlr.v4.runtime.misc.Nullable;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.gui.TreeTextProvider;
 import org.antlr.v4.runtime.tree.gui.TreeViewer.DefaultTreeTextProvider;
@@ -164,7 +160,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
             }
         };
 
-        scriptChooser.setCurrentDirectory(Paths.get("").toFile());
+        scriptChooser.setCurrentDirectory(Paths.get(".").toFile());
         scriptChooser.setDialogTitle("Open an MScript file");
         scriptChooser.setFileFilter(MSCRIPT_FILTER);
 
@@ -224,7 +220,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
             javax.swing.BorderFactory.createEmptyBorder(2, 2, 2, 2)));
         errList.setFont(CODE_FONT);
         errList.setForeground(new java.awt.Color(255, 51, 51));
-        errList.setModel(new DefaultListModel<SyntaxError>());
+        errList.setModel(new DefaultListModel<MScriptError>());
         errList.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         errList.addListSelectionListener(new javax.swing.event.ListSelectionListener() {
 
@@ -306,17 +302,17 @@ public class MScriptTestRig extends javax.swing.JFrame {
         if (errList.isSelectionEmpty()) {
             return;
         }
-        SyntaxError error = (SyntaxError) errList.getSelectedValue();
+        MScriptError error = (MScriptError) errList.getSelectedValue();
 
         // Compute the caret position in the source code pane:
-        int caretPos = 0, lineCount = error.line - 1;
+        int caretPos = 0, lineCount = error.lineNumber - 1;
         String[] lines = srcPane.getText().split(NL);
         for (int i = 0; i < lineCount; i++) {
             caretPos += lines[i].length() + 1;
         }
 
         try {
-            srcPane.setCaretPosition(error.charPositionInLine + caretPos);
+            srcPane.setCaretPosition(error.charNumber + caretPos);
             srcPane.requestFocusInWindow();
         } catch (Throwable throwable) {
             LOG.log(SEVERE, "Cannot go to the syntax error location in code", throwable);
@@ -350,32 +346,21 @@ public class MScriptTestRig extends javax.swing.JFrame {
         }
     }
 
-    private class ParseWorker extends SwingWorker<ParseTree, SyntaxError> {
+    private class ParseWorker extends SwingWorker<ParseTree, MScriptError> {
 
         private MScriptLexer mScriptLexer;
 
         private MScriptParser mScriptParser;
 
-        private final List<SyntaxError> syntaxErrors = new ArrayList<>(); // accumulates errors for later reporting
+        private final List<MScriptError> mScriptErrors = new ArrayList<>(); // accumulates errors for later reporting
 
         @Override
         protected ParseTree doInBackground() throws Exception {
             mScriptLexer = new MScriptLexer(new ANTLRInputStream(srcPane.getText()));
 
-            FunctionsFixture fixture = new FunctionsFixture();
             mScriptParser = new MScriptParser(new CommonTokenStream(mScriptLexer), fixture.getSystemFunctions(),
                                               fixture.getAvailablePlugins());
-            mScriptParser.addErrorListener(new BaseErrorListener() {
-
-                @Override
-                public <T extends Token> void syntaxError(@NotNull Recognizer<T, ?> recognizer,
-                                                          @Nullable T offendingSymbol, int line, int charPositionInLine,
-                                                          @NotNull String message,
-                                                          @Nullable RecognitionException exception) {
-                    syntaxErrors.add(
-                        new SyntaxError(recognizer, offendingSymbol, line, charPositionInLine, message, exception));
-                }
-            });
+            mScriptParser.addErrorListener(new MScriptEngine.MScriptErrorListener(srcPane.getText(), mScriptErrors));
 
             return mScriptParser.script();
         }
@@ -385,9 +370,9 @@ public class MScriptTestRig extends javax.swing.JFrame {
             try {
                 synchronized (MScriptTestRig.class) {
                     // Update the syntax errors list:
-                    DefaultListModel<SyntaxError> errModel = (DefaultListModel<SyntaxError>) errList.getModel();
+                    DefaultListModel<MScriptError> errModel = (DefaultListModel<MScriptError>) errList.getModel();
                     errModel.clear();
-                    for (SyntaxError syntaxError : syntaxErrors) {
+                    for (MScriptError syntaxError : mScriptErrors) {
                         errModel.addElement(syntaxError);
                     }
 
@@ -404,40 +389,6 @@ public class MScriptTestRig extends javax.swing.JFrame {
                 LOG.log(SEVERE, "", throwable);
             }
             MScriptTestRig.this.getRootPane().setCursor(Cursor.getDefaultCursor());
-        }
-    }
-
-    private static class SyntaxError {
-
-        final Recognizer<?, ?> recognizer;
-
-        final Object offendingSymbol;
-
-        final int line;
-
-        final int charPositionInLine;
-
-        final String message;
-
-        final RecognitionException recognitionException;
-
-        final String asString;
-
-        public SyntaxError(@NotNull Recognizer<?, ?> recognizer, @Nullable Object offendingSymbol, int line,
-                           int charPositionInLine, @NotNull String message, @Nullable RecognitionException exception) {
-            this.recognizer = recognizer;
-            this.offendingSymbol = offendingSymbol;
-            this.line = line;
-            this.charPositionInLine = charPositionInLine;
-            this.message = message;
-            this.recognitionException = exception;
-
-            asString = "line " + line + ", column " + charPositionInLine + ": " + message;
-        }
-
-        @Override
-        public String toString() {
-            return asString;
         }
     }
 
@@ -460,6 +411,16 @@ public class MScriptTestRig extends javax.swing.JFrame {
     private static final Font LABEL_FONT = new Font(Font.SANS_SERIF, Font.BOLD, 12);
 
     private static final String NL = System.getProperty("line.separator", "\n");
+
+    private static final FunctionsFixture fixture;
+
+    static {
+        try {
+            fixture = new FunctionsFixture();
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JList errList;
