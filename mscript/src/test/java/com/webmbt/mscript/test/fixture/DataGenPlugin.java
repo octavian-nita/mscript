@@ -4,17 +4,13 @@ import com.webmbt.plugin.PluginAncestor;
 
 import java.util.Random;
 
-/**
- * @author yxl01
- */
+/** @author yxl01 */
 public final class DataGenPlugin extends PluginAncestor {
 
     private final Random random = new Random();
 
     @Override
-    public String getPluginID() {
-        return "dataGen";
-    }
+    public String getPluginID() { return "dataGen"; }
 
     @MSCRIPT_METHOD
     public String lowerCase(String inString) {

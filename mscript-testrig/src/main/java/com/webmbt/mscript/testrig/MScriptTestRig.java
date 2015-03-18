@@ -1,7 +1,8 @@
-package com.webmbt.mscript.test.gui;
+package com.webmbt.mscript.testrig;
 
 import com.webmbt.mscript.parse.MScriptLexer;
 import com.webmbt.mscript.parse.MScriptParser;
+import com.webmbt.mscript.testrig.fixture.FunctionsFixture;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -163,7 +164,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
             }
         };
 
-        scriptChooser.setCurrentDirectory(Paths.get(".").toFile());
+        scriptChooser.setCurrentDirectory(Paths.get("").toFile());
         scriptChooser.setDialogTitle("Open an MScript file");
         scriptChooser.setFileFilter(MSCRIPT_FILTER);
 
@@ -360,7 +361,10 @@ public class MScriptTestRig extends javax.swing.JFrame {
         @Override
         protected ParseTree doInBackground() throws Exception {
             mScriptLexer = new MScriptLexer(new ANTLRInputStream(srcPane.getText()));
-            mScriptParser = new MScriptParser(new CommonTokenStream(mScriptLexer));
+
+            FunctionsFixture fixture = new FunctionsFixture();
+            mScriptParser = new MScriptParser(new CommonTokenStream(mScriptLexer), fixture.getSystemFunctions(),
+                                              fixture.getAvailablePlugins());
             mScriptParser.addErrorListener(new BaseErrorListener() {
 
                 @Override
@@ -372,6 +376,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
                         new SyntaxError(recognizer, offendingSymbol, line, charPositionInLine, message, exception));
                 }
             });
+
             return mScriptParser.script();
         }
 

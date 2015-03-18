@@ -2,15 +2,11 @@ package com.webmbt.mscript.test.fixture;
 
 import com.webmbt.plugin.PluginAncestor;
 
-/**
- * @author yxl01
- */
+/** @author yxl01 */
 public final class WebPlugin extends PluginAncestor {
 
     @Override
-    public String getPluginID() {
-        return "web";
-    }
+    public String getPluginID() { return "web"; }
 
     /**
      * Plugin function, called with $web.click('elem1') or $click('elem1').

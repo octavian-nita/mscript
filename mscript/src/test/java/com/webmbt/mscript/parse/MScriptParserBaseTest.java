@@ -28,14 +28,14 @@ import static org.junit.Assert.fail;
  */
 public class MScriptParserBaseTest {
 
-    protected Functions functions;
+    protected Functions functions; // (caching) function lookup service
 
-    protected FunctionsFixture functionsFixture;
+    protected FunctionsFixture functionsFixture; // provides test system functions and plugins
 
     @Before
     public void setUp() throws IllegalAccessException, InstantiationException {
         functions = new Functions();
-        functionsFixture = new FunctionsFixture().setUp();
+        functionsFixture = new FunctionsFixture();
     }
 
     @After
@@ -103,10 +103,9 @@ public class MScriptParserBaseTest {
     protected ParseTree parse(ANTLRInputStream chars) {
         MScriptLexer mScriptLexer = new MScriptLexer(chars);
 
-        CommonTokenStream tokens = new CommonTokenStream(mScriptLexer);
-        com.webmbt.mscript.parse.MScriptParser mScriptParser =
-            new com.webmbt.mscript.parse.MScriptParser(tokens, functionsFixture.getSystemFunctions(),
-                                                       functionsFixture.getAvailablePlugins());
+        MScriptParser mScriptParser =
+            new MScriptParser(new CommonTokenStream(mScriptLexer), functionsFixture.getSystemFunctions(),
+                              functionsFixture.getAvailablePlugins());
 
         // Set up a custom error listener that forces a test to fail upon the first parsing error:
         mScriptParser.addErrorListener(new MScriptParserTestErrorListener());

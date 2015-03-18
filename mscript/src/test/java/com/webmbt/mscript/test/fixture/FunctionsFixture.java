@@ -16,15 +16,25 @@ public class FunctionsFixture {
 
     protected MbtScriptExecutor systemFunctions;
 
-    protected List<PluginAncestor> availablePlugins;
-
     public MbtScriptExecutor getSystemFunctions() { return systemFunctions; }
+
+    public FunctionsFixture setSystemFunctions(MbtScriptExecutor systemFunctions) {
+        this.systemFunctions = systemFunctions;
+        return this;
+    }
+
+    protected List<PluginAncestor> availablePlugins;
 
     public List<PluginAncestor> getAvailablePlugins() { return availablePlugins; }
 
-    public void setSystemFunctions(MbtScriptExecutor systemFunctions) { this.systemFunctions = systemFunctions; }
+    public FunctionsFixture setAvailablePlugins(List<PluginAncestor> availablePlugins) {
+        this.availablePlugins = availablePlugins;
+        return this;
+    }
 
-    public void setAvailablePlugins(List<PluginAncestor> availablePlugins) { this.availablePlugins = availablePlugins; }
+    public FunctionsFixture() throws IllegalAccessException, InstantiationException {
+        setUp();
+    }
 
     public static final List<Class<? extends PluginAncestor>> DEFAULT_PLUGIN_CLASSES =
         asList(DataGenPlugin.class, ServicePlugin.class, WebPlugin.class);
