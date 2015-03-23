@@ -1,6 +1,5 @@
 package com.webmbt.mscript.test.fixture;
 
-import com.webmbt.plugin.MbtScriptExecutor;
 import com.webmbt.plugin.PluginAncestor;
 
 import java.util.ArrayList;

@@ -91,7 +91,7 @@ public class Functions {
 
         Function function = plugin.get(functionName);
         if (function == null) {
-            plugin.putIfAbsent(functionName, new Function(functionName, pluginName));
+            plugin.putIfAbsent(functionName, new Function(functionName, pluginName == "__SYS__" ? null : pluginName));
             function = plugin.get(functionName);
         }
 

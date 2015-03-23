@@ -12,6 +12,10 @@ public final class DataGenPlugin extends PluginAncestor {
     @Override
     public String getPluginID() { return "dataGen"; }
 
+    protected String dataGenUtility(String arg) {
+        return "Should not be available / visible as an MScript function!";
+    }
+
     @MSCRIPT_METHOD
     public String lowerCase(String inString) {
         return inString == null ? "" : inString.toLowerCase();
