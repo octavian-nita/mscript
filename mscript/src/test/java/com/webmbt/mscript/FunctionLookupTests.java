@@ -12,6 +12,7 @@ import static com.webmbt.mscript.Functions.Lookup;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 
 /**
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
@@ -74,7 +75,7 @@ public class FunctionLookupTests {
     }
 
     @Test
-    public void givenPublicMethodWhenUnderscorePrefixedNameIsProvidedThenResultIsFound() {
+    public void givenPublicMethodInPluginsWhenUnderscorePrefixedNameIsProvidedThenResultIsFound() {
         Lookup lookup =
             functions.lookup("web", "_myFunc1", 0, fixture.getSystemFunctions(), fixture.getAvailablePlugins());
 
@@ -118,6 +119,22 @@ public class FunctionLookupTests {
         assertEquals(Lookup.Result.E_WRONG_NUMBER_OF_ARGUMENTS, lookup.result);
     }
 
-    // TODO: Verify caching behaviour using Mockito!
-    // (http://site.mockito.org/mockito/docs/current/org/mockito/Mockito.html)
+    @Test
+    public void givenAnnotatedMethodInPluginsWhenLookedUpThenFunctionIsCached() {
+        Function function = functions.getFunction("dataGen", "lowerCase");
+        assertNull(function);
+
+        Lookup lookup =
+            functions.lookup("dataGen", "lowerCase", 1, fixture.getSystemFunctions(), fixture.getAvailablePlugins());
+
+        assertEquals(Lookup.Result.FOUND, lookup.result);
+
+        assertNotNull(lookup.function);
+        assertEquals("dataGen", lookup.function.getPluginName());
+        assertEquals("lowerCase", lookup.function.getName());
+
+        function = functions.getFunction("dataGen", "lowerCase");
+        assertNotNull(function);
+        assertSame(lookup.function, function);
+    }
 }

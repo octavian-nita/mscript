@@ -131,7 +131,7 @@ public class Functions {
         return new Lookup(result, function);
     }
 
-    protected Lookup lookup(String pluginName, String functionName, int argsNumber, Object targetOrClass) {
+    protected Lookup lookupOrCache(String pluginName, String functionName, int argsNumber, Object targetOrClass) {
         // Look up in the internal cache first since reflection-based lookup is generally slower.
         Function function = getFunction(pluginName, functionName);
         if (function != null && function.hasImplementation(argsNumber)) {
@@ -173,7 +173,7 @@ public class Functions {
 
             // The plugin might exist in the internal cache but it is not available, at least for this lookup:
             return plugin == null ? new Lookup(E_PLUGIN_NOT_FOUND)
-                                  : lookup(pluginName, functionName, argsNumber, plugin);
+                                  : lookupOrCache(pluginName, functionName, argsNumber, plugin);
         }
 
         // No plugin name - look up system functions and eventually fall back on provided plugins (slower lookup):
@@ -181,7 +181,7 @@ public class Functions {
         Lookup prevLookup = null;
 
         if (systemFunctions != null) {
-            prevLookup = lookup(null, functionName, argsNumber, systemFunctions);
+            prevLookup = lookupOrCache(null, functionName, argsNumber, systemFunctions);
             if (prevLookup.result == FOUND) {
                 return prevLookup;
             }
@@ -191,7 +191,7 @@ public class Functions {
             for (PluginAncestor availablePlugin : availablePlugins) {
                 if (availablePlugin != null) {
                     Lookup currLookup =
-                        lookup(availablePlugin.getPluginID(), functionName, argsNumber, availablePlugin);
+                        lookupOrCache(availablePlugin.getPluginID(), functionName, argsNumber, availablePlugin);
 
                     if (currLookup.result == FOUND) {
                         return currLookup;
