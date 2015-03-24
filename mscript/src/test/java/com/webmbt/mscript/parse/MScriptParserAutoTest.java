@@ -25,7 +25,6 @@ public class MScriptParserAutoTest extends MScriptParserBaseTest {
         }
     };
 
-    @Ignore
     @Test
     public void testScriptParsing() throws IOException {
         File scriptBaseDir = new File("mscript"); // automatically parse all MScript files in this directory

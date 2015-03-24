@@ -6,20 +6,6 @@ other scenarios that are not covered by this sample.
 function calls are highlighted in orange.
 Note $test is not a function as "test" is not in the
 function list.
-Valid functions:
- $getValue=2,2
- $web.getValue=2,2
- $rand=0,1
- $isPresent=1,1
- $web.isPresent=1,1
- $size=1,1
- $web.click=1,1
- $getTitle=0,0
- $increment=1,1
- $isEven=1,1
- $dblClick=1,1
- $_myFunc=0,1
- $web._nativeFunc1
 */
 
 /*
@@ -230,5 +216,3 @@ if ($rand('5')>3) {
 		}
 	}
 }
-
-

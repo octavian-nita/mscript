@@ -4,14 +4,14 @@ if
   - '3'
   )
 {
-  $print('OK if ()\n$f() {}');
-  if(1 > 3) $print('Oh no!' + 4)
+  $g('OK if ()\n$f() {}');
+  if(1 > 3) $h('Oh no!' + 4)
 
 
 
   else
 
-    $g();
-  $h();
+    $f();
+  $rand();
 
 }

@@ -23,6 +23,9 @@ public class MbtScriptExecutor extends com.webmbt.plugin.MbtScriptExecutor {
     public String h(String param0, String param1) { return "2"; }
 
     @MSCRIPT_METHOD
+    public String h(String param0, String param1, String param2) { return "3"; }
+
+    @MSCRIPT_METHOD
     public int h(String param0, String param1, String param2, String param3, String param4) { return 5; }
 
     @MSCRIPT_METHOD
