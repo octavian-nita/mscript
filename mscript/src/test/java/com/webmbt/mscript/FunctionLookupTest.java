@@ -18,7 +18,7 @@ import static org.junit.Assert.assertSame;
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
  * @version 2.0, Mar 14, 2015
  */
-public class FunctionLookupTests {
+public class FunctionLookupTest {
 
     /** The <a href="http://xunitpatterns.com/SUT.html">system under test <em>(SUT)</em></a>. */
     protected Functions functions;

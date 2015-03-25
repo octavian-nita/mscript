@@ -10,7 +10,7 @@ import static org.junit.Assert.assertTrue;
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
  * @version 1.0, Dec 12, 2014
  */
-public class FunctionTests {
+public class FunctionTest {
 
     private static class FunctionTestPlugin extends PluginAncestor {
 

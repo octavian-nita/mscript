@@ -41,7 +41,7 @@ public class MScriptParserAutoTest extends MScriptParserBaseTest {
             log.info("Parsing " + absolutePath + " ...");
             try {
                 parse(script);
-                log.info("[FOUND]" + NL);
+                log.info("[SUCCESS]" + NL);
             } catch (Throwable throwable) {
                 log.info("[ERROR]" + NL);
                 failures.put(absolutePath, throwable);
