@@ -58,31 +58,29 @@ public class MbtScriptExecutor extends com.webmbt.plugin.MbtScriptExecutor {
     }
 
     @MSCRIPT_METHOD
-    public String setVar(String varName, String varVal) {
-        return "";
-    }
-
-    /**
-     * Variable retrieval: $isPresent('[var1]') => $isPresent($getVar('var1')).
-     * Is there a better way to reference var? Like $isPresent($var1)...
-     */
-    @MSCRIPT_METHOD
-    public String getVar(String varName) {
-        return "123";
-    }
+    public String setVar(String varName, String varVal) { return ""; }
 
     @MSCRIPT_METHOD
-    public String getData(String dsName, String fieldName) {
-        return "xy";
-    }
+    public String getVar(String varName) { return "123"; }
 
     @MSCRIPT_METHOD
-    public double rand() {
-        return Math.random();
-    }
+    public String getData(String dsName, String fieldName) { return "xy"; }
 
     @MSCRIPT_METHOD
-    public int rand(String range) {
-        return (int) (Math.random() * parseInt(range));
-    }
+    public double rand() { return Math.random(); }
+
+    @MSCRIPT_METHOD
+    public int rand(String range) { return (int) (Math.random() * parseInt(range)); }
+
+    @MSCRIPT_METHOD
+    public int size(String arg) { return arg == null ? 0 : arg.length(); }
+
+    @MSCRIPT_METHOD
+    public boolean not(String arg) { return false; }
+
+    @MSCRIPT_METHOD
+    public boolean isEven(String arg) { return false; }
+
+    @MSCRIPT_METHOD
+    public int increment(String arg) { return 0; }
 }

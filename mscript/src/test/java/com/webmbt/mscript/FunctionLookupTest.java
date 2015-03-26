@@ -77,13 +77,13 @@ public class FunctionLookupTest {
     @Test
     public void givenPublicMethodInPluginsWhenUnderscorePrefixedNameIsProvidedThenResultIsFound() {
         Lookup lookup =
-            functions.lookup("web", "_myFunc1", 0, fixture.getSystemFunctions(), fixture.getAvailablePlugins());
+            functions.lookup("web", "_nativeFunc1", 0, fixture.getSystemFunctions(), fixture.getAvailablePlugins());
 
         assertEquals(Lookup.Result.FOUND, lookup.result);
 
         assertNotNull(lookup.function);
         assertEquals("web", lookup.function.getPluginName());
-        assertEquals("_myFunc1", lookup.function.getName());
+        assertEquals("_nativeFunc1", lookup.function.getName());
     }
 
     @Test

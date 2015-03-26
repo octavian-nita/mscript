@@ -18,23 +18,18 @@ public final class WebPlugin extends PluginAncestor {
     public void click(String location, String option) {}
 
     @MSCRIPT_METHOD
-    public boolean isPresent(String location) {
-        return ((int) (Math.random() * 10)) % 2 == 0;
-    }
+    public boolean isPresent(String location) { return ((int) (Math.random() * 10)) % 2 == 0; }
 
     @MSCRIPT_METHOD
-    public String getValue(String location, String propName) {
-        return "abc";
-    }
+    public String getValue(String location, String propName) { return "abc"; }
+
+    @MSCRIPT_METHOD
+    public String getTitle() { return "title"; }
 
     /**
      * Native function, not annotated with @MSCRIPT_METHOD; must be called with $web._myFunc1(), $web._myFunc2('p1').
      */
-    public int myFunc1() {
-        return 1;
-    }
+    public int nativeFunc1() { return 0; }
 
-    public float myFunc2(String param0) {
-        return 2.2f;
-    }
+    public int nativeFunc1(String arg) { return 0; }
 }

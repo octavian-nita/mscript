@@ -22,6 +22,9 @@ import com.webmbt.plugin.MbtScriptExecutor;
 import com.webmbt.plugin.PluginAncestor;
 
 import java.util.List;
+
+import static com.webmbt.mscript.Functions.Lookup.Result.E_PLUGIN_NOT_FOUND;
+import static com.webmbt.mscript.Functions.Lookup.Result.FOUND;
 }
 
 @members {
@@ -98,18 +101,19 @@ stat   : assign | fncall | ifStat | whileStat | breakStat | continueStat ;
 assign : ID pad* ASSIGN pad* expr ;
 
 fncall
-locals [String plugin, String function, int argc] // match and store plugin and function names and argument count
-  : SIGIL // followed by...
-
-    ( ID {$plugin = $ID.text;} DOT )? ID {$function = $ID.text;} pad*
+locals [Token plugin, Token function, int argc] // match and store plugin and function names and argument count
+  : SIGIL ( ID {$plugin = $ID;} DOT )? ID {$function = $ID;} pad* // followed by...
 
     // match and count arguments to validate the call
     LPAREN pad* ( expr {$argc++;} ( pad* COMMA pad* expr {$argc++;} )* )? pad* RPAREN {
 
         // After matching the whole function call, validate function name and arguments:
-        Lookup lookup = functions.lookup($plugin, $function, $argc, systemFunctions, availablePlugins);
-        if (lookup.result != Lookup.Result.FOUND) {
-            throw new MScriptRecognitionException(this, $SIGIL, lookup.result.toString());
+        Lookup lookup = functions.lookup($plugin != null ? $plugin.getText() : null, $function.getText(),
+                                         $argc, systemFunctions, availablePlugins);
+        if (lookup.result != FOUND) {
+            throw new MScriptRecognitionException(this,
+                                                  lookup.result == E_PLUGIN_NOT_FOUND ? $plugin : $function,
+                                                  lookup.result.toString());
         }
 
     } ;
