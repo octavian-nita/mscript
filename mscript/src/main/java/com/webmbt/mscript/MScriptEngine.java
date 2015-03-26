@@ -1,9 +1,13 @@
 package com.webmbt.mscript;
 
+import com.webmbt.mscript.parse.MScriptLexer;
+import com.webmbt.mscript.parse.MScriptParser;
 import com.webmbt.mscript.parse.MScriptRecognitionException;
 import com.webmbt.plugin.MbtScriptExecutor;
 import com.webmbt.plugin.PluginAncestor;
+import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BaseErrorListener;
+import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Token;
@@ -56,14 +60,19 @@ public class MScriptEngine {
     }
 
     public List<MScriptError> checkMScript(String mScript, MbtScriptExecutor systemFunctions,
-                                           List<PluginAncestor> plugins) {
+                                           List<PluginAncestor> availablePlugins) {
         List<MScriptError> errors = new ArrayList<>();
 
-        MScriptErrorListener errorListener = new MScriptErrorListener(mScript, errors);
+        MScriptLexer mScriptLexer = new MScriptLexer(new ANTLRInputStream(mScript));
+
+        MScriptParser mScriptParser =
+            new MScriptParser(new CommonTokenStream(mScriptLexer), systemFunctions, availablePlugins);
+        mScriptParser.addErrorListener(new MScriptErrorListener(mScript, errors));
+        mScriptParser.script();
 
         return errors;
     }
 
     public String executeMScript(String mScriptExpressions, MbtScriptExecutor systemFunctions,
-                                 List<PluginAncestor> plugins) throws Exception { return ""; }
+                                 List<PluginAncestor> availablePlugins) throws Exception { return ""; }
 }
