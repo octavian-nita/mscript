@@ -1,5 +1,5 @@
-[ ] 1. Implement the two public functions as described in MScript_Runtime_Spec.txt
-[ ] 2. Must include JUnit tests in the project for both syntax check and execution method.
+[~] 1. Implement the two public functions as described in MScript_Runtime_Spec.txt
+[v] 2. Must include JUnit tests in the project for both syntax check and execution method.
 
 [v] 3. Documented options used to generate java parser classes from antlr4.
 

@@ -379,7 +379,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
                     // Update the parse tree:
                     DefaultTreeModel treeModel = (DefaultTreeModel) treeView.getModel();
                     treeModel.setRoot(createViewTree(get(), new DefaultTreeTextProvider(Arrays.asList(mScriptParser.
-                                                                                                                       getRuleNames()))));
+                                                     getRuleNames()))));
                     expandViewTree();
                 }
             } catch (Throwable throwable) {

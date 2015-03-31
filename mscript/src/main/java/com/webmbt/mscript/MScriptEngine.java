@@ -23,8 +23,6 @@ import java.util.List;
  */
 public class MScriptEngine {
 
-    private Functions functions = new Functions();
-
     /**
      * {@link org.antlr.v4.runtime.ANTLRErrorListener} that translates
      * {@link org.antlr.v4.runtime.RecognitionException}s to {@link MScriptError}s.
@@ -35,12 +33,13 @@ public class MScriptEngine {
 
         private final List<MScriptError> mScriptErrors; // where to accumulate errors for later reporting
 
+        public List<MScriptError> getErrors() { return mScriptErrors; }
+
+        public MScriptErrorListener(String mScript) { this(mScript, null); }
+
         public MScriptErrorListener(String mScript, List<MScriptError> mScriptErrors) {
-            if (mScriptErrors == null) {
-                throw new IllegalArgumentException("cannot accumulate MScript errors in a null list");
-            }
             this.mScript = mScript;
-            this.mScriptErrors = mScriptErrors;
+            this.mScriptErrors = mScriptErrors == null ? new ArrayList<MScriptError>() : mScriptErrors;
         }
 
         @Override
@@ -59,18 +58,25 @@ public class MScriptEngine {
         }
     }
 
+    private Functions functions = new Functions();
+
+    public MScriptEngine clearFunctionCache() {
+        functions.clearCache();
+        return this;
+    }
+
     public List<MScriptError> checkMScript(String mScript, MbtScriptExecutor systemFunctions,
                                            List<PluginAncestor> availablePlugins) {
-        List<MScriptError> errors = new ArrayList<>();
-
         MScriptLexer mScriptLexer = new MScriptLexer(new ANTLRInputStream(mScript));
 
         MScriptParser mScriptParser =
-            new MScriptParser(new CommonTokenStream(mScriptLexer), systemFunctions, availablePlugins);
-        mScriptParser.addErrorListener(new MScriptErrorListener(mScript, errors));
-        mScriptParser.script();
+            new MScriptParser(new CommonTokenStream(mScriptLexer), functions, systemFunctions, availablePlugins);
 
-        return errors;
+        MScriptErrorListener mScriptErrorListener = new MScriptErrorListener(mScript);
+
+        mScriptParser.addErrorListener(mScriptErrorListener);
+        mScriptParser.script();
+        return mScriptErrorListener.getErrors();
     }
 
     public String executeMScript(String mScriptExpressions, MbtScriptExecutor systemFunctions,
