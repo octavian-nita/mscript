@@ -18,6 +18,10 @@
         <groupId>com.tunnelvisionlabs</groupId>
         <artifactId>antlr4-maven-plugin</artifactId>
         <version>4.4</version>
+        <configuration>
+          <listener>false</listener>
+          <visitor>true</visitor>
+        </configuration>
         <executions>
           <execution>
             <goals>

@@ -105,4 +105,10 @@ public class MScriptEngineTest {
         assertEquals("The error code should point to a specific error message", "E_WRONG_NUMBER_OF_ARGUMENTS",
                      error.code);
     }
+
+    @Test
+    public void testMScriptExecution() throws Exception {
+        new MScriptEngine()
+            .executeMScript("1 < 2", functionsFixture.getSystemFunctions(), functionsFixture.getAvailablePlugins());
+    }
 }
