@@ -101,7 +101,8 @@ public class MScriptEngine {
     public static class MScriptEvalVisitor extends MScriptParserBaseVisitor<String> {
 
         @Override
-        public String visitCond(@NotNull MScriptParser.CondContext ctx) {
+        public String visitCondLessThan(@NotNull MScriptParser.CondLessThanContext ctx) {
+            System.out.println(ctx.expr(1));
             return "";
         }
     }
