@@ -15,9 +15,12 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.misc.Nullable;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static java.lang.String.valueOf;
 
 /**
  * @author Octavian Theodor Nita (https://github.com/octavian-nita)
@@ -50,7 +53,8 @@ public class MScriptEngine {
             return errors.toString();
         }
 
-        return new MScriptEvalVisitor().visit(mScriptParseTree);
+        return new MScriptEvalVisitor(systemFunctions,
+                                      availablePlugins).visit(mScriptParseTree);
     }
 
     protected MScriptParser createParser(String mScript, MbtScriptExecutor systemFunctions,
@@ -100,9 +104,42 @@ public class MScriptEngine {
 
     public static class MScriptEvalVisitor extends MScriptParserBaseVisitor<String> {
 
+        public MScriptEvalVisitor(MbtScriptExecutor systemFunctions,
+                                  List<PluginAncestor> availablePlugins) {
+        }
+
         @Override
-        public String visitCondLessThan(@NotNull MScriptParser.CondLessThanContext ctx) {
-            System.out.println(ctx.expr(1));
+        public String visitCond(@NotNull MScriptParser.CondContext ctx) {
+            if (ctx.op == null) { // no operator specified, simply evaluate and return the expression
+                return visitExpr(ctx.expr(0));
+            }
+
+            System.out.println(ctx.op);
+            return "";
+        }
+
+        @Override
+        public String visitAtom(@NotNull MScriptParser.AtomContext ctx) {
+            TerminalNode terminal = ctx.FLOAT();
+            if (terminal != null) {
+                return valueOf(terminal.getText());
+            }
+
+            terminal = ctx.INTEGER();
+            if (terminal != null) {
+                return valueOf(terminal.getText());
+            }
+
+            terminal = ctx.BOOLEAN();
+            if (terminal != null) {
+                return valueOf(terminal.getText());
+            }
+
+            terminal = ctx.ID();
+            if(terminal != null) {
+                return "???";
+            }
+
             return "";
         }
     }
@@ -112,5 +149,10 @@ public class MScriptEngine {
     public MScriptEngine clearFunctionCache() {
         functions.clearCache();
         return this;
+    }
+
+    public static void main(String[] args) throws Exception {
+        System.out.println("RESULT: [" + new MScriptEngine()
+            .executeMScript("1", new MbtScriptExecutor(), new ArrayList<PluginAncestor>()) + "]");
     }
 }

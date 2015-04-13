@@ -92,3 +92,5 @@ IN_FNC_DOT    : '.' -> type(DOT) ;
 IN_FNC_ID     : [a-zA-Z_] [a-zA-Z0-9_]* -> type(ID) ;
 
 IN_FNC_LPAREN : '(' -> type(LPAREN), popMode, pushMode(DEFAULT_MODE) ;
+
+IN_FNC_WS     : [ \t\f]+ -> skip ;

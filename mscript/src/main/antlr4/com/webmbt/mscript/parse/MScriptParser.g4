@@ -124,13 +124,8 @@ ifStat
     ( pad* ELSE pad* ( LBRACE ( stats? | ( pad | SEMI )* ) RBRACE | stat ) )? ; // optional ELSE branch
 
 cond
-  : expr pad* EQ pad* expr # condEqual
-  | expr pad* NE pad* expr # condNotEqual
-  | expr pad* LE pad* expr # condLessThanOrEqualTo
-  | expr pad* LT pad* expr # condLessThan
-  | expr pad* GE pad* expr # condGreaterThanOrEqualTo
-  | expr pad* GT pad* expr # condGreaterThan
-  | expr                   # condExpr // in order to allow statements like while (v) { ... } or if ('true') { ... }
+  : expr pad* op=( EQ | NE | LE | LT | GE | GT ) pad* expr
+  | expr // in order to allow statements like while (v) { ... } or if ('true') { ... }
   ;
 
 whileStat
@@ -212,21 +207,10 @@ breakStat : BREAK pad* ID? {check(loopDepth > 0, "E_PARSE_BREAK_NOT_ALLOWED");} 
 continueStat : CONTINUE pad* ID? {check(loopDepth > 0, "E_PARSE_CONTINUE_NOT_ALLOWED");} ;
 
 expr
-  : mulDivMod                                        # exprMulDivMod
-  | addSub                                           # exprAddSub
-  | ( ADD | SUB )? pad* LPAREN pad* expr pad* RPAREN # exprParen // parenthesized expression
-  | ( ADD | SUB )? pad* atom                         # exprAtom
-  ;
-
-mulDivMod
-  : expr pad* MUL pad* expr # exprMul
-  | expr pad* DIV pad* expr # exprDiv
-  | expr pad* MOD pad* expr # exprMod
-  ;
-
-addSub
-  : expr pad* ADD pad* expr # exprAdd
-  | expr pad* SUB pad* expr # exprSub
+  : expr pad* op=( MUL | DIV | MOD ) pad* expr               # exprMulDivMod
+  | expr pad* op=( ADD | SUB ) pad* expr                     # exprAddSub
+  | unaryOp=( ADD | SUB )? pad* LPAREN pad* expr pad* RPAREN # exprParen // parenthesized expression
+  | unaryOp=( ADD | SUB )? pad* atom                         # exprAtom
   ;
 
 atom
