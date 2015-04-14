@@ -18,8 +18,13 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+import static com.webmbt.mscript.Functions.Lookup;
+import static com.webmbt.mscript.Functions.Lookup.Result.FOUND;
+import static com.webmbt.mscript.parse.MScriptLexer.IN_STR_LBRACK;
+import static com.webmbt.mscript.parse.MScriptLexer.RBRACK;
 import static java.lang.String.valueOf;
 
 /**
@@ -30,6 +35,10 @@ public class MScriptEngine {
 
     public List<MScriptError> checkMScript(String mScript, MbtScriptExecutor systemFunctions,
                                            List<PluginAncestor> availablePlugins) {
+        if (mScript == null) {
+            return Collections.emptyList();
+        }
+
         List<MScriptError> mScriptErrors = new ArrayList<>();
         createParser(mScript, systemFunctions, availablePlugins, mScriptErrors).script();
         return mScriptErrors;
@@ -53,8 +62,7 @@ public class MScriptEngine {
             return errors.toString();
         }
 
-        return new MScriptEvalVisitor(systemFunctions,
-                                      availablePlugins).visit(mScriptParseTree);
+        return new MScriptEvalVisitor(systemFunctions, availablePlugins).visit(mScriptParseTree);
     }
 
     protected MScriptParser createParser(String mScript, MbtScriptExecutor systemFunctions,
@@ -79,7 +87,7 @@ public class MScriptEngine {
 
         public MScriptErrorListener(String mScript, List<MScriptError> mScriptErrors) {
             if (mScriptErrors == null) {
-                throw new IllegalArgumentException("the list to accumulate MScript errors canot be null");
+                throw new IllegalArgumentException("the list to accumulate MScript errors cannot be null");
             }
 
             this.mScript = mScript;
@@ -104,8 +112,21 @@ public class MScriptEngine {
 
     public static class MScriptEvalVisitor extends MScriptParserBaseVisitor<String> {
 
-        public MScriptEvalVisitor(MbtScriptExecutor systemFunctions,
+        protected Functions functions;
+
+        protected MbtScriptExecutor systemFunctions;
+
+        protected List<PluginAncestor> availablePlugins;
+
+        public MScriptEvalVisitor(MbtScriptExecutor systemFunctions, List<PluginAncestor> availablePlugins) {
+            this(null, systemFunctions, availablePlugins);
+        }
+
+        public MScriptEvalVisitor(Functions functions, MbtScriptExecutor systemFunctions,
                                   List<PluginAncestor> availablePlugins) {
+            this.functions = functions == null ? Functions.DEFAULT_INSTANCE : functions;
+            this.systemFunctions = systemFunctions;
+            this.availablePlugins = availablePlugins;
         }
 
         @Override
@@ -136,11 +157,59 @@ public class MScriptEngine {
             }
 
             terminal = ctx.ID();
-            if(terminal != null) {
-                return "???";
+            if (terminal != null) {
+                // If one hasn't provided a system functions implementation,
+                // we try to be forgiving and simply return 'null'
+                return systemFunctions == null ? "null" : systemFunctions.getVar(terminal.getText());
             }
 
-            return "";
+            return visit(ctx.getChild(0));
+        }
+
+        @Override
+        public String visitString(@NotNull MScriptParser.StringContext ctx) {
+            StringBuilder acc = new StringBuilder();
+
+            int partsCount = ctx.getChildCount() - 1;
+            for (int i = 1; i < partsCount; i++) {
+                ParseTree part = ctx.getChild(i);
+
+                if (part instanceof TerminalNode) {
+                    Token token = ((TerminalNode) part).getSymbol();
+                    int tokenType = token.getType();
+                    if (tokenType != IN_STR_LBRACK && tokenType != RBRACK) {
+                        acc.append(token.getText());
+                    }
+                } else {
+                    acc.append(visit(part));
+                }
+            }
+
+            return acc.toString();
+        }
+
+        @Override
+        public String visitFncall(@NotNull MScriptParser.FncallContext ctx) {
+            String pluginName = ctx.plugin == null ? null : ctx.plugin.getText();
+            String functionName = ctx.function.getText();
+
+            // If the lookup service / cache is reused between the parser and the visitor,
+            // the function would have already been validated so the lookup is much faster:
+            Lookup lookup = functions.lookup(pluginName, functionName, ctx.argc, systemFunctions, availablePlugins);
+            if (lookup.result != FOUND) { // should not happen!
+                throw new RuntimeException(
+                    "Cannot invoke function $" + (pluginName == null ? "" : pluginName + ".") + functionName);
+            }
+
+            String[] args = ctx.argc == 0 ? null : new String[ctx.argc];
+            List<? extends MScriptParser.ExprContext> arguments = ctx.expr();
+            if (ctx.argc > 0) {
+                for (int i = 0; i < ctx.argc; i++) {
+                    args[i] = visit(arguments.get(i));
+                }
+            }
+
+            return lookup.function.call(args);
         }
     }
 
@@ -153,6 +222,7 @@ public class MScriptEngine {
 
     public static void main(String[] args) throws Exception {
         System.out.println("RESULT: [" + new MScriptEngine()
-            .executeMScript("1", new MbtScriptExecutor(), new ArrayList<PluginAncestor>()) + "]");
+            .executeMScript("'1$getVar('boo')['a['b']']'", new MbtScriptExecutor(), new ArrayList<PluginAncestor>()) +
+                           "]");
     }
 }

@@ -6,9 +6,11 @@ package com.webmbt.plugin;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import static java.lang.Double.parseDouble;
 import static java.lang.String.valueOf;
+import static java.util.logging.Level.WARNING;
 
 /**
  * Implements the MScript operators and system (built-in) functions.
@@ -16,6 +18,8 @@ import static java.lang.String.valueOf;
  * @author yxl01
  */
 public class MbtScriptExecutor implements MScriptInterface {
+
+    protected static final Logger LOG = Logger.getLogger(MbtScriptExecutor.class.getName());
 
     protected Map<String, String> symbolTable = new HashMap<>();
 
@@ -26,6 +30,9 @@ public class MbtScriptExecutor implements MScriptInterface {
 
     @MSCRIPT_METHOD
     public String getVar(String name) {
+        if (!symbolTable.containsKey(name)) {
+            LOG.log(WARNING, "Accessing undefined variable: " + name);
+        }
         return symbolTable.get(name);
     }
 

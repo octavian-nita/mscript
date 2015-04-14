@@ -1,5 +1,6 @@
 package com.webmbt.mscript;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
@@ -122,6 +123,23 @@ public class Function {
         return this;
     }
 
+    public String call(String... args) throws Throwable {
+        int argc = args == null ? 0 : args.length;
+
+        Implementation impl = implementations.get(argc);
+        if (impl == null) {
+            throw new RuntimeException(
+                "Cannot find an implementation for " + toString() + " that takes " + argc + "arguments");
+        }
+
+        try {
+            return String.valueOf(impl.getMethod().invoke(impl.getTarget(), args));
+        } catch (InvocationTargetException e) { // try to unwrap the real exception / cause
+            Throwable cause = e.getCause();
+            throw cause == null ? e : cause;
+        }
+    }
+
     @Override
     public String toString() {
         return (pluginName == null ? "$" : "$" + pluginName + ".") + name +
@@ -153,6 +171,13 @@ public class Function {
 
         public void setTarget(Object target) {
             this.target = target;
+        }
+    }
+
+    public static class CallException extends RuntimeException {
+
+        public CallException(Function function, Throwable cause) {
+            super(function.toString(), cause);
         }
     }
 }
