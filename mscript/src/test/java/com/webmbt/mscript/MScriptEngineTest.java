@@ -109,7 +109,7 @@ public class MScriptEngineTest {
 
     @Test
     @Ignore
-    public void testMScriptExecution() throws Exception {
+    public void testMScriptExecution() throws Throwable {
         new MScriptEngine()
             .executeMScript("1 < '2'", functionsFixture.getSystemFunctions(), functionsFixture.getAvailablePlugins());
     }

@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import static java.lang.Double.parseDouble;
+import static com.webmbt.mscript.Types.asNumber;
 import static java.lang.String.valueOf;
 import static java.util.logging.Level.WARNING;
 
@@ -39,7 +39,7 @@ public class MbtScriptExecutor implements MScriptInterface {
     @MSCRIPT_METHOD
     public String add(String val1, String val2) {
         try {
-            return valueOf(parseDouble(val1) + parseDouble(val2));
+            return valueOf(asNumber(val1) + asNumber(val2));
         } catch (NumberFormatException nfe) { // if any of the conversions fail, just concatenate strings...
             return val1 + val2;
         }
@@ -47,21 +47,21 @@ public class MbtScriptExecutor implements MScriptInterface {
 
     @MSCRIPT_METHOD
     public String sub(String val1, String val2) {
-        return valueOf(parseDouble(val1) - parseDouble(val2));
+        return valueOf(asNumber(val1) - asNumber(val2));
     }
 
     @MSCRIPT_METHOD
     public String mul(String val1, String val2) {
-        return valueOf(parseDouble(val1) * parseDouble(val2));
+        return valueOf(asNumber(val1) * asNumber(val2));
     }
 
     @MSCRIPT_METHOD
     public String div(String val1, String val2) {
-        return valueOf(parseDouble(val1) / parseDouble(val2));
+        return valueOf(asNumber(val1) / asNumber(val2));
     }
 
     @MSCRIPT_METHOD
     public String mod(String val1, String val2) {
-        return valueOf(parseDouble(val1) % parseDouble(val2));
+        return valueOf(asNumber(val1) % asNumber(val2));
     }
 }

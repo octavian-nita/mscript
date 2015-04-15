@@ -123,20 +123,22 @@ public class Function {
         return this;
     }
 
-    public String call(String... args) throws Throwable {
+    public String call(String... args) {
         int argc = args == null ? 0 : args.length;
 
         Implementation impl = implementations.get(argc);
         if (impl == null) {
-            throw new RuntimeException(
-                "Cannot find an implementation for " + toString() + " that takes " + argc + "arguments");
+            throw new CallException(this, "Cannot find an implementation for " + toString() + " that takes " + argc +
+                                          "arguments");
         }
 
         try {
             return String.valueOf(impl.getMethod().invoke(impl.getTarget(), args));
-        } catch (InvocationTargetException e) { // try to unwrap the real exception / cause
+        } catch (IllegalAccessException e) {
+            throw new CallException(this, e);
+        } catch (InvocationTargetException e) { // try to unwrap the 'real' exception / cause
             Throwable cause = e.getCause();
-            throw cause == null ? e : cause;
+            throw new CallException(this, cause == null ? e : cause);
         }
     }
 
@@ -174,10 +176,39 @@ public class Function {
         }
     }
 
+    /**
+     * Thrown when {@link #call(String...) calling} an MScript function fails. May {@link #getCause() wrap} an eventual
+     * 'real' failure cause.
+     */
     public static class CallException extends RuntimeException {
 
+        private final Function function;
+
+        /**
+         * @return the {@link Function} whose call failed; can be <code>null</code> if no proper function instance
+         * could be identified
+         */
+        public Function getFunction() {
+            return function;
+        }
+
+        public CallException(Function function) {
+            this.function = function;
+        }
+
+        public CallException(Function function, String message) {
+            super(message);
+            this.function = function;
+        }
+
         public CallException(Function function, Throwable cause) {
-            super(function.toString(), cause);
+            super(cause);
+            this.function = function;
+        }
+
+        public CallException(Function function, String message, Throwable cause) {
+            super(message, cause);
+            this.function = function;
         }
     }
 }
