@@ -9,19 +9,16 @@ import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 import static com.webmbt.mscript.Functions.Lookup.Result.FOUND;
 import static com.webmbt.mscript.Types.asNumber;
-import static com.webmbt.mscript.parse.MScriptLexer.EQ;
-import static com.webmbt.mscript.parse.MScriptLexer.GE;
-import static com.webmbt.mscript.parse.MScriptLexer.GT;
-import static com.webmbt.mscript.parse.MScriptLexer.IN_STR_LBRACK;
-import static com.webmbt.mscript.parse.MScriptLexer.LE;
-import static com.webmbt.mscript.parse.MScriptLexer.LT;
-import static com.webmbt.mscript.parse.MScriptLexer.NE;
-import static com.webmbt.mscript.parse.MScriptLexer.RBRACK;
+import static com.webmbt.mscript.parse.MScriptLexer.*;
 import static java.lang.String.valueOf;
+import static java.util.regex.Pattern.compile;
 
 class MScriptEvalVisitor extends MScriptParserBaseVisitor<String> {
 
@@ -90,8 +87,54 @@ class MScriptEvalVisitor extends MScriptParserBaseVisitor<String> {
                 return valueOf(val1.compareTo(val2) > 0);
             }
         default:
-            throw new RuntimeException("Unsupported conditional operation: " + ctx.condOp.getText());
+            throw new RuntimeException("Unsupported conditional operator: " + ctx.condOp.getText());
         }
+    }
+
+    @Override
+    public String visitMulDivMod(@NotNull MScriptParser.MulDivModContext ctx) {
+        int opType = ctx.binOp.getType();
+        String val1 = visit(ctx.expr(0));
+        String val2 = visit(ctx.expr(1));
+
+        switch (opType) {
+        case MUL:
+            return systemFunctions.mul(val1, val2);
+        case DIV:
+            return systemFunctions.div(val1, val2);
+        case MOD:
+            return systemFunctions.mod(val1, val2);
+        default:
+            throw new RuntimeException("Unsupported arithmetic operator: " + ctx.binOp.getText());
+        }
+    }
+
+    @Override
+    public String visitAddSub(@NotNull MScriptParser.AddSubContext ctx) {
+        int opType = ctx.binOp.getType();
+        String val1 = visit(ctx.expr(0));
+        String val2 = visit(ctx.expr(1));
+
+        switch (opType) {
+        case ADD:
+            return systemFunctions.add(val1, val2);
+        case SUB:
+            return systemFunctions.sub(val1, val2);
+        default:
+            throw new RuntimeException("Unsupported arithmetic operator: " + ctx.binOp.getText());
+        }
+    }
+
+    @Override
+    public String visitParens(@NotNull MScriptParser.ParensContext ctx) {
+        String val = visit(ctx.expr());
+        return ctx.unaryOp != null && ctx.unaryOp.getType() == SUB ? valueOf(-asNumber(val)) : val;
+    }
+
+    @Override
+    public String visitExAtom(@NotNull MScriptParser.ExAtomContext ctx) {
+        String val = visit(ctx.atom());
+        return ctx.unaryOp != null && ctx.unaryOp.getType() == SUB ? valueOf(-asNumber(val)) : val;
     }
 
     @Override
@@ -155,12 +198,18 @@ class MScriptEvalVisitor extends MScriptParserBaseVisitor<String> {
         for (int i = 1; i < partsCount; i++) {
             ParseTree part = ctx.getChild(i);
 
-            if (part instanceof TerminalNode) {
+            if (part instanceof TerminalNode) { // translate MScript string part to Java
                 Token token = ((TerminalNode) part).getSymbol();
                 int tokenType = token.getType();
                 if (tokenType != IN_STR_LBRACK && tokenType != RBRACK) {
-                    acc.append(token.getText().replaceAll("\\n", "\n"));
-                    System.out.println(acc);
+                    String tx = token.getText();
+
+                    // Could we do better / faster here, like in only one string traversal?
+                    for (Map.Entry<Pattern, String> esc : ESC.entrySet()) {
+                        tx = esc.getKey().matcher(tx).replaceAll(esc.getValue());
+                    }
+
+                    acc.append(tx);
                 }
             } else {
                 acc.append(visit(part));
@@ -168,5 +217,19 @@ class MScriptEvalVisitor extends MScriptParserBaseVisitor<String> {
         }
 
         return acc.toString();
+    }
+
+    protected static final Map<Pattern, String> ESC = new LinkedHashMap<>();
+
+    // Avoid re-compiling the escape character patterns for each string translation from MScript to Java:
+    static {
+        ESC.put(compile("\\\\\\\\"), "\\\\");
+        ESC.put(compile("\\\\'"), "'");
+        ESC.put(compile("\\\\\\$"), "\\$");
+        ESC.put(compile("\\\\\\["), "[");
+        ESC.put(compile("\\\\\\]"), "]");
+        ESC.put(compile("\\\\n"), "\n");
+        ESC.put(compile("\\\\r"), "\r");
+        ESC.put(compile("\\\\t"), "\t");
     }
 }

@@ -76,8 +76,22 @@ public class MScriptEngine {
     }
 
     public static void main(String[] args) throws Throwable {
-        System.out.println("RESULT: [" + new MScriptEngine()
-            .executeMScript("'\\n' == '\\$'", new MbtScriptExecutor(), new ArrayList<PluginAncestor>()) +
-                           "]");
+        MbtScriptExecutor systemFunctions = new MbtScriptExecutor();
+        List<PluginAncestor> availablePlugins = new ArrayList<>();
+        MScriptEngine mScriptEngine = new MScriptEngine();
+
+        systemFunctions.setVar("v1", "123");
+        systemFunctions.setVar("v2", "abc");
+
+        String[] expressions = {//@fmt:off
+            "1 < v1",
+            "3 + v2",
+            "1 > '02' - v1 * 1",
+        };//@fmt:on
+
+        for (String expression : expressions) {
+            System.out.println(
+                "RESULT: " + mScriptEngine.executeMScript(expression, systemFunctions, availablePlugins) + ".");
+        }
     }
 }

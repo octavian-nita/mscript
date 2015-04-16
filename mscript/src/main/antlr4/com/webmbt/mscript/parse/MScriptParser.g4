@@ -207,10 +207,10 @@ breakStat : BREAK pad* ID? {check(loopDepth > 0, "E_PARSE_BREAK_NOT_ALLOWED");} 
 continueStat : CONTINUE pad* ID? {check(loopDepth > 0, "E_PARSE_CONTINUE_NOT_ALLOWED");} ;
 
 expr
-  : expr pad* binOp=( MUL | DIV | MOD ) pad* expr               # exprMulDivMod
-  | expr pad* binOp=( ADD | SUB ) pad* expr                     # exprAddSub
-  | unaryOp=( ADD | SUB )? pad* LPAREN pad* expr pad* RPAREN    # exprParen // parenthesized expression
-  | unaryOp=( ADD | SUB )? pad* atom                            # exprAtom
+  : expr pad* binOp=( MUL | DIV | MOD ) pad* expr               # mulDivMod
+  | expr pad* binOp=( ADD | SUB ) pad* expr                     # addSub
+  | unaryOp=( ADD | SUB )? pad* LPAREN pad* expr pad* RPAREN    # parens // parenthesized expression
+  | unaryOp=( ADD | SUB )? pad* atom                            # exAtom
   ;
 
 atom
