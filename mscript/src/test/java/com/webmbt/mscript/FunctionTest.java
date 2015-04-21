@@ -7,7 +7,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author Octavian Theodor Nita (https://github.com/octavian-nita)
+ * @author TestOptimal, LLC
  * @version 1.0, Dec 12, 2014
  */
 public class FunctionTest {

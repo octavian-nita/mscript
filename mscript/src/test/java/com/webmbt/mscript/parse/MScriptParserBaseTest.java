@@ -23,7 +23,7 @@ import static org.junit.Assert.fail;
 /**
  * Base class for MScript parser tests, encapsulating common functionality like exercising the SUT on a script, etc.
  *
- * @author Octavian Theodor Nita (https://github.com/octavian-nita)
+ * @author TestOptimal, LLC
  * @version 1.0, Sep 27, 2014
  */
 public class MScriptParserBaseTest {

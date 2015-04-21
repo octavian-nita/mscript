@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentMap;
  * accept {@link String} parameters and no varargs. The selection of one implementation over another is based on
  * call arity.
  *
- * @author Octavian Theodor Nita (https://github.com/octavian-nita)
+ * @author TestOptimal, LLC
  * @version 1.2, Jan 12, 2015
  */
 public class Function {

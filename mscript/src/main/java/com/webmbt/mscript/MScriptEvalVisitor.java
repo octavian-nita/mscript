@@ -20,6 +20,19 @@ import static com.webmbt.mscript.parse.MScriptLexer.*;
 import static java.lang.String.valueOf;
 import static java.util.regex.Pattern.compile;
 
+/**
+ * <p>
+ * {@link com.webmbt.mscript.parse.MScriptParserVisitor MScriptParserVisitor} that evaluates expressions formed using
+ * zero, one or more <em>comparison</em> or <em>arithmetic</em> unary or binary operators.
+ * </p>
+ * <p>
+ * If a {@link Functions lookup service / cache} is reused between the parser and the visitor, the function lookup in
+ * the visitor will be much faster since the functions have already been validated.
+ * </p>
+ *
+ * @author TestOptimal, LLC
+ * @version 1.0, Mar 06, 2015
+ */
 class MScriptEvalVisitor extends MScriptParserBaseVisitor<String> {
 
     protected Functions functions;
@@ -87,7 +100,7 @@ class MScriptEvalVisitor extends MScriptParserBaseVisitor<String> {
                 return valueOf(val1.compareTo(val2) > 0);
             }
         default:
-            throw new RuntimeException("Unsupported conditional operator: " + ctx.condOp.getText());
+            throw new RuntimeException("Unsupported comparison operator: " + ctx.condOp.getText());
         }
     }
 
@@ -198,7 +211,7 @@ class MScriptEvalVisitor extends MScriptParserBaseVisitor<String> {
         for (int i = 1; i < partsCount; i++) {
             ParseTree part = ctx.getChild(i);
 
-            if (part instanceof TerminalNode) { // translate MScript string part to Java
+            if (part instanceof TerminalNode) { // translate an MScript string part to Java, escaping it
                 Token token = ((TerminalNode) part).getSymbol();
                 int tokenType = token.getType();
                 if (tokenType != IN_STR_LBRACK && tokenType != RBRACK) {

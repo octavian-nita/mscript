@@ -8,7 +8,7 @@ import static java.text.MessageFormat.format;
 import static java.util.logging.Level.WARNING;
 
 /**
- * @author Octavian Theodor Nita (https://github.com/octavian-nita)
+ * @author TestOptimal, LLC
  * @version 1.0, Mar 12, 2015
  */
 public class MScriptError {

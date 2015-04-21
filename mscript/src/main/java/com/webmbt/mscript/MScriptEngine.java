@@ -13,7 +13,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * @author Octavian Theodor Nita (https://github.com/octavian-nita)
+ * @author TestOptimal, LLC
  * @version 1.0, Mar 06, 2015
  */
 public class MScriptEngine {

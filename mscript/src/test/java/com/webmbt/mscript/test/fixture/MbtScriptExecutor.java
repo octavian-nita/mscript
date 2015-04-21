@@ -9,7 +9,7 @@ public class MbtScriptExecutor extends com.webmbt.plugin.MbtScriptExecutor {
     public String f() { return "f()"; }
 
     @MSCRIPT_METHOD
-    public String g(String param0) { return "1"; }
+    public String g(String param0) { return param0; }
 
     @MSCRIPT_METHOD
     public int g(String param0, String param1) { return 2; }

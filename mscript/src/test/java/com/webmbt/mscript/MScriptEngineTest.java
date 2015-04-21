@@ -3,7 +3,6 @@ package com.webmbt.mscript;
 import com.webmbt.mscript.test.fixture.FunctionsFixture;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.List;
@@ -11,7 +10,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author Octavian Theodor Nita (https://github.com/octavian-nita)
+ * @author TestOptimal, LLC
  * @version 2.0, Mar 30, 2015
  */
 public class MScriptEngineTest {
@@ -53,7 +52,7 @@ public class MScriptEngineTest {
     }
 
     @Test
-    public void givenMScriptFunctionCallWhenNonexistentPluginIsUsedThenPluginNotFoundErrorIsCollected() {
+    public void givenFunctionCallWhenNonexistentPluginIsUsedThenPluginNotFoundErrorIsCollected() {
         String mScript = "$foo.bar()";
 
         List<MScriptError> errors = mScriptEngine
@@ -71,7 +70,7 @@ public class MScriptEngineTest {
     }
 
     @Test
-    public void givenMScriptFunctionCallWhenNonexistentFunctionIsCalledThenFunctionNotFoundErrorIsCollected() {
+    public void givenFunctionCallWhenNonexistentFunctionIsCalledThenFunctionNotFoundErrorIsCollected() {
         String mScript = "$web.bar()";
 
         List<MScriptError> errors = mScriptEngine
@@ -89,7 +88,7 @@ public class MScriptEngineTest {
     }
 
     @Test
-    public void givenMScriptFunctionCallWhenWrongNumberOfArgumentsThenWrongNumberOfArgumentsErrorIsCollected() {
+    public void givenFunctionCallWhenWrongNumberOfArgumentsThenWrongNumberOfArgumentsErrorIsCollected() {
         String mScript = "$web._nativeFunc1(1, 2)";
 
         List<MScriptError> errors = mScriptEngine
@@ -108,9 +107,25 @@ public class MScriptEngineTest {
     }
 
     @Test
-    @Ignore
-    public void testMScriptExecution() throws Throwable {
-        new MScriptEngine()
-            .executeMScript("1 < '2'", functionsFixture.getSystemFunctions(), functionsFixture.getAvailablePlugins());
+    public void givenSysCallExpressionWhenFunctionExistsThenEvaluationSucceeds() throws Throwable {
+        String result = mScriptEngine.executeMScript("$g('whatever')", functionsFixture.getSystemFunctions(),
+                                                     functionsFixture.getAvailablePlugins());
+        assertEquals(functionsFixture.getSystemFunctions().g("whatever"), result);
+    }
+
+    @Test
+    public void givenInterpolatedStringExpressionThenEvaluationSucceeds() throws Throwable {
+        functionsFixture.getSystemFunctions().setVar("var", "1");
+        String result = mScriptEngine.executeMScript("'ab$g('1$g('34')2[var]')'", functionsFixture.getSystemFunctions(),
+                                                     functionsFixture.getAvailablePlugins());
+        assertEquals("ab13421", result);
+    }
+
+    @Test
+    public void givenParenthesisedAndNegationExpressionThenEvaluationSucceeds() throws Throwable {
+        functionsFixture.getSystemFunctions().setVar("var", "1");
+        String result = mScriptEngine.executeMScript("var", functionsFixture.getSystemFunctions(),
+                                                     functionsFixture.getAvailablePlugins());
+        assertEquals("1", result);
     }
 }

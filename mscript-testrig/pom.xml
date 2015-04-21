@@ -23,7 +23,7 @@
         <artifactId>exec-maven-plugin</artifactId>
         <version>1.3.2</version>
         <configuration>
-          <mainClass>com.webmbt.mscript.testrig.MScriptTestRig</mainClass>
+          <mainClass>com.webmbt.mscript.MScriptTestRig</mainClass>
         </configuration>
       </plugin>
     </plugins>

@@ -1,7 +1,5 @@
-package com.webmbt.mscript.testrig;
+package com.webmbt.mscript;
 
-import com.webmbt.mscript.MScriptEngine;
-import com.webmbt.mscript.MScriptError;
 import com.webmbt.mscript.parse.MScriptLexer;
 import com.webmbt.mscript.parse.MScriptParser;
 import com.webmbt.mscript.testrig.fixture.FunctionsFixture;
@@ -38,7 +36,7 @@ import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;
 
 /**
- * @author Octavian Theodor Nita (https://github.com/octavian-nita)
+ * @author TestOptimal, LLC
  * @version 1.0, Oct 27, 2014
  */
 public class MScriptTestRig extends javax.swing.JFrame {
@@ -360,7 +358,7 @@ public class MScriptTestRig extends javax.swing.JFrame {
 
             mScriptParser = new MScriptParser(new CommonTokenStream(mScriptLexer), fixture.getSystemFunctions(),
                                               fixture.getAvailablePlugins());
-            mScriptParser.addErrorListener(new MScriptEngine.MScriptErrorListener(srcPane.getText(), mScriptErrors));
+            mScriptParser.addErrorListener(new MScriptErrorListener(srcPane.getText(), mScriptErrors));
 
             return mScriptParser.script();
         }

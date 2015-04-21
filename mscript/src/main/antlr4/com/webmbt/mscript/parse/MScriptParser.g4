@@ -7,7 +7,7 @@
  * is rather cheap, see <a href="http://groups.google.com/d/msg/antlr-discussion/B2TaUFm29jE/1UmKQKHhFEcJ">here</a>.
  * </p>
  *
- * @author Octavian Theodor Nita (https://github.com/octavian-nita)
+ * @author TestOptimal, LLC
  * @version 1.1, Mar 13, 2015
  */
 parser grammar MScriptParser;

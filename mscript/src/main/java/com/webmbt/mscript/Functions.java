@@ -24,7 +24,7 @@ import static com.webmbt.plugin.MScriptInterface.MSCRIPT_METHOD;
  * appropriate definition is found, it is retrieved.
  * </p>
  *
- * @author Octavian Theodor Nita (https://github.com/octavian-nita)
+ * @author TestOptimal, LLC
  * @version 1.0, Mar 09, 2015
  */
 public class Functions {

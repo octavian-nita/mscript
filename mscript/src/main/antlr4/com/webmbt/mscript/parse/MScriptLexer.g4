@@ -1,7 +1,7 @@
 /**
  * The MScript lexer is defined separately since we are using lexical modes which are only allowed in lexer grammars.
  *
- * @author Octavian Theodor Nita (https://github.com/octavian-nita)
+ * @author TestOptimal, LLC
  * @version 1.0, Sep 27, 2014
  */
 lexer grammar MScriptLexer;

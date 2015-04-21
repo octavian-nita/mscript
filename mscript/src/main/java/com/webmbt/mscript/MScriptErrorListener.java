@@ -13,6 +13,9 @@ import java.util.List;
 /**
  * {@link org.antlr.v4.runtime.ANTLRErrorListener} that translates
  * {@link org.antlr.v4.runtime.RecognitionException}s to {@link MScriptError}s.
+ *
+ * @author TestOptimal, LLC
+ * @version 1.0, Mar 06, 2015
  */
 class MScriptErrorListener extends BaseErrorListener {
 

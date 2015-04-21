@@ -10,7 +10,7 @@ import org.antlr.v4.runtime.Token;
  * is wrong; currently, function invocation is checked at parse time as opposed to the more common case in which a
  * semantic analysis phase would validate it).
  *
- * @author Octavian Theodor Nita (https://github.com/octavian-nita)
+ * @author TestOptimal, LLC
  * @version 1.1, Mar 13, 2014
  */
 public class MScriptRecognitionException extends RecognitionException {
