@@ -18,6 +18,6 @@ $web.click($h('ds1',$g('f3','Val')))
 var2 = $web.getValue('f3','val') + 30
 var1=$setVar('f1' ,$rand(5)) + '-OK string'
 
-$h( '$g('3' * ($web._myFunc1()) * (2 + 1))-aa', 1, 2 )
+$h( '$g('3' * ($web._nativeFunc1()) * (2 + 1))-aa', 1, 2 )
 
-$g( '$g('3' * $web._myFunc1()) * (2 + 1))-aa' )
+$g( '$g('3' * $web._nativeFunc1()) * (2 + 1))-aa' )

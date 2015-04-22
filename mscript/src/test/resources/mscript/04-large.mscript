@@ -198,7 +198,7 @@ while ($isEven('[var2]') | loopIdxVar; label=outerLoop) {
  */
 
 if ($rand('5')>3) {
-	while ('$_myFunc()' | idx; label=outerLoop) {
+	while ('$_nativeFunc1()' | idx; label=outerLoop) {
 		if (idx >3) {
 			while('true' | maxLoopNum = 4) {
 				if ('$rand()' < 0.5) {
@@ -211,7 +211,7 @@ if ($rand('5')>3) {
 			break;
 		}
 		else {
-			$dblClick('f4')
+			$click('f4')
 			continue;
 		}
 	}
