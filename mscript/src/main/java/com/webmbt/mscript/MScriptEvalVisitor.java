@@ -16,8 +16,8 @@ import java.util.regex.Pattern;
 
 import static com.webmbt.mscript.Functions.Lookup.Result.FOUND;
 import static com.webmbt.mscript.Types.asNumber;
+import static com.webmbt.mscript.Types.asString;
 import static com.webmbt.mscript.parse.MScriptLexer.*;
-import static java.lang.String.valueOf;
 import static java.util.regex.Pattern.compile;
 
 /**
@@ -65,39 +65,39 @@ class MScriptEvalVisitor extends MScriptParserBaseVisitor<String> {
         switch (opType) {
         case EQ:
             try {
-                return valueOf(asNumber(val1) == asNumber(val2));
+                return asString(asNumber(val1) == asNumber(val2));
             } catch (NumberFormatException nfe) {
-                return valueOf(val1.equals(val2));
+                return asString(val1.equals(val2));
             }
         case NE:
             try {
-                return valueOf(asNumber(val1) != asNumber(val2));
+                return asString(asNumber(val1) != asNumber(val2));
             } catch (NumberFormatException nfe) {
-                return valueOf(!val1.equals(val2));
+                return asString(!val1.equals(val2));
             }
         case LE:
             try {
-                return valueOf(asNumber(val1) <= asNumber(val2));
+                return asString(asNumber(val1) <= asNumber(val2));
             } catch (NumberFormatException nfe) {
-                return valueOf(val1.compareTo(val2) <= 0);
+                return asString(val1.compareTo(val2) <= 0);
             }
         case LT:
             try {
-                return valueOf(asNumber(val1) < asNumber(val2));
+                return asString(asNumber(val1) < asNumber(val2));
             } catch (NumberFormatException nfe) {
-                return valueOf(val1.compareTo(val2) < 0);
+                return asString(val1.compareTo(val2) < 0);
             }
         case GE:
             try {
-                return valueOf(asNumber(val1) >= asNumber(val2));
+                return asString(asNumber(val1) >= asNumber(val2));
             } catch (NumberFormatException nfe) {
-                return valueOf(val1.compareTo(val2) >= 0);
+                return asString(val1.compareTo(val2) >= 0);
             }
         case GT:
             try {
-                return valueOf(asNumber(val1) > asNumber(val2));
+                return asString(asNumber(val1) > asNumber(val2));
             } catch (NumberFormatException nfe) {
-                return valueOf(val1.compareTo(val2) > 0);
+                return asString(val1.compareTo(val2) > 0);
             }
         default:
             throw new RuntimeException("Unsupported comparison operator: " + ctx.condOp.getText());
@@ -141,30 +141,30 @@ class MScriptEvalVisitor extends MScriptParserBaseVisitor<String> {
     @Override
     public String visitParens(@NotNull MScriptParser.ParensContext ctx) {
         String val = visit(ctx.expr());
-        return ctx.unaryOp != null && ctx.unaryOp.getType() == SUB ? valueOf(-asNumber(val)) : val;
+        return ctx.unaryOp != null && ctx.unaryOp.getType() == SUB ? asString(-asNumber(val)) : val;
     }
 
     @Override
     public String visitExAtom(@NotNull MScriptParser.ExAtomContext ctx) {
         String val = visit(ctx.atom());
-        return ctx.unaryOp != null && ctx.unaryOp.getType() == SUB ? valueOf(-asNumber(val)) : val;
+        return ctx.unaryOp != null && ctx.unaryOp.getType() == SUB ? asString(-asNumber(val)) : val;
     }
 
     @Override
     public String visitAtom(@NotNull MScriptParser.AtomContext ctx) {
         TerminalNode terminal = ctx.FLOAT();
         if (terminal != null) {
-            return valueOf(terminal.getText());
+            return asString(terminal.getText());
         }
 
         terminal = ctx.INTEGER();
         if (terminal != null) {
-            return valueOf(terminal.getText());
+            return asString(terminal.getText());
         }
 
         terminal = ctx.BOOLEAN();
         if (terminal != null) {
-            return valueOf(terminal.getText());
+            return asString(terminal.getText());
         }
 
         terminal = ctx.ID();

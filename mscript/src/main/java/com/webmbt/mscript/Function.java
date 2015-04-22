@@ -133,7 +133,7 @@ public class Function {
         }
 
         try {
-            return String.valueOf(impl.getMethod().invoke(impl.getTarget(), args));
+            return Types.asString(impl.getMethod().invoke(impl.getTarget(), args));
         } catch (IllegalAccessException e) {
             throw new CallException(this, e);
         } catch (InvocationTargetException e) { // try to unwrap the 'real' exception / cause

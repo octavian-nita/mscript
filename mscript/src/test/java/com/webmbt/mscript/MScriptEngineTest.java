@@ -1,6 +1,8 @@
 package com.webmbt.mscript;
 
 import com.webmbt.mscript.test.fixture.FunctionsFixture;
+import com.webmbt.plugin.MbtScriptExecutor;
+import com.webmbt.plugin.PluginAncestor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -116,16 +118,81 @@ public class MScriptEngineTest {
     @Test
     public void givenInterpolatedStringExpressionThenEvaluationSucceeds() throws Throwable {
         functionsFixture.getSystemFunctions().setVar("var", "1");
+
         String result = mScriptEngine.executeMScript("'ab$g('1$g('34')2[var]')'", functionsFixture.getSystemFunctions(),
                                                      functionsFixture.getAvailablePlugins());
+
         assertEquals("ab13421", result);
     }
 
     @Test
-    public void givenParenthesisedAndNegationExpressionThenEvaluationSucceeds() throws Throwable {
-        functionsFixture.getSystemFunctions().setVar("var", "1");
-        String result = mScriptEngine.executeMScript("var", functionsFixture.getSystemFunctions(),
-                                                     functionsFixture.getAvailablePlugins());
+    public void givenParenthesisedNegationExpressionThenEvaluationSucceeds() throws Throwable {
+        functionsFixture.getSystemFunctions().setVar("var", "1.0");
+
+        String result = mScriptEngine
+            .executeMScript("-(-var)", functionsFixture.getSystemFunctions(), functionsFixture.getAvailablePlugins());
+
+        // The arithmetic operator '-' forced numeric conversion which removed the .0 from the initial value...
         assertEquals("1", result);
+    }
+
+    @Test
+    public void givenInterpolatedArithmeticExpressionThenEvaluationSucceeds() throws Throwable {
+        MbtScriptExecutor systemFunctions = functionsFixture.getSystemFunctions();
+        systemFunctions.setVar("one", "1.0");
+        systemFunctions.setVar("two", "2.");
+        systemFunctions.setVar("mOne", "-1");
+
+        String result = mScriptEngine
+            .executeMScript("'v[one + 2 * 3 / -mOne]'", systemFunctions, functionsFixture.getAvailablePlugins());
+
+        assertEquals("v7", result);
+    }
+
+    @Test
+    public void givenParenthesizedArithmeticExpressionThenEvaluationSucceeds() throws Throwable {
+        MbtScriptExecutor systemFunctions = functionsFixture.getSystemFunctions();
+        systemFunctions.setVar("one", "1.0");
+        systemFunctions.setVar("two", "2.");
+        systemFunctions.setVar("mOne", "-1");
+
+        String result = mScriptEngine
+            .executeMScript("(one + 2.34) * 3 / -mOne", systemFunctions, functionsFixture.getAvailablePlugins());
+
+        assertEquals("10.02", result);
+    }
+
+    @Test
+    public void givenComparisonExpressionThenEvaluationSucceeds() throws Throwable {
+        MbtScriptExecutor systemFunctions = functionsFixture.getSystemFunctions();
+        systemFunctions.setVar("one", "1.0");
+        systemFunctions.setVar("two", "2.");
+        systemFunctions.setVar("mOne", "-1");
+
+        List<PluginAncestor> availablePlugins = functionsFixture.getAvailablePlugins();
+        String result;
+
+        result = mScriptEngine.executeMScript("one == -mOne", systemFunctions, availablePlugins);
+        assertEquals("true", result);
+        result = mScriptEngine.executeMScript("one != -mOne", systemFunctions, availablePlugins);
+        assertEquals("false", result);
+
+        result = mScriptEngine.executeMScript("one != mOne", systemFunctions, availablePlugins);
+        assertEquals("true", result);
+        result = mScriptEngine.executeMScript("one == mOne", systemFunctions, availablePlugins);
+        assertEquals("false", result);
+
+        result = mScriptEngine.executeMScript("-one <= -mOne", systemFunctions, availablePlugins);
+        assertEquals("true", result);
+        result = mScriptEngine.executeMScript("-one < mOne", systemFunctions, availablePlugins);
+        assertEquals("false", result);
+
+        result = mScriptEngine.executeMScript("two - one + 1 >= -mOne * (3 - 1)", systemFunctions, availablePlugins);
+        assertEquals("true", result);
+        result = mScriptEngine.executeMScript("two - one > mOne * (3 - 1)", systemFunctions, availablePlugins);
+        assertEquals("true", result);
+
+        result = mScriptEngine.executeMScript("two - one + 1 > -mOne * (3 - 1)", systemFunctions, availablePlugins);
+        assertEquals("false", result);
     }
 }

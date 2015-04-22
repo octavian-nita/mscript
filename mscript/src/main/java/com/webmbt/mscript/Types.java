@@ -22,6 +22,22 @@ import static java.lang.Double.parseDouble;
  */
 public class Types {
 
+    public static String asString(double d) {
+        String s = Double.toString(d);
+        return d % 1 == 0 ? s.substring(0, s.indexOf(".")) : s;
+    }
+
+    public static String asString(boolean b) {
+        return b ? "true" : "false";
+    }
+
+    public static String asString(Object o) {
+        if (o instanceof Number) {
+            return asString(((Number) o).doubleValue());
+        }
+        return String.valueOf(o);
+    }
+
     /**
      * @throws NullPointerException  if {@code value} is {@code null}
      * @throws NumberFormatException if {@code value} does not represent a {@link #isTrue(String) boolean}
